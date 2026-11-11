@@ -585,7 +585,8 @@ function pickGoal(){
   if(duck.off){duck.off=false;duck.turns=0;duck.nextOff=nextOffCount();duck.goal=(Math.random()-.5)*.5;return;}
   if(duck.turns>=duck.nextOff){duck.off=true;
     const side=Math.abs(duck.x)>.1?Math.sign(duck.x):(Math.random()<.5?-1:1);
-    duck.offEnd=tNow+(1-side*duck.x)/(speed()*1.15)+D.offDur*(.85+Math.random()*.3); // walk to the edge, then keep pushingduck.goal=side*1.9;SFX.quack(0,1.2);return;}
+    duck.offEnd=tNow+(1-side*duck.x)/(speed()*1.15)+D.offDur*(.85+Math.random()*.3); 
+    duck.goal=side*1.9;SFX.quack(0,1.2);return;} // walks to the edge, then keeps pushing
   duck.turns++;const side=duck.goal>0?-1:1;duck.goal=side*(.25+Math.random()*.4);
 }
 function updateFly(dt,lim){
