@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Glow Spots · Bamboo Physio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Grandstander:wght@700;900&family=Fredoka:wght@500;600;700&family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/kit.css">
+<style>
+html,body{background:#4A3E78}
+.jar{display:flex;gap:2px;align-items:center;min-height:40px;background:#fff;border:3px solid var(--ink);border-radius:22px;padding:2px 8px;box-shadow:0 3px 0 var(--ink)}
+.jar canvas{width:24px;height:24px}
+.jar canvas.off{opacity:.25;filter:grayscale(1)}
+.where{position:fixed;left:50%;top:calc(var(--safe-t) + 122px);transform:translateX(-50%);background:#fff;border:3px solid var(--ink);border-radius:20px;padding:4px 16px;font:700 20px Fredoka,sans-serif;box-shadow:0 3px 0 var(--ink);z-index:4;display:none}
+.where.on{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<video id="v" playsinline muted></video>
+
+<div class="top">
+  <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 33 C 10 20, 20 9, 34 6 C 33 20, 24 31, 8 33 Z" fill="#7DCB6B" stroke="#2b2118" stroke-width="3.5" stroke-linejoin="round"/><path d="M11 30 C 17 23, 23 16, 29 11" fill="none" stroke="#2b2118" stroke-width="2.5" stroke-linecap="round"/></svg><span>Bamboo Physio</span></div>
+  <div class="tr"><button class="snd" id="snd" aria-pressed="false">🔊</button>
+  <div class="lang"><button id="lang-en" aria-pressed="true">EN</button><button id="lang-he" aria-pressed="false">עב</button></div></div>
+</div>
+
+<div class="hud" id="hud">
+  <div class="pill"><b id="score">0</b><small id="t-sec">seconds</small></div>
+  <div class="jar" id="jar"></div>
+  <div class="pill"><b id="best">–</b><small id="t-best">fastest</small></div>
+</div>
+<div class="where" id="where"></div>
+
+<div class="msg" id="msg"></div>
+<div class="count" id="count"></div>
+<div class="toast" id="toast"></div>
+
+<div class="card" id="start">
+  <h1 id="t-title">Glow Spots</h1>
+  <p class="sub" id="t-sub"></p>
+  <button class="btn" id="play"><span id="t-play">Play</span></button>
+  <p class="note" id="t-privacy"></p>
+  <details id="grown">
+    <summary id="t-grown">For grown-ups</summary>
+    <div class="g-body">
+      <p id="t-g1"></p>
+      <div class="g-row"><span id="t-far">Spots</span>
+        <div class="seg" id="far-seg"><button data-v="near"></button><button data-v="far"></button></div></div>
+      <div class="g-row"><span id="t-hold">Hold for</span>
+        <div class="seg" id="hold-seg"><button data-v="3"></button><button data-v="5"></button><button data-v="8"></button></div></div>
+      <div class="g-row"><span id="t-still">Body still check</span>
+        <div class="seg" id="still-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-music">Music</span>
+        <div class="seg" id="music-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-amb">Night sounds</span>
+        <div class="seg" id="amb-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-sfx">Sound effects</span>
+        <div class="seg" id="sfx-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <p id="t-g2"></p>
+      <p id="t-g3"></p>
+      <p class="mini" id="t-legal"></p>
+    </div>
+  </details>
+</div>
+
+<div class="card" id="end" hidden>
+  <div class="center"><span class="newbest" id="newbest" hidden></span></div>
+  <h1 id="t-over"></h1>
+  <div class="big-score"><span id="final">0</span><small id="t-sec2"></small></div>
+  <p class="best-line" id="best-line"></p>
+  <button class="btn" id="again"><span id="t-again">Play again</span></button>
+  <p class="note" id="t-privacy2"></p>
+</div>
+
+<script type="module">
+import {INK,$,LS,S,audio,tone,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom,drawKid,startFaceTracker,faceFrame,drawMirroredVideo} from '../shared/kit.js';
+
+/* ================= TEXT ================= */
+const UI={
+ en:{title:"Glow Spots",sub:"Bring the firefly home to the flower!",play:"Play",
+  privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
+  g1:"A firefly lands on the child's face: nose, cheek, forehead or chin. The child moves the head to bring it to the flower in the middle and holds it there until the flower opens. Turning the head brings the cheek spots in; nodding up and down brings the forehead and chin spots in. Six fireflies make a round, and the score is the time it took.",
+  far:"Spots",near:"Near",farv:"Far",hold:"Hold for",still:"Body still check",
+  music:"Music",amb:"Night sounds",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
+  g2:"★ The body still check pauses the flower if the child moves the whole body instead of the head. Ask the child to keep the shoulders still.",
+  g3:"★ Stand the phone upright at eye level, about an arm's length away. The first firefly is always on the nose: that sets the middle.",
+  legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio",
+  sec:"seconds",best:"fastest",sec2:"seconds for six fireflies",over:"All the fireflies are home!",again:"Play again",newbest:"New record!",bestis:"Fastest: ",
+  ready:"Getting ready…",face:"Show me your face!",lost:"Where did you go?",stillmsg:"Move only your head!",
+  nocam:"No camera here. Drag to move the head.",aria:"Game area",
+  nose:"Nose",cheek:"Cheek",forehead:"Forehead",chin:"Chin"},
+ he:{title:"נקודות אור",sub:"תחזירו את הגחלילית הביתה לפרח!",play:"שחקו",
+  privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
+  g1:"גחלילית נוחתת על הפנים של הילד: על האף, הלחי, המצח או הסנטר. הילד מזיז את הראש כדי להביא אותה לפרח שבאמצע ומחזיק שם עד שהפרח נפתח. סיבוב הראש מביא את הלחיים, והנהון למעלה ולמטה מביא את המצח והסנטר. בכל סבב יש שש גחליליות, והניקוד הוא הזמן שלקח.",
+  far:"נקודות",near:"קרוב",farv:"רחוק",hold:"להחזיק",still:"בדיקת גוף יציב",
+  music:"מוזיקה",amb:"צלילי לילה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
+  g2:"★ בדיקת הגוף היציב עוצרת את הפרח אם הילד מזיז את כל הגוף במקום רק את הראש. בקשו מהילד להשאיר את הכתפיים במקום.",
+  g3:"★ העמידו את הטלפון ישר בגובה העיניים, במרחק של בערך יד ישרה. הגחלילית הראשונה תמיד על האף, וכך נקבע האמצע.",
+  legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio",
+  sec:"שניות",best:"הכי מהר",sec2:"שניות לשש גחליליות",over:"כל הגחליליות בבית!",again:"עוד פעם",newbest:"שיא חדש!",bestis:"הכי מהר: ",
+  ready:"מתכוננים…",face:"תראו לי את הפנים!",lost:"לאן נעלמתם?",stillmsg:"מזיזים רק את הראש!",
+  nocam:"אין כאן מצלמה. גררו כדי להזיז את הראש.",aria:"אזור המשחק",
+  nose:"אף",cheek:"לחי",forehead:"מצח",chin:"סנטר"}
+};
+
+/* face spots: MediaPipe landmark per spot, near and far sets */
+const SPOTS={
+  near:{nose:1,cheekA:205,cheekB:425,forehead:8,chin:200},
+  far: {nose:1,cheekA:50, cheekB:280,forehead:151,chin:152}};
+const LABEL=k=>k.startsWith('cheek')?'cheek':k;
+const ROUND=6, TOL=.15; // catch zone = 15% of face width
+
+let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
+let far=LS.get('gs-far','near'); if(!SPOTS[far])far='near';
+let holdSec=+LS.get('gs-hold','5'); if(![3,5,8].includes(holdSec))holdSec=5;
+let stillOn=LS.get('gs-still','1')==='1';
+let best=+LS.get('gs-best-'+far+holdSec,'0')||0;
+const loadBest=()=>{best=+LS.get('gs-best-'+far+holdSec,'0')||0;$('best').textContent=best?Math.round(best):'–';};
+
+S.track='night'; S.amb='night'; S.bpm=()=>76;
+const syncSound=bindSound(()=>UI[lang]);
+
+function segs(){
+  const u=UI[lang],mark=(id,v)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===String(v)));
+  document.querySelectorAll('#far-seg button').forEach(b=>b.textContent=b.dataset.v==='far'?u.farv:u.near);
+  document.querySelectorAll('#hold-seg button').forEach(b=>b.textContent=b.dataset.v+(lang==='he'?' שנ׳':' s'));
+  document.querySelectorAll('#still-seg button').forEach(b=>b.textContent=u[b.dataset.v==='1'?'on':'off']);
+  mark('far-seg',far);mark('hold-seg',holdSec);mark('still-seg',+stillOn);
+}
+function setLang(l){
+  lang=l;LS.set('bamboo-lang',l);const u=UI[l];
+  document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
+  for(const k of ['title','sub','play','privacy','grown','g1','far','hold','still','music','amb','sfx','g2','g3','legal','sec','best','sec2','over','again'])
+    {const e=$('t-'+k);if(e)e.textContent=u[k];}
+  $('t-privacy2').textContent=u.privacy;
+  $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
+  $('c').setAttribute('aria-label',u.aria);
+  segs();syncSound();showWhere();
+  if(!$('end').hidden)fillEnd(lastNew);
+}
+$('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
+document.querySelectorAll('#far-seg button').forEach(b=>b.onclick=()=>{far=b.dataset.v;LS.set('gs-far',far);loadBest();segs();});
+document.querySelectorAll('#hold-seg button').forEach(b=>b.onclick=()=>{holdSec=+b.dataset.v;LS.set('gs-hold',holdSec);loadBest();segs();});
+document.querySelectorAll('#still-seg button').forEach(b=>b.onclick=()=>{stillOn=b.dataset.v==='1';LS.set('gs-still',b.dataset.v);segs();});
+
+/* ================= CANVAS + ART ================= */
+const cv=$('c'),ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;}
+addEventListener('resize',resize);resize();
+
+function glow(c,x,y,r,a=1,col='255,236,140'){
+  const g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(${col},${.75*a})`);g.addColorStop(.4,`rgba(${col},${.3*a})`);g.addColorStop(1,`rgba(${col},0)`);
+  c.fillStyle=g;c.fillRect(x-r,y-r,r*2,r*2);
+}
+function drawFirefly(c,x,y,s,t,lit=1){
+  glow(c,x,y+s*.25,s*2.6*(.85+.15*Math.sin(t*6)),lit);
+  c.save();c.translate(x,y);c.rotate(Math.sin(t*3)*.15);const lw=Math.max(2,s*.12);
+  const fl=.35+.65*Math.abs(Math.sin(t*30));
+  c.save();c.globalAlpha=.8;sticker(c,ell(-s*.3,-s*.35,s*.32*fl,s*.42,-.5),'#EAF2FF',lw*.7);sticker(c,ell(s*.3,-s*.35,s*.32*fl,s*.42,.5),'#EAF2FF',lw*.7);c.restore();
+  sticker(c,ell(0,s*.15,s*.34,s*.42),lit>.5?'#FFF07A':'#D9D2A0',lw);
+  sticker(c,ell(0,-s*.32,s*.3,s*.26),'#5B4E8C',lw);
+  c.fillStyle='#fff';c.fill(ell(-s*.11,-s*.34,s*.08,s*.09));c.fill(ell(s*.11,-s*.34,s*.08,s*.09));
+  c.fillStyle=INK;c.fill(ell(-s*.1,-s*.32,s*.045,s*.055));c.fill(ell(s*.1,-s*.32,s*.045,s*.055));
+  c.lineWidth=lw*.6;c.strokeStyle=INK;c.beginPath();c.moveTo(-s*.08,-s*.55);c.quadraticCurveTo(-s*.18,-s*.8,-s*.3,-s*.82);c.moveTo(s*.08,-s*.55);c.quadraticCurveTo(s*.18,-s*.8,s*.3,-s*.82);c.stroke();
+  c.restore();
+}
+/* flower that opens as the hold fills (no numbers, no rings) */
+function drawFlower(c,x,y,s,open,t,stem=false){
+  const lw=Math.max(2.5,s*.07);
+  glow(c,x,y,s*(1.6+open*.8),.35+open*.65,'255,214,240');
+  c.save();c.translate(x,y);
+  if(stem){
+  c.strokeStyle=INK;c.lineWidth=s*.14+lw*2;c.lineCap='round';c.beginPath();c.moveTo(0,s*.2);c.quadraticCurveTo(s*.1,s*.9,0,s*1.6);c.stroke();
+  c.strokeStyle='#6CC56B';c.lineWidth=s*.14;c.beginPath();c.moveTo(0,s*.2);c.quadraticCurveTo(s*.1,s*.9,0,s*1.6);c.stroke();
+  for(const sd of [-1,1]){c.save();c.translate(sd*s*.05,s*1.1);c.rotate(sd*-.9);sticker(c,ell(sd*s*.28,0,s*.3,s*.12),'#8BD16B',lw*.8);c.restore();}
+  }
+  const sway=Math.sin(t*1.5)*.05;
+  if(open<.12){ // closed bud
+    c.save();c.rotate(sway);const bud=new Path2D();bud.moveTo(0,-s*.75);bud.bezierCurveTo(s*.42,-s*.45,s*.34,s*.12,0,s*.14);bud.bezierCurveTo(-s*.34,s*.12,-s*.42,-s*.45,0,-s*.75);
+    sticker(c,bud,'#FF9FC6',lw);c.strokeStyle='rgba(43,33,24,.4)';c.lineWidth=lw*.6;c.beginPath();c.moveTo(0,-s*.68);c.quadraticCurveTo(s*.16,-s*.3,0,s*.1);c.stroke();
+    c.fillStyle='rgba(255,255,255,.4)';c.fill(ell(-s*.14,-s*.38,s*.06,s*.16,.2));c.restore();c.restore();return;}
+  const n=6,spread=.3+open*.7;
+  for(let i=0;i<n;i++){
+    const a=-Math.PI/2+(i-(n-1)/2)*(Math.PI*2/n)*spread+sway;
+    c.save();c.rotate(a+Math.PI/2);
+    sticker(c,ell(0,-s*.42*(.78+open*.22),s*.2*(.8+open*.2),s*.42*(.78+open*.22)),i%2?'#FF9FC6':'#FFB8D6',lw);
+    c.restore();
+  }
+  sticker(c,ell(0,0,s*.22*(.6+open*.5),s*.22*(.6+open*.5)),'#FFD84D',lw);
+  if(open>.6){c.fillStyle=INK;c.fill(ell(-s*.07,-s*.02,s*.03,s*.04));c.fill(ell(s*.07,-s*.02,s*.03,s*.04));
+    c.lineWidth=lw*.6;c.beginPath();c.arc(0,s*.03,s*.06,.2*Math.PI,.8*Math.PI);c.stroke();}
+  c.restore();
+}
+
+/* ================= TRACKING ================= */
+const video=$('v');
+let mode='demo',tracker=null,camOK=false,camTried=false,lastVT=-1;
+const face={ok:false,w:0,c:{x:0,y:0},pts:{},lastSeen:0};
+function track(now){
+  if(!tracker||video.readyState<2||video.currentTime===lastVT)return;lastVT=video.currentTime;
+  const P=faceFrame(tracker,video,now,W,H);if(!P){face.ok=false;return;}
+  const L=P(234),R=P(454),w=Math.hypot(R.x-L.x,R.y-L.y),k=face.ok?.5:1;
+  face.w+=(w-face.w)*k;
+  const c={x:(L.x+R.x)/2,y:(L.y+R.y)/2};face.c.x+=(c.x-face.c.x)*k;face.c.y+=(c.y-face.c.y)*k;
+  for(const [name,i] of Object.entries(SPOTS[far])){const p=P(i),o=face.pts[name];if(!o||!face.ok)face.pts[name]={x:p.x,y:p.y};else{o.x+=(p.x-o.x)*k;o.y+=(p.y-o.y)*k;}}
+  face.ok=true;face.lastSeen=now;
+}
+/* no-camera: drag moves the cartoon head */
+let drag={on:false,x0:0,y0:0},head={ox:0,oy:0,tx:0,ty:0};
+cv.addEventListener('pointerdown',e=>{drag={on:true,x0:e.clientX-head.tx,y0:e.clientY-head.ty};});
+cv.addEventListener('pointermove',e=>{if(!drag.on)return;head.tx=Math.max(-W*.3,Math.min(W*.3,e.clientX-drag.x0));head.ty=Math.max(-H*.15,Math.min(H*.15,e.clientY-drag.y0));});
+addEventListener('pointerup',()=>{drag.on=false;});
+let kidGeo=null;
+function kidSpots(g){
+  const r=g.r,fx=g.fx,fy=g.fy,n=far==='far'?1:.75;
+  return {nose:g.to(fx*1.15,-r*.93+fy*1.1),cheekA:g.to(-r*.62*n-.05*r+fx,-r*.82+fy),cheekB:g.to(r*.62*n+.05*r+fx,-r*.82+fy),
+    forehead:g.to(fx*.9,-r*(1.12+.25*n)+fy*.8),chin:g.to(fx*.8,-r*(.42-.12*n)+fy*.6)};
+}
+
+/* ================= GAME ================= */
+let state='menu',tNow=0,score=0,countT=0,lastNew=false;
+let order=[],idx=0,prog=0,celebT=0,home=null,calib=null,fly=null,sparks=[],stillBad=false;
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function newRound(){
+  const rest=shuffle(['cheekA','cheekB','forehead','chin']);
+  order=['nose',...rest,shuffle(['cheekA','cheekB','forehead','chin'])[0]];
+  if(order[5]===order[4])order[5]=order[1];
+  idx=0;prog=0;home=null;calib=null;fly=null;sparks=[];
+}
+function cur(){return order[idx];}
+function buildJar(){const box=$('jar');box.innerHTML='';for(let i=0;i<ROUND;i++){const c=document.createElement('canvas');c.width=48;c.height=48;const x=c.getContext('2d');drawFirefly(x,24,26,14,1,1);if(i>=idx)c.className='off';box.appendChild(c);}}
+function showWhere(){const w=$('where');if(state==='play'&&cur()&&!fly){w.textContent=UI[lang][LABEL(cur())];w.classList.add('on');}else w.classList.remove('on');}
+let msgNow='';function msg(t){const m=$('msg');if(t){m.textContent=t;m.classList.add('on')}else m.classList.remove('on');msgNow=t;}
+
+async function play(){
+  audio();SFX.go();musicStart();
+  $('start').hidden=true;$('end').hidden=true;
+  score=0;newRound();buildJar();head.tx=head.ty=0;$('score').textContent='0';loadBest();$('hud').classList.add('on');
+  if(!camTried){
+    camTried=true;msg(UI[lang].ready);state='ready';
+    try{tracker=await startFaceTracker(video);camOK=true;mode='camera';}
+    catch(e){mode='finger';msg('');const t=$('toast');t.textContent=UI[lang].nocam;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),5000);}
+  } else mode=camOK?'camera':'finger';
+  if(mode==='finger'){state='count';countT=tNow;} else {state='ready';msg(UI[lang].face);}
+}
+$('play').onclick=play;$('again').onclick=play;
+
+function endGame(){
+  state='over';musicStop();$('hud').classList.remove('on');showWhere();msg('');
+  lastNew=!best||score<best;if(lastNew){best=score;LS.set('gs-best-'+far+holdSec,best.toFixed(1));}
+  fillEnd(lastNew);$('end').hidden=false;SFX.chime();
+}
+function fillEnd(nb){const u=UI[lang];$('final').textContent=Math.round(score);$('newbest').hidden=!nb;$('newbest').textContent=u.newbest;
+  $('best-line').textContent=u.bestis+Math.round(best);$('t-privacy2').textContent=u.privacy;$('t-over').textContent=u.over;$('t-sec2').textContent=u.sec2;}
+
+function geometry(){
+  if(mode==='camera'&&state!=='menu'){
+    return {ok:face.ok,w:face.w||W*.4,c:face.c,spots:face.pts};
+  }
+  const g=kidGeo;if(!g)return {ok:false};
+  return {ok:true,w:g.r*2,c:g.to(g.fx,-g.r*1.1+g.fy),spots:kidSpots(g)};
+}
+function target(G){
+  if(state==='menu')return {x:W*.76,y:H*.2};
+  if(home)return home;
+  if(mode==='camera')return {x:W/2,y:H*.42};
+  const hw=Math.min(W*.46,H*.3);return {x:W/2,y:H*.78-hw*.5*.93};   // the cartoon's nose at rest
+}
+
+let last=performance.now(),demoT=0;
+function frame(now){
+  const dt=Math.min(.05,(now-last)/1000);last=now;tNow+=dt;
+  if(mode==='camera')track(now);
+  if(state==='menu'){demoT+=dt;head.tx=Math.sin(demoT*.8)*W*.08;head.ty=Math.sin(demoT*.55)*H*.04;}
+  head.ox+=(head.tx-head.ox)*Math.min(1,dt*8);head.oy+=(head.ty-head.oy)*Math.min(1,dt*8);
+  render(dt);
+
+  if(state==='ready'){if(mode==='camera'&&face.ok){state='count';countT=tNow;msg('');}}
+  else if(state==='count'){
+    const n=3-Math.floor(tNow-countT),el=$('count');
+    if(n>0){if(el.textContent!==String(n)){el.textContent=n;el.style.display='block';SFX.tick();}}
+    else{el.style.display='none';el.textContent='';state='play';SFX.boing();showWhere();}
+  }
+  else if(state==='play'){
+    const G=geometry(),lostFace=mode==='camera'&&(!face.ok||now-face.lastSeen>500);
+    if(lostFace){msg(UI[lang].lost);}
+    else{
+      if(msgNow===UI[lang].lost)msg('');
+      score+=dt;$('score').textContent=Math.floor(score);
+      if(fly){ // firefly flying home
+        const k=Math.min(1,(tNow-fly.t0)/.8);
+        if(k>=1&&!fly.done){fly.done=true;SFX.chime();for(let i=0;i<14;i++)sparks.push({x:fly.tx,y:fly.ty,vx:(Math.random()-.5)*260,vy:(Math.random()-.8)*260,life:1});idx++;buildJar();}
+        if(tNow-fly.t0>1.8){fly=null;prog=0;if(idx>=ROUND)endGame();else{SFX.boing();showWhere();}}
+      } else {
+        const sp=G.spots[cur()],T=target(G);
+        if(sp){
+          // body still check: face centre must stay near where it was at the nose
+          stillBad=stillOn&&calib&&Math.hypot(G.c.x-calib.x,G.c.y-calib.y)>G.w*.55;
+          if(stillBad){if(msgNow!==UI[lang].stillmsg)msg(UI[lang].stillmsg);}else if(msgNow===UI[lang].stillmsg)msg('');
+          const inside=Math.hypot(sp.x-T.x,sp.y-T.y)<G.w*TOL+12;
+          if(inside&&!stillBad){prog+=dt/holdSec;if(Math.random()<dt*3)SFX.tink(1+prog*.5);}
+          else prog=Math.max(0,prog-dt/(holdSec*1.5));
+          if(prog>=1){
+            if(cur()==='nose'&&!home){home={x:T.x,y:T.y};calib={x:G.c.x,y:G.c.y};}
+            fly={sx:sp.x,sy:sp.y,tx:T.x,ty:T.y,t0:tNow,done:false};prog=1;showWhere();SFX.sparkle();
+          }
+        }
+      }
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+function render(dt){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  const cam=mode==='camera'&&camOK&&state!=='menu';
+  if(cam&&video.readyState>=2){drawMirroredVideo(ctx,video,W,H);ctx.fillStyle='rgba(50,36,110,.28)';ctx.fillRect(0,0,W,H);}
+  else drawRoom(ctx,W,H,true);
+  if(!cam){
+    const hw=Math.min(W*.46,H*.3),neck=(state==='menu'?H*.62:H*.78)+head.oy*.6;
+    const yaw=Math.max(-1,Math.min(1,head.ox/(W*.25))),pitch=Math.max(-1,Math.min(1,head.oy/(H*.12)));
+    kidGeo=drawKid(ctx,W,H,W/2+head.ox,neck,hw,head.ox*.0005,tNow,yaw,pitch);
+  }
+  const G=geometry();
+  const T=target(G);
+  const playing=state==='play'||state==='over'||state==='menu';
+  // the flower in the middle
+  const fs=Math.max(34,(G.w||W*.4)*.28);
+  if(state!=='over')drawFlower(ctx,T.x,T.y,fs,fly?1:Math.max(0,prog),tNow,state==='menu');
+  // the firefly on the face, with a soft sparkle trail to the flower
+  if(G.ok&&(state==='play'||state==='menu')){
+    const key=state==='menu'?['nose','cheekA','forehead','cheekB','chin'][Math.floor(tNow/2.5)%5]:cur();
+    if(fly){const k=Math.min(1,(tNow-fly.t0)/.8),e=k*k*(3-2*k);
+      const x=fly.sx+(fly.tx-fly.sx)*e,y=fly.sy+(fly.ty-fly.sy)*e-Math.sin(k*Math.PI)*fs*1.2;drawFirefly(ctx,x,y,fs*.5,tNow);}
+    else if(key&&G.spots[key]){const p=G.spots[key];
+      if(state==='play'){for(let i=1;i<=5;i++){const k=i/6,tw=.5+.5*Math.sin(tNow*5-i);glow(ctx,p.x+(T.x-p.x)*k,p.y+(T.y-p.y)*k,fs*.3,.35+tw*.65);}}
+      drawFirefly(ctx,p.x,p.y-fs*.12,fs*.48,tNow);}
+  }
+  sparks=sparks.filter(s=>(s.life-=dt)>0);
+  for(const s of sparks){s.vy+=120*dt;s.x+=s.vx*dt;s.y+=s.vy*dt;glow(ctx,s.x,s.y,10,s.life);ctx.save();ctx.translate(s.x,s.y);ctx.globalAlpha=s.life;sticker(ctx,starPath(5),'#FFF07A',1.5);ctx.restore();}
+}
+
+setLang(lang);
+loadBest();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
