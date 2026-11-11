@@ -158,7 +158,7 @@ const UI={
   nocam:"No camera here. Drag left and right to tilt the head.",
   aria:"Game area",
   yellow:"Yellow",red:"Red",black:"Black",
-  g4:"★ Pick a duck: Yellow is slow and tries to walk off every 3 turns. Red is quicker and tries every 2–3 turns. Black is fast and tries almost every turn, for longer. Each duck keeps its own record.",
+  g4:"★ Pick a duck: Yellow is slow and tries to walk off every 2–3 turns. Red is quicker and pushes longer. Black is fast and tries almost every turn, pushing hardest. Each duck keeps its own record.",
   music:"Music",quacks:"Quacks in the music",pond:"Pond sounds",sfx:"Sound effects",on:"On",off:"Off",q0:"None",q1:"Quack",q2:"Double",mute:"Sound on or off"},
  he:{title:"ברווזון על הראש",sub:"הטו את הראש כדי שהברווזון לא ייפול!",play:"שחקו",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",
@@ -175,14 +175,14 @@ const UI={
   nocam:"אין כאן מצלמה. גררו ימינה ושמאלה כדי להטות את הראש.",
   aria:"אזור המשחק",
   yellow:"צהוב",red:"אדום",black:"שחור",
-  g4:"★ בוחרים ברווזון: הצהוב איטי ומנסה לצאת מהעלה כל 3 סיבובים. האדום מהיר יותר ומנסה כל 2–3 סיבובים. השחור מהיר ומנסה כמעט בכל סיבוב, ולזמן ארוך יותר. לכל ברווזון יש שיא משלו.",
+  g4:"★ בוחרים ברווזון: הצהוב איטי ומנסה לצאת מהעלה כל 2–3 סיבובים. האדום מהיר יותר ודוחף זמן ארוך יותר. השחור מהיר, מנסה כמעט בכל סיבוב ודוחף הכי חזק. לכל ברווזון יש שיא משלו.",
   music:"מוזיקה",quacks:"גע-גע במוזיקה",pond:"צלילי בריכה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",q0:"בלי",q1:"גע",q2:"גע-גע",mute:"הפעלת או השתקת קול"}
 };
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
 let tiltSize=LS.get('hb-duck-tilt','medium');
 const DUCKS={
-  yellow:{body:'#FFD84D',wing:'#F7C12F',base:.18,range:.45,lim:1.2,flyMin:1.6,flyRand:2.2,slip:1,  sp:'●',offEvery:[3,3],offDur:1.6},
+  yellow:{body:'#FFD84D',wing:'#F7C12F',base:.18,range:.45,lim:1.2,flyMin:1.6,flyRand:2.2,slip:1,  sp:'●',offEvery:[2,3],offDur:1.6},
   red:   {body:'#FF7A66',wing:'#E2564A',base:.38,range:.5, lim:1.35,flyMin:1.1,flyRand:1.6,slip:1.2,sp:'●●',offEvery:[2,3],offDur:2.2},
   black: {body:'#3D3A4A',wing:'#29273A',base:.6, range:.55,lim:1.5,flyMin:.7, flyRand:1.1,slip:1.45,sp:'●●●',offEvery:[1,2],offDur:2.8}};
 let kind=LS.get('hb-duck-kind','yellow');if(!DUCKS[kind])kind='yellow';
