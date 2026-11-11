@@ -146,7 +146,7 @@ const UI={
  en:{title:"Duck on My Head",sub:"Tilt your head to keep the duckling on!",play:"Play",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",
   grown:"For grown-ups",
-  g1:"The duckling chases a butterfly. The child tilts their head to the other side to keep it on the lily pad, then comes back to the middle. The duck gets faster as the child does well, and slows down after a fall.",
+  g1:"The duckling follows a butterfly from side to side. Every few turns the butterfly lures it toward the edge and it keeps walking off, so the child tilts the head the other way to hold it on, then comes back to the middle. The duck gets faster as the child does well, and slows down after a fall.",
   tilt:"Tilt needed",small:"Small",medium:"Medium",big:"Big",
   g2:"★ Make it harder: sit on a therapy ball or a balance cushion, then stand, then stand on one leg.",
   g3:"★ Stand the phone upright at eye level, with room above the head for the duck.",
@@ -158,12 +158,12 @@ const UI={
   nocam:"No camera here. Drag left and right to tilt the head.",
   aria:"Game area",
   yellow:"Yellow",red:"Red",black:"Black",
-  g4:"★ Pick a duck: Yellow is slow and gentle, Red is quicker, Black is fast and tricky. Each duck keeps its own record.",
+  g4:"★ Pick a duck: Yellow is slow and tries to walk off every 3 turns. Red is quicker and tries every 2–3 turns. Black is fast and tries almost every turn, for longer. Each duck keeps its own record.",
   music:"Music",quacks:"Quacks in the music",pond:"Pond sounds",sfx:"Sound effects",on:"On",off:"Off",q0:"None",q1:"Quack",q2:"Double",mute:"Sound on or off"},
  he:{title:"ברווזון על הראש",sub:"הטו את הראש כדי שהברווזון לא ייפול!",play:"שחקו",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",
   grown:"למבוגרים",
-  g1:"הברווזון רודף אחרי פרפר. הילד מטה את הראש לצד השני כדי להשאיר אותו על עלה הלוטוס, ואז חוזר לאמצע. הברווזון מאיץ כשהילד מצליח, ומאט אחרי נפילה.",
+  g1:"הברווזון הולך אחרי פרפר מצד לצד. כל כמה סיבובים הפרפר מושך אותו לכיוון הקצה והוא ממשיך ללכת החוצה, אז הילד מטה את הראש לצד השני כדי להחזיק אותו, ואז חוזר לאמצע. הברווזון מאיץ כשהילד מצליח, ומאט אחרי נפילה.",
   tilt:"כמה להטות",small:"קצת",medium:"בינוני",big:"הרבה",
   g2:"★ להקשות: ישיבה על כדור טיפולי או כרית איזון, אחר כך עמידה, ואז עמידה על רגל אחת.",
   g3:"★ העמידו את הטלפון ישר בגובה העיניים, עם מקום מעל הראש בשביל הברווזון.",
@@ -175,16 +175,16 @@ const UI={
   nocam:"אין כאן מצלמה. גררו ימינה ושמאלה כדי להטות את הראש.",
   aria:"אזור המשחק",
   yellow:"צהוב",red:"אדום",black:"שחור",
-  g4:"★ בוחרים ברווזון: הצהוב איטי ועדין, האדום מהיר יותר, השחור מהיר ומאתגר. לכל ברווזון יש שיא משלו.",
+  g4:"★ בוחרים ברווזון: הצהוב איטי ומנסה לצאת מהעלה כל 3 סיבובים. האדום מהיר יותר ומנסה כל 2–3 סיבובים. השחור מהיר ומנסה כמעט בכל סיבוב, ולזמן ארוך יותר. לכל ברווזון יש שיא משלו.",
   music:"מוזיקה",quacks:"גע-גע במוזיקה",pond:"צלילי בריכה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",q0:"בלי",q1:"גע",q2:"גע-גע",mute:"הפעלת או השתקת קול"}
 };
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
 let tiltSize=LS.get('hb-duck-tilt','medium');
 const DUCKS={
-  yellow:{body:'#FFD84D',wing:'#F7C12F',base:.18,range:.45,lim:1.2,flyMin:1.6,flyRand:2.2,slip:1,  sp:'●'},
-  red:   {body:'#FF7A66',wing:'#E2564A',base:.38,range:.5, lim:1.35,flyMin:1.1,flyRand:1.6,slip:1.2,sp:'●●'},
-  black: {body:'#3D3A4A',wing:'#29273A',base:.6, range:.55,lim:1.5,flyMin:.7, flyRand:1.1,slip:1.45,sp:'●●●'}};
+  yellow:{body:'#FFD84D',wing:'#F7C12F',base:.18,range:.45,lim:1.2,flyMin:1.6,flyRand:2.2,slip:1,  sp:'●',offEvery:[3,3],offDur:1.6},
+  red:   {body:'#FF7A66',wing:'#E2564A',base:.38,range:.5, lim:1.35,flyMin:1.1,flyRand:1.6,slip:1.2,sp:'●●',offEvery:[2,3],offDur:2.2},
+  black: {body:'#3D3A4A',wing:'#29273A',base:.6, range:.55,lim:1.5,flyMin:.7, flyRand:1.1,slip:1.45,sp:'●●●',offEvery:[1,2],offDur:2.8}};
 let kind=LS.get('hb-duck-kind','yellow');if(!DUCKS[kind])kind='yellow';
 let best=0,level=0;
 function loadKind(){best=+LS.get('hb-duck-best-'+kind,'0')||0;level=Math.min(1,Math.max(0,+LS.get('hb-duck-level-'+kind,'0')||0));}
@@ -293,25 +293,39 @@ function musicTick(){
 function musicStart(){if(!audio()||MU.on)return;MU.on=true;MU.step=0;MU.next=AC.currentTime+.1;MU.timer=setInterval(musicTick,25);syncPond();}
 function musicStop(){MU.on=false;clearInterval(MU.timer);syncPond();}
 function syncPond(){const want=MU.on&&pondOn&&soundOn;if(want&&!MU.nat)pondStart();else if(!want&&MU.nat)pondStop();}
-function pondStart(){
-  const a=AC,len=a.sampleRate*3,buf=a.createBuffer(1,len,a.sampleRate),d=buf.getChannelData(0);
-  let l=0;for(let i=0;i<len;i++){l=(l+.02*(Math.random()*2-1))/1.02;d[i]=l*3.5;}
+/* pond ambience: lapping water, trickling bubbles, frog ribbits, bird warbles. Returns stop() */
+function pondAmb(a,B){
+  const len=a.sampleRate*4,buf=a.createBuffer(1,len,a.sampleRate),d=buf.getChannelData(0);
+  let l=0;for(let i=0;i<len;i++){l=(l+.04*(Math.random()*2-1))/1.04;d[i]=l*3;}
   const src=a.createBufferSource();src.buffer=buf;src.loop=true;
-  const lp=a.createBiquadFilter();lp.type='lowpass';lp.frequency.value=700;const g=a.createGain();g.gain.value=.35;
-  src.connect(lp);lp.connect(g);g.connect(BUS.pond);src.start();MU.nat={src,timer:0};
-  const ev=()=>{if(!MU.nat)return;const t=AC.currentTime+.05,r=Math.random();
-    if(r<.3)pondFrog(t);else if(r<.65)pondBird(t);else mPlip(t,.05,BUS.pond);
-    MU.nat.timer=setTimeout(ev,1200+Math.random()*2200);};
-  ev();
+  const bp=a.createBiquadFilter();bp.type='bandpass';bp.frequency.value=450;bp.Q.value=.6;
+  const g=a.createGain();g.gain.value=.25;src.connect(bp);bp.connect(g);g.connect(B);src.start();
+  const timers=[];let alive=true;
+  const swell=()=>{if(!alive)return;g.gain.setTargetAtTime(.12+Math.random()*.28,a.currentTime,.6);timers[0]=setTimeout(swell,700+Math.random()*1200);};swell();
+  const bubble=t=>{const o=a.createOscillator(),gg=a.createGain(),f=500+Math.random()*1100;o.type='sine';
+    o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(f*(1.5+Math.random()*.6),t+.02+Math.random()*.02);
+    gg.gain.setValueAtTime(.0001,t);gg.gain.exponentialRampToValueAtTime(.012+Math.random()*.03,t+.003);gg.gain.exponentialRampToValueAtTime(.0001,t+.045);
+    o.connect(gg);gg.connect(B);o.start(t);o.stop(t+.06);};
+  const trickle=()=>{if(!alive)return;const t=a.currentTime+.03,n=1+Math.floor(Math.random()*3);for(let k=0;k<n;k++)bubble(t+Math.random()*.12);timers[1]=setTimeout(trickle,90+Math.random()*220);};trickle();
+  const ribbit=t=>{const f=170+Math.random()*90;for(let k=0;k<2;k++){const tt=t+k*.16,o=a.createOscillator();o.type='sawtooth';
+      o.frequency.setValueAtTime(f*1.05,tt);o.frequency.linearRampToValueAtTime(f*.92,tt+.11);
+      const am=a.createGain();am.gain.value=.5;const lfo=a.createOscillator();lfo.type='square';lfo.frequency.value=32+Math.random()*10;
+      const dep=a.createGain();dep.gain.value=.5;lfo.connect(dep);dep.connect(am.gain);
+      const f2=a.createBiquadFilter();f2.type='bandpass';f2.frequency.value=900;f2.Q.value=2.5;
+      const e=a.createGain();e.gain.setValueAtTime(.0001,tt);e.gain.exponentialRampToValueAtTime(.16,tt+.015);e.gain.setValueAtTime(.16,tt+.07);e.gain.exponentialRampToValueAtTime(.0001,tt+.12);
+      o.connect(am);am.connect(f2);f2.connect(e);e.connect(B);o.start(tt);lfo.start(tt);o.stop(tt+.14);lfo.stop(tt+.14);}};
+  const warble=t=>{const base=2600+Math.random()*900,n=2+Math.floor(Math.random()*3);for(let k=0;k<n;k++){const tt=t+k*.2,o=a.createOscillator();o.type='sine';
+      o.frequency.setValueAtTime(base,tt);o.frequency.exponentialRampToValueAtTime(base*(1.2+Math.random()*.3),tt+.08);o.frequency.exponentialRampToValueAtTime(base*.9,tt+.16);
+      const v=a.createOscillator();v.frequency.value=22+Math.random()*10;const vd=a.createGain();vd.gain.value=base*.06;v.connect(vd);vd.connect(o.frequency);
+      const e=a.createGain();e.gain.setValueAtTime(.0001,tt);e.gain.exponentialRampToValueAtTime(.03,tt+.02);e.gain.exponentialRampToValueAtTime(.0001,tt+.17);
+      o.connect(e);e.connect(B);o.start(tt);v.start(tt);o.stop(tt+.2);v.stop(tt+.2);}};
+  const life=()=>{if(!alive)return;const t=a.currentTime+.05,r=Math.random();
+    if(r<.45){ribbit(t);if(Math.random()<.4)ribbit(t+.6+Math.random()*.4);}else if(r<.8)warble(t);
+    timers[2]=setTimeout(life,1500+Math.random()*2500);};timers[2]=setTimeout(life,800);
+  return ()=>{alive=false;timers.forEach(clearTimeout);try{src.stop(a.currentTime+.05)}catch(e){}};
 }
-function pondStop(){clearTimeout(MU.nat.timer);try{MU.nat.src.stop(AC.currentTime+.05)}catch(e){}MU.nat=null;}
-function pondFrog(t){const f=90+Math.random()*40,n=2+Math.floor(Math.random()*2);
-  for(let k=0;k<n;k++){const tt=t+k*.13,lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=480;
-    const g=mEnv(tt,.01,.09,.09);mOsc('square',f,tt,.12).connect(lp);lp.connect(g);g.connect(BUS.pond);}}
-function pondBird(t){const base=2300+Math.random()*900,n=2+Math.floor(Math.random()*3);
-  for(let k=0;k<n;k++){const tt=t+k*.11,o=AC.createOscillator();o.type='sine';
-    o.frequency.setValueAtTime(base,tt);o.frequency.exponentialRampToValueAtTime(base*1.45,tt+.07);
-    const g=mEnv(tt,.005,.07,.035);o.connect(g);g.connect(BUS.pond);o.start(tt);o.stop(tt+.1);}}
+function pondStart(){MU.nat={stop:pondAmb(AC,BUS.pond)};}
+function pondStop(){MU.nat.stop();MU.nat=null;}
 document.addEventListener('visibilitychange',()=>{if(!AC)return;if(document.hidden)AC.suspend();else if(MU.on)AC.resume();});
 
 /* sound controls (speaker button + grown-ups settings), remembered on this device */
@@ -511,7 +525,8 @@ let score=0,lives=3,starsGiven=0,tNow=0,countT=0,lastNew=false,demoRoll=0,startL
 let particles=[],stars=[];
 
 function speed(){const D=DUCKS[kind];return D.base+D.range*level;}
-function resetDuck(){Object.assign(duck,{x:0,vs:0,vw:0,wob:0,dropT:0.55});fly.x=fly.tx=(Math.random()<.5?-1:1)*.6;fly.next=tNow+1.2;}
+function nextOffCount(){const D=DUCKS[kind];return D.offEvery[0]+Math.floor(Math.random()*(D.offEvery[1]-D.offEvery[0]+1));}
+function resetDuck(){const side=Math.random()<.5?-1:1;Object.assign(duck,{x:0,vs:0,vw:0,wob:0,dropT:0.55,goal:side*.45,turns:0,nextOff:nextOffCount(),off:false,offEnd:0,waitT:0});fly.x=fly.tx=side*.6;}
 
 function buildLives(){const box=$('lives');box.innerHTML='';for(let i=0;i<3;i++){const c=document.createElement('canvas');c.width=80;c.height=80;const x=c.getContext('2d');x.translate(40,74);drawDuck(x,64,{});if(i>=lives)c.className='lost';box.appendChild(c);}}
 
@@ -563,15 +578,26 @@ function fillEnd(nb){const u=UI[lang];$('final').textContent=Math.floor(score);$
   $('best-line').textContent=u.bestis+Math.floor(best);$('t-privacy2').textContent=u.privacy;}
 
 /* ---- update ---- */
-function updateFly(dt,lim){
+/* The duck walks from side to side after the butterfly. Every few turns the butterfly
+   lures it toward the edge and it keeps walking off; the child must tilt the other way. */
+function pickGoal(){
   const D=DUCKS[kind];
-  if(tNow>fly.next){fly.tx=(Math.random()*2-1)*lim;fly.next=tNow+D.flyMin+Math.random()*D.flyRand;}
-  fly.x+=(fly.tx-fly.x)*Math.min(1,dt*1.6);
+  if(duck.off){duck.off=false;duck.turns=0;duck.nextOff=nextOffCount();duck.goal=(Math.random()-.5)*.5;return;}
+  if(duck.turns>=duck.nextOff){duck.off=true;
+    const side=Math.abs(duck.x)>.1?Math.sign(duck.x):(Math.random()<.5?-1:1);
+    duck.offEnd=tNow+(1-side*duck.x)/(speed()*1.15)+D.offDur*(.85+Math.random()*.3); // walk to the edge, then keep pushingduck.goal=side*1.9;SFX.quack(0,1.2);return;}
+  duck.turns++;const side=duck.goal>0?-1:1;duck.goal=side*(.25+Math.random()*.4);
+}
+function updateFly(dt,lim){
+  if(duck.off){if(tNow>duck.offEnd)pickGoal();}
+  else if(Math.abs(duck.goal-duck.x)<.08){if(!duck.waitT)duck.waitT=tNow+.25+Math.random()*.5;if(tNow>duck.waitT){duck.waitT=0;pickGoal();}}
+  fly.tx=Math.max(-lim,Math.min(lim,duck.goal));
+  fly.x+=(fly.tx-fly.x)*Math.min(1,dt*1.8);
 }
 function updateDuck(dt,roll,running){
   const G=TILT_G[tiltSize]*DUCKS[kind].slip;
-  const want=(fly.x-duck.x);
-  const target=Math.abs(want)<.08?0:Math.sign(want)*Math.min(1,Math.abs(want)*2.2)*speed();
+  const want=(duck.goal-duck.x);
+  const target=Math.abs(want)<.08?0:Math.sign(want)*Math.min(1,Math.abs(want)*2.2)*speed()*(duck.off?1.15:1);
   duck.vw+=(target-duck.vw)*Math.min(1,dt*4);
   const r=Math.max(-.6,Math.min(.6,roll));
   if(running){duck.vs+=(G*Math.sin(r)-K*duck.vs)*dt;duck.x+=(duck.vw+duck.vs)*dt;}
