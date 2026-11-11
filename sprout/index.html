@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Copy the Sprout · Bamboo Physio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Grandstander:wght@700;900&family=Fredoka:wght@500;600;700&family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#2b2118;--leaf:#5DB760;--sun:#FFD84D;--pink:#FF9FB0;--cream:#FFF8EC;
+  --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#BFE6FF;font-family:Andika,Fredoka,system-ui,sans-serif;color:var(--ink);touch-action:none;user-select:none;-webkit-user-select:none}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+video{display:none}
+.top{position:fixed;left:0;right:0;top:0;padding:calc(var(--safe-t) + 10px) 12px 0;display:flex;justify-content:space-between;align-items:center;z-index:5;pointer-events:none}
+.top>*{pointer-events:auto}
+.brand{display:flex;align-items:center;gap:6px;background:#fff;border:3px solid var(--ink);border-radius:999px;padding:4px 12px 4px 6px;font:700 14px Fredoka,sans-serif;box-shadow:0 3px 0 var(--ink)}
+.brand svg{width:22px;height:22px}
+.lang{display:flex;background:#fff;border:3px solid var(--ink);border-radius:999px;overflow:hidden;box-shadow:0 3px 0 var(--ink)}
+.lang button,.seg button{border:0;background:transparent;font:700 14px Fredoka,sans-serif;padding:6px 12px;color:var(--ink);cursor:pointer}
+.lang button[aria-pressed="true"],.seg button[aria-pressed="true"]{background:var(--sun)}
+.bubble{position:fixed;z-index:4;background:#fff;border:3px solid var(--ink);border-radius:22px;padding:6px 14px;font:900 22px Grandstander,Fredoka,sans-serif;box-shadow:0 3px 0 var(--ink);pointer-events:none;white-space:nowrap;transform:translate(-50%,0);display:none}
+.bubble.on{display:block}
+.count{position:fixed;z-index:4;right:12px;background:#fff;border:3px solid var(--ink);border-radius:20px;padding:4px 12px;font:900 20px Grandstander,sans-serif;box-shadow:0 3px 0 var(--ink);display:none}
+.count.on{display:block}
+.msg{position:fixed;left:50%;transform:translate(-50%,-50%);background:#fff;border:3px solid var(--ink);border-radius:24px;padding:10px 18px;font:700 20px Fredoka,sans-serif;text-align:center;box-shadow:0 4px 0 var(--ink);z-index:6;opacity:0;transition:opacity .2s;pointer-events:none;max-width:86vw}
+.msg.on{opacity:1}
+.toast{position:fixed;left:50%;bottom:calc(var(--safe-b) + 16px);transform:translateX(-50%);width:min(420px,calc(100vw - 24px));background:#fff;border:3px solid var(--ink);border-radius:20px;padding:8px 14px;font:600 15px Fredoka,sans-serif;text-align:center;box-shadow:0 3px 0 var(--ink);z-index:6;display:none}
+.toast.on{display:block}
+.card{position:fixed;left:50%;bottom:calc(var(--safe-b) + 14px);transform:translateX(-50%);width:min(440px,calc(100vw - 24px));background:var(--cream);border:4px solid var(--ink);border-radius:30px;padding:16px 16px 12px;box-shadow:0 6px 0 var(--ink);z-index:7;max-height:calc(100vh - var(--safe-t) - 90px);overflow:auto;touch-action:pan-y}
+.card[hidden]{display:none}
+h1{font:900 34px/1.05 Grandstander,Fredoka,sans-serif;margin:0 0 4px;text-align:center}
+.sub{font:600 17px Fredoka,sans-serif;margin:0 0 12px;text-align:center}
+.btn{display:block;width:100%;border:4px solid var(--ink);border-radius:999px;background:var(--leaf);color:#fff;font:900 30px Grandstander,Fredoka,sans-serif;padding:10px 0 8px;box-shadow:0 5px 0 var(--ink);cursor:pointer;-webkit-text-stroke:1.5px var(--ink);paint-order:stroke fill}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+.note{font-size:13px;text-align:center;margin:10px 4px 6px;opacity:.85;line-height:1.35}
+details{margin-top:6px;border-top:2px dashed #d8cdb8;padding-top:6px}
+summary{font:700 15px Fredoka,sans-serif;cursor:pointer;list-style:none;text-align:center;padding:4px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:" ▾"}details[open] summary::after{content:" ▴"}
+.g-body{font-size:14px;line-height:1.45;padding:4px 2px}
+.g-body p{margin:6px 0}
+.g-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0;flex-wrap:wrap}
+.seg{display:flex;border:3px solid var(--ink);border-radius:999px;overflow:hidden;background:#fff}
+.mini{font-size:12px;opacity:.7;text-align:center;margin-top:8px}
+.big{font:900 60px/1 Grandstander,sans-serif;text-align:center;margin:4px 0}
+.big small{display:block;font:600 16px Fredoka,sans-serif;margin-top:4px}
+[dir=rtl] .g-body{text-align:right}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<video id="v" playsinline muted></video>
+<div class="top">
+  <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 33 C 10 20, 20 9, 34 6 C 33 20, 24 31, 8 33 Z" fill="#7DCB6B" stroke="#2b2118" stroke-width="3.5" stroke-linejoin="round"/><path d="M11 30 C 17 23, 23 16, 29 11" fill="none" stroke="#2b2118" stroke-width="2.5" stroke-linecap="round"/></svg><span>Bamboo Physio</span></div>
+  <div class="lang"><button id="lang-en" aria-pressed="true">EN</button><button id="lang-he" aria-pressed="false">עב</button></div>
+</div>
+<div class="bubble" id="bubble"></div>
+<div class="count" id="count"></div>
+<div class="msg" id="msg"></div>
+<div class="toast" id="toast"></div>
+
+<div class="card" id="start">
+  <h1 id="t-title"></h1>
+  <p class="sub" id="t-sub"></p>
+  <button class="btn" id="play"><span id="t-play"></span></button>
+  <p class="note" id="t-privacy"></p>
+  <details>
+    <summary id="t-grown"></summary>
+    <div class="g-body">
+      <p id="t-g1"></p>
+      <div class="g-row"><span id="t-hold"></span><div class="seg" id="seg-hold"><button data-v="5"></button><button data-v="10"></button></div></div>
+      <div class="g-row"><span id="t-exact"></span><div class="seg" id="seg-exact"><button data-v="easy"></button><button data-v="medium"></button><button data-v="exact"></button></div></div>
+      <div class="g-row"><span id="t-upright"></span><div class="seg" id="seg-up"><button data-v="on"></button><button data-v="off"></button></div></div>
+      <p id="t-g2"></p>
+      <p class="mini" id="t-legal"></p>
+    </div>
+  </details>
+</div>
+
+<div class="card" id="end" hidden>
+  <h1 id="t-over"></h1>
+  <div class="big"><span id="final">0</span><small id="t-copied"></small></div>
+  <button class="btn" id="again"><span id="t-again"></span></button>
+  <p class="note" id="t-privacy2"></p>
+</div>
+
+<script type="module">
+/* ============ TEXT ============ */
+const UI={
+ en:{title:"Copy the Sprout",sub:"Copy the sprout's pose and hold it until the flower opens!",play:"Play",
+  privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
+  g1:"The sprout shows a pose like a mirror. The child copies it with the arms and holds it until the flower on the sprout's head opens. Works sitting in a chair or wheelchair.",
+  hold:"Hold for",s5:"5 sec",s10:"10 sec",exact:"How exact",easy:"Easy",medium:"Medium",exactv:"Exact",
+  upright:"Back upright check",on:"On",off:"Off",
+  g2:"★ Place the phone about 1–1.5 m away so the head, shoulders and hands are all in view. The upright check stops leaning from counting.",
+  legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio",
+  over:"Great copying!",copied:"poses copied",again:"Play again",
+  ready:"Getting ready…",arms:"Show me your arms!",back:"Move back a little",tall:"Sit up tall!",yay:"Yay!",
+  nocam:"No camera here. Press and hold the screen to pretend you're holding the pose.",camhere:"Your camera picture shows here",
+  poses:{sunshine:"Sunshine",rocket:"Rocket",airplane:"Airplane",cactus:"Cactus",wings:"Wings",upoutL:"Up and out",upoutR:"Up and out",pickmeL:"Pick me!",pickmeR:"Pick me!"}},
+ he:{title:"חקו את הנבט",sub:"עשו כמו הנבט והחזיקו עד שהפרח נפתח!",play:"שחקו",
+  privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
+  g1:"הנבט מראה תנוחה כמו מראה. הילד מחקה אותה עם הידיים ומחזיק עד שהפרח על ראש הנבט נפתח. מתאים גם בישיבה על כיסא או כיסא גלגלים.",
+  hold:"להחזיק",s5:"5 שניות",s10:"10 שניות",exact:"כמה מדויק",easy:"סלחני",medium:"בינוני",exactv:"מדויק",
+  upright:"בדיקת גב זקוף",on:"פועל",off:"כבוי",
+  g2:"★ הניחו את הטלפון במרחק של מטר עד מטר וחצי, כך שרואים את הראש, הכתפיים והידיים. בדיקת הגב הזקוף מונעת מהטיה של הגוף להיחשב.",
+  legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio",
+  over:"איזה חיקוי!",copied:"תנוחות",again:"עוד פעם",
+  ready:"מתכוננים…",arms:"תראו לי את הידיים!",back:"זוזו קצת אחורה",tall:"שבו זקוף!",yay:"יש!",
+  nocam:"אין כאן מצלמה. לחצו והחזיקו את המסך כאילו אתם מחזיקים את התנוחה.",camhere:"כאן תופיע תמונת המצלמה",
+  poses:{sunshine:"שמש",rocket:"טיל",airplane:"מטוס",cactus:"קקטוס",wings:"כנפיים",upoutL:"למעלה ולצד",upoutR:"למעלה ולצד",pickmeL:"אני! אני!",pickmeR:"אני! אני!"}}
+};
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+let lang=LS.get('bamboo-lang','en');if(!UI[lang])lang='en';
+let holdSec=+LS.get('sp-hold','5')||5, exact=LS.get('sp-exact','medium'), upright=LS.get('sp-up','on');
+const $=id=>document.getElementById(id);
+
+/* ============ POSES ============
+   Each arm: [upper-arm angle, forearm angle] in degrees, in SCREEN terms (mirror view).
+   0 = straight out to the side, 90 = straight up, -90 = straight down, 180 = across the body.
+   L = arm on the left of the screen, R = arm on the right. 'rest' = arm relaxed down (any low position). */
+const POSES={
+  sunshine:{L:[55,55],R:[55,55]},
+  rocket:  {L:[70,90],R:[70,90]},
+  airplane:{L:[0,0],R:[0,0]},
+  cactus:  {L:[0,90],R:[0,90]},
+  wings:   {L:[-35,60],R:[-35,60]},
+  upoutL:  {L:[72,90],R:[0,0]},
+  upoutR:  {L:[0,0],R:[72,90]},
+  pickmeL: {L:[72,90],R:'rest'},
+  pickmeR: {L:'rest',R:[72,90]}
+};
+const TOL={easy:42,medium:30,exact:20};
+const ROUND=6;
+
+function setLang(l){
+  lang=l;LS.set('bamboo-lang',l);const u=UI[l];
+  document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
+  for(const k of ['title','sub','play','privacy','grown','g1','hold','exact','upright','g2','legal','over','copied','again'])$('t-'+k).textContent=u[k];
+  $('t-privacy2').textContent=u.privacy;
+  const lab={ '5':u.s5,'10':u.s10,easy:u.easy,medium:u.medium,exact:u.exactv,on:u.on,off:u.off};
+  document.querySelectorAll('.seg button').forEach(b=>b.textContent=lab[b.dataset.v]);
+  syncSeg();
+  $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
+  if(cur)showBubble();
+}
+function syncSeg(){
+  document.querySelectorAll('#seg-hold button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.v===holdSec));
+  document.querySelectorAll('#seg-exact button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===exact));
+  document.querySelectorAll('#seg-up button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===upright));
+}
+document.querySelectorAll('#seg-hold button').forEach(b=>b.onclick=()=>{holdSec=+b.dataset.v;LS.set('sp-hold',holdSec);syncSeg()});
+document.querySelectorAll('#seg-exact button').forEach(b=>b.onclick=()=>{exact=b.dataset.v;LS.set('sp-exact',exact);syncSeg()});
+document.querySelectorAll('#seg-up button').forEach(b=>b.onclick=()=>{upright=b.dataset.v;LS.set('sp-up',upright);syncSeg()});
+$('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
+
+/* ============ SOUND ============ */
+let AC=null;
+function audio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC;}
+function tone({f0=440,f1=f0,dur=.15,type='sine',vol=.22,at=0}){const a=AC;if(!a)return;const t=a.currentTime+at;const o=a.createOscillator(),g=a.createGain();o.type=type;
+  o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+dur);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+dur+.02);}
+const SFX={
+  boing(){tone({f0:200,f1:560,dur:.22});},
+  yay(){[523,659,784,1047].forEach((f,i)=>tone({f0:f,dur:.25,type:'triangle',vol:.2,at:i*.09}));tone({f0:1568,f1:2093,dur:.4,type:'sine',vol:.12,at:.4});},
+  tick(p){tone({f0:500+p*500,dur:.06,type:'triangle',vol:.08});},
+  go(){tone({f0:990,dur:.2,type:'triangle'});},
+  end(){[784,988,1175,1568].forEach((f,i)=>tone({f0:f,dur:.3,type:'triangle',vol:.2,at:i*.12}));}
+};
+
+/* ============ CANVAS + ART ============ */
+const cv=$('c'),ctx=cv.getContext('2d');let W=0,H=0,DPR=1;
+function resize(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;}
+addEventListener('resize',resize);resize();
+const INK='#2b2118';
+function ell(x,y,rx,ry,r=0){const p=new Path2D();p.ellipse(x,y,rx,ry,r,0,Math.PI*2);return p;}
+function stk(p,fill,lw){ctx.fillStyle=fill;ctx.fill(p);ctx.lineWidth=lw;ctx.strokeStyle=INK;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke(p);}
+function leafPath(len,w){const p=new Path2D();p.moveTo(0,0);p.quadraticCurveTo(len*.45,-w,len,0);p.quadraticCurveTo(len*.45,w,0,0);p.closePath();return p;}
+const D2R=Math.PI/180;
+function armVec(side,deg){return {x:side*Math.cos(deg*D2R),y:-Math.sin(deg*D2R)};}
+
+/* sprout pose state (animated) */
+const sp={L:[-80,-85],R:[-80,-85],tL:[-80,-85],tR:[-80,-85],hop:0,squash:0,bloom:0,dance:0,blink:0};
+function setSproutTarget(p){const f=a=>a==='rest'?[-45,-150]:a;sp.tL=f(POSES[p].L).slice();sp.tR=f(POSES[p].R).slice();}
+function angLerp(a,b,k){let d=((b-a+540)%360)-180;return a+d*k;}
+
+function drawSprout(cx,by,size,t){
+  const u=size/100,lw=Math.max(2.5,4.2*u);
+  const hop=sp.hop, sq=sp.squash;
+  ctx.save();ctx.translate(cx,by);
+  // shadow
+  ctx.fillStyle='rgba(43,33,24,.15)';ctx.fill(ell(0,2*u,34*u*(1-hop*.3),6*u));
+  // pot
+  const pot=new Path2D();pot.moveTo(-26*u,-38*u);pot.lineTo(26*u,-38*u);pot.quadraticCurveTo(24*u,-12*u,19*u,0);pot.lineTo(-19*u,0);pot.quadraticCurveTo(-24*u,-12*u,-26*u,-38*u);pot.closePath();
+  stk(pot,'#E2804F',lw);
+  ctx.fillStyle='rgba(255,255,255,.22)';ctx.fill(ell(-12*u,-20*u,4*u,10*u,.15));
+  const rim=new Path2D();rim.roundRect(-31*u,-48*u,62*u,12*u,6*u);stk(rim,'#F29B6A',lw);
+  // body group (hops)
+  ctx.save();ctx.translate(0,-hop*30*u);
+  const sway=Math.sin(t*1.6)*2.5*D2R+(sp.dance?Math.sin(t*14)*8*D2R*sp.dance:0);
+  ctx.translate(0,-46*u);ctx.rotate(sway);ctx.scale(1+sq*.08,1-sq*.08);
+  // stalk
+  const stalk=new Path2D();stalk.roundRect(-10*u,-58*u,20*u,60*u,8*u);stk(stalk,'#6CC56B',lw);
+  ctx.strokeStyle='rgba(43,33,24,.45)';ctx.lineWidth=lw*.6;ctx.beginPath();
+  for(const y of [-16,-34,-50]){ctx.moveTo(-8*u,y*u);ctx.quadraticCurveTo(0,(y+2.5)*u,8*u,y*u);}ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.25)';ctx.fill(ell(-4*u,-28*u,2.5*u,18*u));
+  // little side leaf on stalk
+  ctx.save();ctx.translate(8*u,-8*u);ctx.rotate(-.5);stk(leafPath(16*u,6*u),'#8BD16B',lw*.8);ctx.restore();
+  // arms (shoulders at y=-40)
+  const shY=-40*u;
+  const drawArm=side=>{
+    const a=side<0?sp.L:sp.R;
+    const sx=side*10*u;const v1=armVec(side,a[0]);const ex=sx+v1.x*30*u,ey=shY+v1.y*30*u;
+    const v2=armVec(side,a[1]);const hx=ex+v2.x*26*u,hy=ey+v2.y*26*u;
+    ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.strokeStyle=INK;ctx.lineWidth=8*u+lw*2;ctx.beginPath();ctx.moveTo(sx,shY);ctx.lineTo(ex,ey);ctx.lineTo(hx,hy);ctx.stroke();
+    ctx.strokeStyle='#6CC56B';ctx.lineWidth=8*u;ctx.beginPath();ctx.moveTo(sx,shY);ctx.lineTo(ex,ey);ctx.lineTo(hx,hy);ctx.stroke();
+    // leaf hand
+    ctx.save();ctx.translate(hx,hy);ctx.rotate(Math.atan2(v2.y,v2.x));stk(leafPath(15*u,6.5*u),'#8BD16B',lw*.8);
+    ctx.strokeStyle='rgba(43,33,24,.4)';ctx.lineWidth=lw*.4;ctx.beginPath();ctx.moveTo(2*u,0);ctx.lineTo(12*u,0);ctx.stroke();ctx.restore();
+  };
+  const over=side=>{const a=side<0?sp.L:sp.R;return a[1]>120;};
+  for(const side of [-1,1])if(!over(side))drawArm(side);
+  // head
+  ctx.save();ctx.translate(0,-76*u);
+  // hair leaves
+  for(const [rx,rot,c] of [[-6,-2.3,'#7CC86B'],[6,-.85,'#8BD16B']]){ctx.save();ctx.translate(rx*u,-16*u);ctx.rotate(rot);stk(leafPath(18*u,7*u),c,lw*.8);ctx.restore();}
+  // flower bud / bloom
+  drawFlower(0,-22*u,u,sp.bloom,lw,t);
+  const head=ell(0,0,22*u,19*u);stk(head,'#9ADB78',lw);
+  ctx.fillStyle='rgba(255,255,255,.35)';ctx.fill(ell(-10*u,-9*u,6*u,3.5*u,-.4));
+  // face
+  const blink=sp.blink>0?.15:1;
+  for(const s of [-1,1]){ctx.fillStyle=INK;
+    if(sp.dance>.3){ctx.lineWidth=lw*.8;ctx.strokeStyle=INK;ctx.beginPath();ctx.arc(s*8*u,1*u,3.6*u,Math.PI*1.1,Math.PI*1.9);ctx.stroke();}
+    else{ctx.fill(ell(s*8*u,0,3.3*u,4.2*u*blink));ctx.fillStyle='#fff';ctx.fill(ell(s*8*u+1.2*u,-1.6*u,1.3*u,1.3*u*blink));}
+    ctx.fillStyle='rgba(255,130,150,.7)';ctx.fill(ell(s*14*u,5*u,4*u,2.6*u));}
+  ctx.strokeStyle=INK;ctx.lineWidth=lw*.8;ctx.beginPath();
+  if(sp.dance>.3){const m=new Path2D();m.moveTo(-5*u,5*u);m.quadraticCurveTo(0,13*u,5*u,5*u);m.closePath();stk(m,'#E2564A',lw*.7);}
+  else{ctx.arc(0,4*u,4.5*u,.15*Math.PI,.85*Math.PI);ctx.stroke();}
+  ctx.restore();
+  for(const side of [-1,1])if(over(side))drawArm(side);
+  ctx.restore();
+  ctx.restore();
+}
+function drawFlower(x,y,u,b,lw,t){
+  ctx.save();ctx.translate(x,y);
+  // stem
+  ctx.strokeStyle=INK;ctx.lineWidth=lw*2.2;ctx.beginPath();ctx.moveTo(0,8*u);ctx.lineTo(0,0);ctx.stroke();
+  ctx.strokeStyle='#6CC56B';ctx.lineWidth=lw*1.1;ctx.beginPath();ctx.moveTo(0,8*u);ctx.lineTo(0,0);ctx.stroke();
+  const n=6,open=Math.min(1,b);
+  if(open<.05){stk(ell(0,-3*u,4*u,6*u),'#FF9FB0',lw*.8);ctx.restore();return;}
+  const R=(4+open*9)*u;
+  for(let i=0;i<n;i++){const a=i/n*Math.PI*2+t*.3*open;ctx.save();ctx.rotate(a);
+    stk(ell(0,-R*.75,R*.42,R*.62),i%2?'#FF9FB0':'#FFB3C4',lw*.7);ctx.restore();}
+  stk(ell(0,0,R*.38,R*.38),'#FFD84D',lw*.7);
+  if(open>.95){ctx.fillStyle='#fff';ctx.fill(ell(-R*.12,-R*.12,R*.1,R*.1));}
+  ctx.restore();
+}
+/* leaf marker on the child's hands */
+function drawHandLeaf(x,y,ok,s,t){
+  ctx.save();ctx.translate(x,y);ctx.rotate(-.6+Math.sin(t*4)*.15);const sc=ok?1.15+Math.sin(t*10)*.06:1;ctx.scale(sc,sc);
+  ctx.globalAlpha=ok?1:.85;stk(leafPath(s,s*.42),ok?'#7DDB5E':'#E9E4D6',Math.max(2.5,s*.12));
+  ctx.restore();
+  if(ok){ctx.fillStyle='rgba(255,255,255,.9)';for(let i=0;i<3;i++){const a=t*3+i*2.1;ctx.fill(ell(x+Math.cos(a)*s*.9,y+Math.sin(a)*s*.9,s*.08,s*.08));}}
+}
+/* background panel for the sprout */
+function drawGarden(x,y,w,h){
+  ctx.save();const r=26;const p=new Path2D();p.roundRect(x,y,w,h,r);ctx.clip(p);
+  const g=ctx.createLinearGradient(0,y,0,y+h);g.addColorStop(0,'#CDEEFF');g.addColorStop(1,'#A9DBF7');ctx.fillStyle=g;ctx.fillRect(x,y,w,h);
+  ctx.fillStyle='rgba(255,255,255,.8)';
+  for(const [fx,fy,s] of [[.15,.3,1],[.75,.22,.8]]){const cx=x+fx*w,cy=y+fy*h,rr=Math.min(w,h)*.07*s;ctx.beginPath();ctx.arc(cx,cy,rr,0,7);ctx.arc(cx+rr,cy-rr*.4,rr*1.2,0,7);ctx.arc(cx+rr*2.1,cy,rr*.9,0,7);ctx.fill();}
+  ctx.fillStyle='#8BD16B';ctx.beginPath();ctx.ellipse(x+w/2,y+h*1.02,w*.75,h*.16,0,0,7);ctx.fill();
+  ctx.restore();
+}
+
+/* ============ TRACKING ============ */
+const video=$('v');let tracker=null,camOK=false,camTried=false,mode='none';
+const kid={ok:false,L:[0,0],R:[0,0],okL:false,okR:false,hands:null,upright:true,lastSeen:0,far:false};
+async function startCamera(){
+  camTried=true;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('nocam');
+  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:false});
+  video.srcObject=stream;await video.play();
+  const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
+  const files=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+  const opts=d=>({baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',delegate:d},runningMode:'VIDEO',numPoses:1});
+  try{tracker=await vision.PoseLandmarker.createFromOptions(files,opts('GPU'));}catch(e){tracker=await vision.PoseLandmarker.createFromOptions(files,opts('CPU'));}
+  camOK=true;
+}
+let camRect={x:0,y:0,w:0,h:0};
+function coverMap(){const vw=video.videoWidth||640,vh=video.videoHeight||480,R=camRect,s=Math.max(R.w/vw,R.h/vh);return {vw,vh,s,ox:R.x+(R.w-vw*s)/2,oy:R.y+(R.h-vh*s)/2};}
+let lastVT=-1;
+function outAngle(side,dx,dy){return Math.atan2(-dy,side*dx)/D2R;}
+function track(now){
+  if(!tracker||video.readyState<2)return;if(video.currentTime===lastVT)return;lastVT=video.currentTime;
+  let res;try{res=tracker.detectForVideo(video,now);}catch(e){return;}
+  const lm=res&&res.landmarks&&res.landmarks[0];
+  if(!lm){kid.ok=false;return;}
+  const m=coverMap();const P=i=>({x:m.ox+(1-lm[i].x)*m.vw*m.s,y:m.oy+lm[i].y*m.vh*m.s,v:lm[i].visibility??1});
+  let a={s:P(11),e:P(13),w:P(15)},b={s:P(12),e:P(14),w:P(16)};
+  if(a.s.x>b.s.x)[a,b]=[b,a];       // a = screen-left arm
+  const vis=[a.s,a.e,a.w,b.s,b.e,b.w].every(p=>p.v>.45);
+  const nose=P(0);
+  if(!vis){kid.ok=false;kid.far=nose.v>.5;return;}
+  const ang=(arm,side)=>[outAngle(side,arm.e.x-arm.s.x,arm.e.y-arm.s.y),outAngle(side,arm.w.x-arm.e.x,arm.w.y-arm.e.y)];
+  const nL=ang(a,-1),nR=ang(b,1),k=kid.ok?.5:1;
+  kid.L=[angLerp(kid.L[0],nL[0],k),angLerp(kid.L[1],nL[1],k)];kid.R=[angLerp(kid.R[0],nR[0],k),angLerp(kid.R[1],nR[1],k)];
+  kid.hands={L:{x:a.w.x,y:a.w.y},R:{x:b.w.x,y:b.w.y},sw:Math.hypot(b.s.x-a.s.x,b.s.y-a.s.y)};
+  const roll=Math.atan2(b.s.y-a.s.y,b.s.x-a.s.x)/D2R,mid=(a.s.x+b.s.x)/2;
+  kid.upright=Math.abs(roll)<12&&Math.abs(nose.x-mid)<kid.hands.sw*.32;
+  kid.ok=true;kid.lastSeen=now;
+}
+function armMatch(target,actual){
+  const tol=TOL[exact];
+  if(target==='rest')return actual[0]<-40;
+  const d=(x,y)=>Math.abs(((x-y+540)%360)-180);
+  return d(target[0],actual[0])<tol&&d(target[1],actual[1])<tol*1.25;
+}
+
+/* finger fallback */
+let pressing=false;cv.addEventListener('pointerdown',()=>pressing=true);addEventListener('pointerup',()=>pressing=false);
+
+/* ============ GAME ============ */
+let state='menu',cur=null,queue=[],done=0,prog=0,celebT=0,tNow=0,introT=0;
+let leaves=[];
+function showBubble(){const b=$('bubble');if(!cur||state==='menu'||state==='over'){b.classList.remove('on');return;}b.textContent=UI[lang].poses[cur];b.classList.add('on');}
+let msgNow='';function msg(t){if(t===msgNow)return;msgNow=t;const m=$('msg');if(t){m.textContent=t;m.classList.add('on')}else m.classList.remove('on');}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
+function pickRound(){
+  const base=shuffle(['sunshine','rocket','airplane','cactus','wings',Math.random()<.5?'upoutL':'upoutR',Math.random()<.5?'pickmeL':'pickmeR']);
+  return base.slice(0,ROUND);
+}
+function nextPose(){
+  if(done>=ROUND){endGame();return;}
+  cur=queue[done];prog=0;sp.bloom=0;setSproutTarget(cur);state='intro';introT=tNow;SFX.boing();sp.hop=.001;showBubble();updCount();
+}
+function updCount(){const c=$('count');c.textContent=(done)+' / '+ROUND;c.classList.toggle('on',state!=='menu'&&state!=='over');}
+async function play(){
+  audio();SFX.go();$('start').hidden=true;$('end').hidden=true;
+  done=0;queue=pickRound();
+  if(!camTried){msg(UI[lang].ready);try{await startCamera();mode='camera';}catch(e){mode='finger';const t=$('toast');t.textContent=UI[lang].nocam;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),6000);}msg('');}
+  else mode=camOK?'camera':'finger';
+  nextPose();
+}
+$('play').onclick=play;$('again').onclick=play;
+function endGame(){state='over';cur=null;showBubble();updCount();msg('');setSproutTarget('rocket');sp.dance=1;
+  $('final').textContent=done;$('end').hidden=false;SFX.end();
+  for(let i=0;i<30;i++)spawnLeaf();}
+function spawnLeaf(){leaves.push({x:Math.random()*W,y:-20-Math.random()*H*.3,vx:(Math.random()-.5)*40,vy:60+Math.random()*80,r:Math.random()*6,vr:(Math.random()-.5)*4,s:10+Math.random()*10,c:Math.random()<.5?'#8BD16B':(Math.random()<.5?'#FF9FB0':'#FFD84D'),life:6});}
+
+/* menu demo: cycle poses */
+let demoI=0,demoT=0;const demoList=['sunshine','airplane','cactus','wings','rocket','upoutL','pickmeR'];
+setSproutTarget(demoList[0]);
+
+let last=performance.now(),tick=0;
+function frame(now){
+  const dt=Math.min(.05,(now-last)/1000);last=now;tNow+=dt;
+  if(mode==='camera')track(now);
+  // animate sprout arms toward target
+  const k=Math.min(1,dt*6);
+  sp.L=[angLerp(sp.L[0],sp.tL[0],k),angLerp(sp.L[1],sp.tL[1],k)];sp.R=[angLerp(sp.R[0],sp.tR[0],k),angLerp(sp.R[1],sp.tR[1],k)];
+  if(sp.hop>0){sp.hop+=dt*2.2;if(sp.hop>=1)sp.hop=0;}
+  const hopv=sp.hop>0?Math.sin(sp.hop*Math.PI):0;
+  sp.squash=hopv>0?-hopv*.6:0;
+  sp.blink=Math.max(0,sp.blink-dt);if(Math.random()<dt*.35)sp.blink=.12;
+  sp.dance=Math.max(0,sp.dance-(state==='celebrate'||state==='over'?0:dt*2));
+
+  if(state==='menu'){
+    demoT+=dt;if(demoT>2.2){demoT=0;demoI=(demoI+1)%demoList.length;setSproutTarget(demoList[demoI]);sp.hop=.001;}
+    sp.bloom=.5+.5*Math.sin(tNow*1.2);
+  }
+  else if(state==='intro'){ if(tNow-introT>1.1)state='hold'; }
+  else if(state==='hold'){
+    let matched=false;
+    if(mode==='camera'){
+      if(!kid.ok||now-kid.lastSeen>600){msg(kid.far?UI[lang].arms:UI[lang].arms);kid.okL=kid.okR=false;}
+      else{
+        const P=POSES[cur];kid.okL=armMatch(P.L,kid.L);kid.okR=armMatch(P.R,kid.R);
+        const up=upright==='off'||kid.upright;
+        matched=kid.okL&&kid.okR&&up;
+        msg(kid.okL&&kid.okR&&!up?UI[lang].tall:'');
+      }
+    } else matched=pressing;
+    if(matched){prog+=dt/holdSec;tick+=dt;if(tick>.5){tick=0;SFX.tick(prog);}}
+    else prog=Math.max(0,prog-dt/holdSec*.6);
+    sp.bloom=prog;
+    if(prog>=1){state='celebrate';celebT=tNow;done++;updCount();sp.dance=1;sp.bloom=1;sp.hop=.001;SFX.yay();msg('');
+      for(let i=0;i<16;i++)spawnLeaf();
+      const b=$('bubble');b.textContent=UI[lang].yay;}
+  }
+  else if(state==='celebrate'){
+    if(tNow-celebT>2){sp.dance=0;nextPose();}
+  }
+  render(now,dt);requestAnimationFrame(frame);
+}
+
+function render(now,dt){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.fillStyle='#BFE6FF';ctx.fillRect(0,0,W,H);
+  const portrait=H>=W*1.1, topPad=56;
+  let spR,camR;
+  const playing=state!=='menu'&&state!=='over';
+  // child (camera) on top in portrait, on the left in landscape; sprout below / on the right
+  if(!playing){spR={x:10,y:topPad,w:W-20,h:H-topPad-10};camR=null;}
+  else if(portrait){const ch=Math.round((H-topPad)*.55);camR={x:10,y:topPad,w:W-20,h:ch};spR={x:10,y:topPad+ch+8,w:W-20,h:H-topPad-ch-18};}
+  else{const cw=Math.round(W*.6);camR={x:10,y:topPad,w:cw,h:H-topPad-10};spR={x:cw+18,y:topPad,w:W-cw-28,h:H-topPad-10};}
+  drawGarden(spR.x,spR.y,spR.w,spR.h);
+  // camera
+  if(camR){camRect=camR;
+    ctx.save();const p=new Path2D();p.roundRect(camR.x,camR.y,camR.w,camR.h,26);ctx.clip(p);
+    if(mode!=='camera'){ctx.fillStyle='#E9F6E4';ctx.fillRect(camR.x,camR.y,camR.w,camR.h);
+      ctx.fillStyle='rgba(43,33,24,.45)';ctx.font='600 16px Fredoka,sans-serif';ctx.textAlign='center';ctx.fillText(UI[lang].camhere,camR.x+camR.w/2,camR.y+camR.h/2);}
+    else if(video.readyState>=2){const m=coverMap();ctx.save();ctx.translate(camR.x*2+camR.w,0);ctx.scale(-1,1);
+      ctx.drawImage(video,camR.x*2+camR.w-(m.ox+m.vw*m.s),m.oy,m.vw*m.s,m.vh*m.s);ctx.restore();}
+    ctx.restore();
+    ctx.lineWidth=4;ctx.strokeStyle=INK;const p2=new Path2D();p2.roundRect(camR.x,camR.y,camR.w,camR.h,26);ctx.stroke(p2);
+    if(kid.ok&&kid.hands&&(state==='hold'||state==='celebrate')){const s=Math.max(22,kid.hands.sw*.32);
+      const okAll=state==='celebrate';drawHandLeaf(kid.hands.L.x,kid.hands.L.y,okAll||kid.okL,s,tNow);drawHandLeaf(kid.hands.R.x,kid.hands.R.y,okAll||kid.okR,s,tNow);}
+  }
+  // sprout
+  const size=playing?Math.min((spR.h-56)/1.85,spR.w/1.45):Math.min(spR.h*.45,spR.w*.55);
+  const cx=spR.x+spR.w/2, by=spR.y+spR.h*(playing?.96:(portrait?.6:.75));
+  drawSprout(cx,by,size,tNow);
+  // bubble & counter placement
+  const b=$('bubble');b.style.left=(spR.x+spR.w/2)+'px';b.style.top=(spR.y+8)+'px';
+  {const c=$('count');c.style.top=(spR.y+8)+'px';}
+  $('msg').style.top=(camR?camR.y+camR.h*.5:H*.45)+'px';
+  // falling leaves
+  leaves=leaves.filter(l=>(l.life-=dt)>0&&l.y<H+30);
+  for(const l of leaves){l.x+=l.vx*dt+Math.sin(tNow*2+l.r)*20*dt;l.y+=l.vy*dt;l.r+=l.vr*dt;ctx.save();ctx.translate(l.x,l.y);ctx.rotate(l.r);stk(leafPath(l.s,l.s*.45),l.c,2);ctx.restore();}
+}
+
+setLang(lang);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
