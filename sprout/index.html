@@ -199,9 +199,12 @@ function drawSprout(cx,by,size,t){
   ctx.fillStyle='rgba(255,255,255,.22)';ctx.fill(ell(-12*u,-20*u,4*u,10*u,.15));
   const rim=new Path2D();rim.roundRect(-31*u,-48*u,62*u,12*u,6*u);stk(rim,'#F29B6A',lw);
   // body group (hops)
-  ctx.save();ctx.translate(0,-hop*30*u);
-  const sway=Math.sin(t*1.6)*2.5*D2R+(sp.dance?Math.sin(t*14)*8*D2R*sp.dance:0);
-  ctx.translate(0,-46*u);ctx.rotate(sway);ctx.scale(1+sq*.08,1-sq*.08);
+  // the stem stays planted in the pot: it sways from the soil, never leaves it
+  ctx.save();
+  const party=state==='over'?1:0;
+  const sway=Math.sin(t*1.6)*2.5*D2R+(sp.dance?(party?Math.sin(t*8)*15:Math.sin(t*5.5)*9)*D2R*sp.dance:0);
+  const stretch=sp.dance&&party?Math.abs(Math.sin(t*8))*.07:0;
+  ctx.translate(0,-46*u);ctx.rotate(sway);ctx.scale(1+sq*.08-stretch*.5,1-sq*.08+stretch);
   // stalk
   const stalk=new Path2D();stalk.roundRect(-10*u,-58*u,20*u,60*u,8*u);stk(stalk,'#6CC56B',lw);
   ctx.strokeStyle='rgba(43,33,24,.45)';ctx.lineWidth=lw*.6;ctx.beginPath();
@@ -225,7 +228,7 @@ function drawSprout(cx,by,size,t){
   const over=side=>{const a=side<0?sp.L:sp.R;return a[1]>120;};
   for(const side of [-1,1])if(!over(side))drawArm(side);
   // head
-  ctx.save();ctx.translate(0,-76*u);
+  ctx.save();ctx.translate(0,-76*u);if(party&&sp.dance)ctx.rotate(Math.sin(t*8+1.2)*.12);
   // hair leaves
   for(const [rx,rot,c] of [[-6,-2.3,'#7CC86B'],[6,-.85,'#8BD16B']]){ctx.save();ctx.translate(rx*u,-16*u);ctx.rotate(rot);stk(leafPath(18*u,7*u),c,lw*.8);ctx.restore();}
   // flower bud / bloom
