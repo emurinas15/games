@@ -53,6 +53,8 @@ html,body{background:#4A3E78}
         <div class="seg" id="hold-seg"><button data-v="3"></button><button data-v="5"></button><button data-v="8"></button></div></div>
       <div class="g-row"><span id="t-still">Body still check</span>
         <div class="seg" id="still-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-guide">Sound hints</span>
+        <div class="seg" id="guide-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
       <div class="g-row"><span id="t-music">Music</span>
         <div class="seg" id="music-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
       <div class="g-row"><span id="t-amb">Night sounds</span>
@@ -60,6 +62,7 @@ html,body{background:#4A3E78}
       <div class="g-row"><span id="t-sfx">Sound effects</span>
         <div class="seg" id="sfx-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
       <p id="t-g2"></p>
+      <p id="t-g5"></p>
       <p id="t-g3"></p>
       <p class="mini" id="t-legal"></p>
     </div>
@@ -76,18 +79,19 @@ html,body{background:#4A3E78}
 </div>
 
 <script type="module">
-import {INK,$,LS,S,audio,tone,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom,drawKid,startFaceTracker,faceFrame,drawMirroredVideo} from '../shared/kit.js';
+import {INK,$,LS,S,audio,tone,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom,drawKid,startFaceTracker,faceFrame,drawMirroredVideo,coverMap,playSample} from '../shared/kit.js';
 
 /* ================= TEXT ================= */
 const UI={
  en:{title:"Glow Spots",sub:"Bring the firefly home to the flower!",play:"Play",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
   g1:"A firefly lands on the child's face: nose, cheek, forehead or chin. The child moves the head to bring it to the flower in the middle and holds it there until the flower opens. Turning the head brings the cheek spots in; nodding up and down brings the forehead and chin spots in. Six fireflies make a round, and the score is the time it took.",
-  far:"Spots",near:"Near",farv:"Far",hold:"Hold for",still:"Body still check",
+  far:"Spots",near:"Near",farv:"Far",hold:"Hold for",still:"Body still check",guide:"Sound hints",close:"Move back a little so I can see your shoulders",
+  g5:"★ Sound hints: soft beeps get faster as the firefly gets closer to the flower, and notes climb while the child holds. The game can be played without watching the screen, for example when the child is very close or looking up.",
   music:"Music",amb:"Night sounds",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
   g2:"★ The body still check pauses the flower if the child moves the whole body instead of the head. Ask the child to keep the shoulders still.",
   g3:"★ Stand the phone upright at eye level, about an arm's length away. The first firefly is always on the nose: that sets the middle.",
-  legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio",
+  legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
   sec:"seconds",best:"fastest",sec2:"seconds for six fireflies",over:"All the fireflies are home!",again:"Play again",newbest:"New record!",bestis:"Fastest: ",
   ready:"Getting ready…",face:"Show me your face!",lost:"Where did you go?",stillmsg:"Move only your head!",
   nocam:"No camera here. Drag to move the head.",aria:"Game area",
@@ -95,11 +99,12 @@ const UI={
  he:{title:"נקודות אור",sub:"תחזירו את הגחלילית הביתה לפרח!",play:"שחקו",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
   g1:"גחלילית נוחתת על הפנים של הילד: על האף, הלחי, המצח או הסנטר. הילד מזיז את הראש כדי להביא אותה לפרח שבאמצע ומחזיק שם עד שהפרח נפתח. סיבוב הראש מביא את הלחיים, והנהון למעלה ולמטה מביא את המצח והסנטר. בכל סבב יש שש גחליליות, והניקוד הוא הזמן שלקח.",
-  far:"נקודות",near:"קרוב",farv:"רחוק",hold:"להחזיק",still:"בדיקת גוף יציב",
+  far:"נקודות",near:"קרוב",farv:"רחוק",hold:"להחזיק",still:"בדיקת גוף יציב",guide:"רמזי צליל",close:"זוזו קצת אחורה כדי שאראה את הכתפיים",
+  g5:"★ רמזי צליל: צפצופים רכים מואצים ככל שהגחלילית מתקרבת לפרח, והצלילים עולים בזמן ההחזקה. אפשר לשחק בלי להסתכל על המסך, למשל כשהילד קרוב מאוד או מסתכל למעלה.",
   music:"מוזיקה",amb:"צלילי לילה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
   g2:"★ בדיקת הגוף היציב עוצרת את הפרח אם הילד מזיז את כל הגוף במקום רק את הראש. בקשו מהילד להשאיר את הכתפיים במקום.",
   g3:"★ העמידו את הטלפון ישר בגובה העיניים, במרחק של בערך יד ישרה. הגחלילית הראשונה תמיד על האף, וכך נקבע האמצע.",
-  legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio",
+  legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
   sec:"שניות",best:"הכי מהר",sec2:"שניות לשש גחליליות",over:"כל הגחליליות בבית!",again:"עוד פעם",newbest:"שיא חדש!",bestis:"הכי מהר: ",
   ready:"מתכוננים…",face:"תראו לי את הפנים!",lost:"לאן נעלמתם?",stillmsg:"מזיזים רק את הראש!",
   nocam:"אין כאן מצלמה. גררו כדי להזיז את הראש.",aria:"אזור המשחק",
@@ -111,12 +116,14 @@ const SPOTS={
   near:{nose:1,cheekA:205,cheekB:425,forehead:8,chin:200},
   far: {nose:1,cheekA:50, cheekB:280,forehead:151,chin:152}};
 const LABEL=k=>k.startsWith('cheek')?'cheek':k;
-const ROUND=6, TOL=.15; // catch zone = 15% of face width
+const ROUND=6, TOL=.09;   // catch zone = 9% of face width
+const TRAVEL={near:.2,far:.32}; // how far (in face widths) the child must move each spot toward the middle // catch zone = 15% of face width
 
 let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
 let far=LS.get('gs-far','near'); if(!SPOTS[far])far='near';
 let holdSec=+LS.get('gs-hold','5'); if(![3,5,8].includes(holdSec))holdSec=5;
 let stillOn=LS.get('gs-still','1')==='1';
+let guideOn=LS.get('gs-guide','1')==='1';
 let best=+LS.get('gs-best-'+far+holdSec,'0')||0;
 const loadBest=()=>{best=+LS.get('gs-best-'+far+holdSec,'0')||0;$('best').textContent=best?Math.round(best):'–';};
 
@@ -127,13 +134,13 @@ function segs(){
   const u=UI[lang],mark=(id,v)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===String(v)));
   document.querySelectorAll('#far-seg button').forEach(b=>b.textContent=b.dataset.v==='far'?u.farv:u.near);
   document.querySelectorAll('#hold-seg button').forEach(b=>b.textContent=b.dataset.v+(lang==='he'?' שנ׳':' s'));
-  document.querySelectorAll('#still-seg button').forEach(b=>b.textContent=u[b.dataset.v==='1'?'on':'off']);
-  mark('far-seg',far);mark('hold-seg',holdSec);mark('still-seg',+stillOn);
+  document.querySelectorAll('#still-seg button,#guide-seg button').forEach(b=>b.textContent=u[b.dataset.v==='1'?'on':'off']);
+  mark('far-seg',far);mark('hold-seg',holdSec);mark('still-seg',+stillOn);mark('guide-seg',+guideOn);
 }
 function setLang(l){
   lang=l;LS.set('bamboo-lang',l);const u=UI[l];
   document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
-  for(const k of ['title','sub','play','privacy','grown','g1','far','hold','still','music','amb','sfx','g2','g3','legal','sec','best','sec2','over','again'])
+  for(const k of ['title','sub','play','privacy','grown','g1','far','hold','still','guide','music','amb','sfx','g2','g3','g5','legal','sec','best','sec2','over','again'])
     {const e=$('t-'+k);if(e)e.textContent=u[k];}
   $('t-privacy2').textContent=u.privacy;
   $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
@@ -145,6 +152,7 @@ $('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
 document.querySelectorAll('#far-seg button').forEach(b=>b.onclick=()=>{far=b.dataset.v;LS.set('gs-far',far);loadBest();segs();});
 document.querySelectorAll('#hold-seg button').forEach(b=>b.onclick=()=>{holdSec=+b.dataset.v;LS.set('gs-hold',holdSec);loadBest();segs();});
 document.querySelectorAll('#still-seg button').forEach(b=>b.onclick=()=>{stillOn=b.dataset.v==='1';LS.set('gs-still',b.dataset.v);segs();});
+document.querySelectorAll('#guide-seg button').forEach(b=>b.onclick=()=>{guideOn=b.dataset.v==='1';LS.set('gs-guide',b.dataset.v);segs();});
 
 /* ================= CANVAS + ART ================= */
 const cv=$('c'),ctx=cv.getContext('2d');
@@ -204,6 +212,7 @@ function track(now){
   if(!tracker||video.readyState<2||video.currentTime===lastVT)return;lastVT=video.currentTime;
   const P=faceFrame(tracker,video,now,W,H);if(!P){face.ok=false;return;}
   const L=P(234),R=P(454),w=Math.hypot(R.x-L.x,R.y-L.y),k=face.ok?.5:1;
+  const m=coverMap(video,W,H);face.frac=w/(m.vw*m.s);   // face width as a share of the camera picture
   face.w+=(w-face.w)*k;
   const c={x:(L.x+R.x)/2,y:(L.y+R.y)/2};face.c.x+=(c.x-face.c.x)*k;face.c.y+=(c.y-face.c.y)*k;
   for(const [name,i] of Object.entries(SPOTS[far])){const p=P(i),o=face.pts[name];if(!o||!face.ok)face.pts[name]={x:p.x,y:p.y};else{o.x+=(p.x-o.x)*k;o.y+=(p.y-o.y)*k;}}
@@ -223,13 +232,13 @@ function kidSpots(g){
 
 /* ================= GAME ================= */
 let state='menu',tNow=0,score=0,countT=0,lastNew=false;
-let order=[],idx=0,prog=0,celebT=0,home=null,calib=null,fly=null,sparks=[],stillBad=false;
+let order=[],idx=0,prog=0,celebT=0,home=null,calib=null,fly=null,sparks=[],stillBad=false,offs=null,guideT=0,guideStep=0,tooClose=false;
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function newRound(){
   const rest=shuffle(['cheekA','cheekB','forehead','chin']);
   order=['nose',...rest,shuffle(['cheekA','cheekB','forehead','chin'])[0]];
   if(order[5]===order[4])order[5]=order[1];
-  idx=0;prog=0;home=null;calib=null;fly=null;sparks=[];
+  idx=0;prog=0;home=null;calib=null;fly=null;sparks=[];offs=null;guideStep=0;
 }
 function cur(){return order[idx];}
 function buildJar(){const box=$('jar');box.innerHTML='';for(let i=0;i<ROUND;i++){const c=document.createElement('canvas');c.width=48;c.height=48;const x=c.getContext('2d');drawFirefly(x,24,26,14,1,1);if(i>=idx)c.className='off';box.appendChild(c);}}
@@ -249,8 +258,10 @@ async function play(){
 }
 $('play').onclick=play;$('again').onclick=play;
 
+const CLIMB=[72,74,76,79,81,84,86,88];
+function guideNote(i){const m=CLIMB[Math.min(7,i)];if(!playSample(S.AC,'kalimba',m,S.AC.currentTime+.01,.16,S.BUS.sfx))tone({f0:440*Math.pow(2,(m-69)/12),dur:.25,type:'triangle',vol:.12});}
 function endGame(){
-  state='over';musicStop();$('hud').classList.remove('on');showWhere();msg('');
+  state='over';musicStop();tooClose=false;$('toast').classList.remove('on');$('hud').classList.remove('on');showWhere();msg('');
   lastNew=!best||score<best;if(lastNew){best=score;LS.set('gs-best-'+far+holdSec,best.toFixed(1));}
   fillEnd(lastNew);$('end').hidden=false;SFX.chime();
 }
@@ -266,7 +277,9 @@ function geometry(){
 }
 function target(G){
   if(state==='menu')return {x:W*.76,y:H*.2};
-  if(home)return home;
+  if(home){const o=offs&&offs[cur()];if(!o||fly)return fly?{x:fly.tx,y:fly.ty}:home;
+    const w=G&&G.w||1,len=Math.hypot(o.x,o.y),keep=Math.max(0,len-TRAVEL[far])/(len||1);
+    return {x:home.x+o.x*w*keep,y:home.y+o.y*w*keep};}
   if(mode==='camera')return {x:W/2,y:H*.42};
   const hw=Math.min(W*.46,H*.3);return {x:W/2,y:H*.78-hw*.5*.93};   // the cartoon's nose at rest
 }
@@ -287,6 +300,8 @@ function frame(now){
   }
   else if(state==='play'){
     const G=geometry(),lostFace=mode==='camera'&&(!face.ok||now-face.lastSeen>500);
+    const close=mode==='camera'&&face.ok&&face.frac>.38;
+    if(close!==tooClose){tooClose=close;const t=$('toast');if(close){t.textContent=UI[lang].close;t.classList.add('on');}else t.classList.remove('on');}
     if(lostFace){msg(UI[lang].lost);}
     else{
       if(msgNow===UI[lang].lost)msg('');
@@ -301,11 +316,15 @@ function frame(now){
           // body still check: face centre must stay near where it was at the nose
           stillBad=stillOn&&calib&&Math.hypot(G.c.x-calib.x,G.c.y-calib.y)>G.w*.55;
           if(stillBad){if(msgNow!==UI[lang].stillmsg)msg(UI[lang].stillmsg);}else if(msgNow===UI[lang].stillmsg)msg('');
-          const inside=Math.hypot(sp.x-T.x,sp.y-T.y)<G.w*TOL+12;
-          if(inside&&!stillBad){prog+=dt/holdSec;if(Math.random()<dt*3)SFX.tink(1+prog*.5);}
-          else prog=Math.max(0,prog-dt/(holdSec*1.5));
+          const inside=Math.hypot(sp.x-T.x,sp.y-T.y)<G.w*TOL+6;
+          if(inside&&!stillBad){const before=Math.floor(prog*8);prog+=dt/holdSec;
+            if(guideOn&&Math.floor(prog*8)>before&&prog<1)guideNote(Math.floor(prog*8));}
+          else{prog=Math.max(0,prog-dt/(holdSec*1.5));
+            if(guideOn&&!stillBad&&tNow>guideT){const d=Math.min(1.5,Math.hypot(sp.x-T.x,sp.y-T.y)/G.w);   // sound hint: faster and higher when closer
+              tone({f0:520+(1.5-d)*420,dur:.07,type:'sine',vol:.09});guideT=tNow+.16+d*.6;}}
           if(prog>=1){
-            if(cur()==='nose'&&!home){home={x:T.x,y:T.y};calib={x:G.c.x,y:G.c.y};}
+            if(cur()==='nose'&&!home){home={x:T.x,y:T.y};calib={x:G.c.x,y:G.c.y};
+              offs={};const n=G.spots.nose;for(const [k,p] of Object.entries(G.spots))offs[k]={x:(p.x-n.x)/G.w,y:(p.y-n.y)/G.w};}
             fly={sx:sp.x,sy:sp.y,tx:T.x,ty:T.y,t0:tNow,done:false};prog=1;showWhere();SFX.sparkle();
           }
         }

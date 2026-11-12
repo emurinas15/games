@@ -22,7 +22,7 @@ export const S = {
 
 export function audio() {
   if (!S.AC) { try { S.AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
-  if (!S.BUS.master) makeBuses(S.AC);
+  if (!S.BUS.master) { makeBuses(S.AC); loadSamples(S.AC, SONG_NOTES[S.track] || {}); }
   if (S.AC.state === 'suspended') S.AC.resume();
   return S.AC;
 }
@@ -73,16 +73,49 @@ export const SFX = {
   sparkle() { [1568, 2093, 2637].forEach((f, i) => tone({ f0: f, dur: .25, type: 'sine', vol: .08, at: i * .06 })); }
 };
 
-/* ---- music: synthesized acoustic loops, tempo set by the game ---- */
+/* ---- real acoustic instrument samples (FluidR3_GM soundfont, CC BY 3.0) ----
+   One normalized mp3 per note in shared/sounds/<instrument>/<note>.mp3. Falls back to synth if missing. */
+const SAMPLE_BASE = new URL('./sounds/', import.meta.url);
+const NOTE = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+export const noteName = m => NOTE[m % 12] + (Math.floor(m / 12) - 1);
+const sampleCache = new WeakMap();
+export function loadSamples(ac, list) {
+  let c = sampleCache.get(ac); if (!c) { c = {}; sampleCache.set(ac, c); }
+  const jobs = [];
+  for (const [inst, notes] of Object.entries(list)) for (const m of new Set(notes)) {
+    const k = inst + m; if (k in c) continue; c[k] = null;
+    jobs.push(fetch(new URL(inst + '/' + noteName(m) + '.mp3', SAMPLE_BASE)).then(r => r.ok ? r.arrayBuffer() : Promise.reject())
+      .then(b => new Promise((res, rej) => ac.decodeAudioData(b, res, rej))).then(buf => { c[k] = buf; }).catch(() => {}));
+  }
+  return Promise.all(jobs);
+}
+/* plays a note if its sample is loaded; returns the gain node (so callers can add reverb) or null */
+export function playSample(ac, inst, m, t, v, dest, len = 2.2) {
+  const c = sampleCache.get(ac), buf = c && c[inst + m]; if (!buf) return null;
+  const s = ac.createBufferSource(); s.buffer = buf; const g = ac.createGain();
+  g.gain.setValueAtTime(v, t); g.gain.setTargetAtTime(0.0001, t + len, .12);
+  s.connect(g); g.connect(dest); s.start(t); s.stop(t + len + .8); return g;
+}
+export const SONG_NOTES = {
+  pond: { marimba: [76,79,72,74,81,77,71], acoustic_guitar_nylon: [60,64,67,57,53,55,59,62], acoustic_bass: [48,45,41,43] },
+  night: { kalimba: [79,76,72,74,77,81,84,83,86,88], celesta: [76,74,77,71,72,69,67], acoustic_bass: [48,50,43,41] }
+};
+function sampled(inst, m, t, v, wet) {
+  const g = playSample(S.AC, inst, m, t, v / .7, S.BUS.music); if (!g) return false;
+  if (wet) { const w = S.AC.createGain(); w.gain.value = wet; g.connect(w); w.connect(S.BUS.rev); }
+  return true;
+}
+
+/* ---- music: acoustic loops (sampled, synth fallback), tempo set by the game ---- */
 const mhz = m => 440 * Math.pow(2, (m - 69) / 12);
 function mOut(node, wet, bus) { node.connect(bus || S.BUS.music); if (wet) { const g = S.AC.createGain(); g.gain.value = wet; node.connect(g); g.connect(S.BUS.rev); } }
 function mEnv(t, a, d, p) { const g = S.AC.createGain(); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(p, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + a + d); return g; }
 function mOsc(type, f, t, dur) { const o = S.AC.createOscillator(); o.type = type; o.frequency.setValueAtTime(f, t); o.start(t); o.stop(t + dur + .05); return o; }
-function marimba(m, t, v) { const f = mhz(m); const g1 = mEnv(t, .004, .7, v); mOsc('sine', f, t, .75).connect(g1); mOut(g1, .3); const g2 = mEnv(t, .002, .07, v * .35); mOsc('sine', f * 3.93, t, .1).connect(g2); mOut(g2, .1); }
-function uke(m, t, v) { const lp = S.AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200; const g = mEnv(t, .003, .45, v); mOsc('triangle', mhz(m), t, .5).connect(lp); lp.connect(g); mOut(g, .25); }
-function bass(m, t, v, d = .5) { const g = mEnv(t, .01, d, v); mOsc('sine', mhz(m), t, d + .05).connect(g); mOut(g, .1); }
-function celesta(m, t, v) { const f = mhz(m); const g1 = mEnv(t, .003, 1.6, v); mOsc('sine', f, t, 1.7).connect(g1); mOut(g1, .55); const g2 = mEnv(t, .002, .35, v * .35); mOsc('sine', f * 2, t, .4).connect(g2); mOut(g2, .4); }
-function kalimba(m, t, v) { const f = mhz(m); const g1 = mEnv(t, .002, 1.1, v); mOsc('sine', f, t, 1.2).connect(g1); mOut(g1, .5); const g2 = mEnv(t, .001, .12, v * .4); mOsc('sine', f * 5.4, t, .15).connect(g2); mOut(g2, .2); }
+function marimba(m, t, v) { if (sampled('marimba', m, t, v, .3)) return; const f = mhz(m); const g1 = mEnv(t, .004, .7, v); mOsc('sine', f, t, .75).connect(g1); mOut(g1, .3); const g2 = mEnv(t, .002, .07, v * .35); mOsc('sine', f * 3.93, t, .1).connect(g2); mOut(g2, .1); }
+function uke(m, t, v) { if (sampled('acoustic_guitar_nylon', m, t, v * 1.3, .25)) return; const lp = S.AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200; const g = mEnv(t, .003, .45, v); mOsc('triangle', mhz(m), t, .5).connect(lp); lp.connect(g); mOut(g, .25); }
+function bass(m, t, v, d = .5) { if (sampled('acoustic_bass', m, t, v * 1.2, .1)) return; const g = mEnv(t, .01, d, v); mOsc('sine', mhz(m), t, d + .05).connect(g); mOut(g, .1); }
+function celesta(m, t, v) { if (sampled('celesta', m, t, v * 1.4, .5)) return; const f = mhz(m); const g1 = mEnv(t, .003, 1.6, v); mOsc('sine', f, t, 1.7).connect(g1); mOut(g1, .55); const g2 = mEnv(t, .002, .35, v * .35); mOsc('sine', f * 2, t, .4).connect(g2); mOut(g2, .4); }
+function kalimba(m, t, v) { if (sampled('kalimba', m, t, v, .45)) return; const f = mhz(m); const g1 = mEnv(t, .002, 1.1, v); mOsc('sine', f, t, 1.2).connect(g1); mOut(g1, .5); const g2 = mEnv(t, .001, .12, v * .4); mOsc('sine', f * 5.4, t, .15).connect(g2); mOut(g2, .2); }
 function plip(t, v, bus) { const a = S.AC, o = a.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(500, t); o.frequency.exponentialRampToValueAtTime(1500, t + .06); const g = mEnv(t, .001, .08, v); o.connect(g); mOut(g, bus ? 0 : .45, bus); o.start(t); o.stop(t + .12); }
 const _ = null;
 const TRACKS = {
