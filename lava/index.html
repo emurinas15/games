@@ -19,7 +19,9 @@
 .btn2{display:block;width:100%;margin-top:10px;border:3px solid var(--ink);border-radius:999px;background:#fff;color:var(--ink);font:700 18px Fredoka,sans-serif;padding:8px 0;box-shadow:0 4px 0 var(--ink);cursor:pointer}
 .btn2:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
 .snd.cast{font-size:19px}
-#setup{top:calc(var(--safe-t) + 60px);bottom:auto;padding:10px 14px}
+#setup{top:calc(var(--safe-t) + 60px);bottom:auto;padding:8px 12px}
+#setup .btn{font-size:22px;padding:6px 0 4px}
+#setup .btn2{font-size:15px;padding:6px 0}
 #setup p{margin:4px 0 10px;text-align:center;font:600 16px Fredoka,sans-serif;line-height:1.35}
 #setup .row{display:flex;gap:10px}
 #setup .row .btn{flex:2}
@@ -120,7 +122,7 @@ const UI={
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
   rnd:"round",best:"best",sec2:"safe landings",over:["Well done!","Hot feet!","Lava hoppers!","Lava champions!"],again:"Play again",newbest:"New record!",bestis:"Best: ",
   ready:"Getting ready…",feet:"Show me your feet! Stand on the floor.",onfloor:"Step onto the lava floor!",
-  setup:"Drag the 4 stones to the corners of the play area on the floor.",setok:"Ready!",setreset:"Reset",
+  setup:"Drag the 4 stones onto the corners of the play area on the floor. Drag the middle to move it all.",setok:"Ready!",setreset:"Reset",
   nocam:"No camera here — showing the demo instead.",errAllow:"The camera is blocked. Allow the camera for this site in the browser settings, then tap Play again.",errNone:"No camera was found on this device.",errModel:"The movement tracking didn’t load. Check the internet connection and tap Play again.",errOther:"The camera didn’t start. Close other apps that use the camera and tap Play again.",errInApp:"Tip: open the link in Chrome or Safari, not inside another app.",aria:"Game area",
   q:"Jump on a ? block!",reveal:"Rock or glass?",melt:"Glass melts — find a rock!",safe:"Safe!",toast:["Hot hot!","Toasty!","Ouch, hot!","Warm toes!"],
   demotip:"Tap a square to hop there",turn:"Turn the phone sideways for a bigger floor",you:"You",lastround:"Last round!"},
@@ -135,7 +137,7 @@ const UI={
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
   rnd:"סבב",best:"שיא",sec2:"נחיתות בטוחות",over:["כל הכבוד!","רגליים חמות!","קופצי לבה!","אלופי הלבה!"],again:"עוד פעם",newbest:"שיא חדש!",bestis:"השיא: ",
   ready:"מתכוננים…",feet:"תראו לי את כפות הרגליים! עמדו על הרצפה.",onfloor:"היכנסו לרצפת הלבה!",
-  setup:"גררו את 4 האבנים לפינות שטח המשחק על הרצפה.",setok:"מוכנים!",setreset:"איפוס",
+  setup:"גררו את 4 האבנים לפינות שטח המשחק על הרצפה. גררו את האמצע כדי להזיז הכול.",setok:"מוכנים!",setreset:"איפוס",
   nocam:"אין כאן מצלמה — מציגים הדגמה במקום.",errAllow:"המצלמה חסומה. אשרו גישה למצלמה לאתר הזה בהגדרות הדפדפן, ואז הקישו שוב על שחקו.",errNone:"לא נמצאה מצלמה במכשיר.",errModel:"זיהוי התנועה לא נטען. בדקו את החיבור לאינטרנט והקישו שוב על שחקו.",errOther:"המצלמה לא נפתחה. סגרו אפליקציות אחרות שמשתמשות במצלמה והקישו שוב על שחקו.",errInApp:"טיפ: פתחו את הקישור ב־Chrome או ב־Safari, לא בתוך אפליקציה אחרת.",aria:"אזור המשחק",
   q:"קפצו על קוביית סימן שאלה!",reveal:"סלע או זכוכית?",melt:"הזכוכית נמסה — מצאו סלע!",safe:"בטוח!",toast:["חם חם!","מתחמם!","אוי, חם!","בהונות חמות!"],
   demotip:"הקישו על משבצת כדי לקפוץ אליה",turn:"סובבו את הטלפון לרוחב כדי לקבל רצפה גדולה יותר",you:"אני",lastround:"סבב אחרון!"}
@@ -205,10 +207,11 @@ function solveH(src,dst){ // maps src[i] -> dst[i]
 }
 const apH=(h,x,y)=>{const w=h[6]*x+h[7]*y+1;return {x:(h[0]*x+h[1]*y+h[2])/w,y:(h[3]*x+h[4]*y+h[5])/w};};
 // corners in normalized picture coordinates (as shown on screen): far-left, far-right, near-right, near-left
-const DEF=[[.27,.5],[.73,.5],[.97,.95],[.03,.95]];
+const DEF_L=[[.28,.7],[.72,.7],[.99,.98],[.01,.98]],DEF_P=[[.12,.73],[.88,.73],[1,.98],[0,.98]];
+const DEF=()=>vr.h>vr.w?DEF_P:DEF_L;
 let corners=(()=>{try{const c=JSON.parse(LS.get('lv-floor',''));if(Array.isArray(c)&&c.length===4)return c;}catch(e){}return null;})();
 let G2S=null,S2G=null,vr={ox:0,oy:0,w:1,h:1,mirror:true};
-const cornersNow=()=>(mode==='camera'&&camOK)||setupMode?(corners||DEF):(W>H?DEMO_L:DEMO_P);
+const cornersNow=()=>(mode==='camera'&&camOK)||setupMode?(corners||DEF()):(W>H?DEMO_L:DEMO_P);
 function updateFloor(){
   const sc=cornersNow().map(([x,y])=>[vr.ox+x*vr.w,vr.oy+y*vr.h]),gc=[[0,0],[N,0],[N,N],[0,N]];
   G2S=solveH(gc,sc);S2G=solveH(sc,gc);
@@ -525,17 +528,22 @@ function fillEnd(nb){const u=UI[lang];$('final').textContent=score;$('newbest').
 
 /* ---- floor setup: drag the 4 stones ---- */
 let setupMode=false,drag=-1,setupFromMenu=false;
-function openSetup(fromMenu){setupMode=true;setupFromMenu=!!fromMenu;state='setup';if(!corners)corners=DEF.map(c=>c.slice());$('setup').hidden=false;$('start').hidden=true;}
+function openSetup(fromMenu){setupMode=true;setupFromMenu=!!fromMenu;state='setup';if(!corners)corners=DEF().map(c=>c.slice());if(H>W)toast(UI[lang].turn,6000);$('setup').hidden=false;$('start').hidden=true;}
 $('setok').onclick=()=>{LS.set('lv-floor',JSON.stringify(corners));setupMode=false;$('setup').hidden=true;SFX.go();
   if(setupFromMenu){state='menu';$('start').hidden=false;}else begin();};
-$('setreset').onclick=()=>{corners=DEF.map(c=>c.slice());SFX.tick();};
+$('setreset').onclick=()=>{corners=DEF().map(c=>c.slice());SFX.tick();};
 const handlePos=i=>{const c=cornersNow()[i];return {x:vr.ox+c[0]*vr.w,y:vr.oy+c[1]*vr.h};};
 cv.addEventListener('pointerdown',e=>{
   const x=e.clientX,y=e.clientY;
-  if(setupMode){let bd=60;drag=-1;for(let i=0;i<4;i++){const h=handlePos(i),d=Math.hypot(h.x-x,h.y-y);if(d<bd){bd=d;drag=i;}}if(drag>=0)cv.setPointerCapture(e.pointerId);return;}
+  if(setupMode){let bd=60;drag=-1;for(let i=0;i<4;i++){const h=handlePos(i),d=Math.hypot(h.x-x,h.y-y);if(d<bd){bd=d;drag=i;}}
+    if(drag<0){const g=toGrid(x,y);if(g.x>0&&g.x<N&&g.y>0&&g.y<N){drag=4;dragFrom={x,y,c:corners.map(c=>c.slice())};}}
+    if(drag>=0)cv.setPointerCapture(e.pointerId);return;}
   if(mode==='demo'&&state==='play'){const you=players.find(p=>p.you),c=cellOf(x,y);if(you&&c&&you.hop>=1&&!(you.status==='toast'&&phase!=='quiz'))hopTo(you,c);}
 });
-cv.addEventListener('pointermove',e=>{if(!setupMode||drag<0)return;corners[drag]=[Math.max(-.05,Math.min(1.05,(e.clientX-vr.ox)/vr.w)),Math.max(0,Math.min(1.05,(e.clientY-vr.oy)/vr.h))];});
+let dragFrom=null;
+cv.addEventListener('pointermove',e=>{if(!setupMode||drag<0)return;
+  if(drag===4){const dx=(e.clientX-dragFrom.x)/vr.w,dy=(e.clientY-dragFrom.y)/vr.h;corners=dragFrom.c.map(([a,b])=>[a+dx,b+dy]);return;}
+  corners[drag]=[Math.max(-.05,Math.min(1.05,(e.clientX-vr.ox)/vr.w)),Math.max(0,Math.min(1.05,(e.clientY-vr.oy)/vr.h))];});
 cv.addEventListener('pointerup',()=>{drag=-1;});
 
 /* ================= MAIN LOOP ================= */
@@ -576,7 +584,7 @@ function render(dt){
   const cam=mode==='camera'&&camOK&&state!=='menu'&&state!=='over';
   if(cam){ctx.fillStyle='#2a2033';ctx.fillRect(0,0,W,H);if(video.readyState>=2)drawVid(video);}
   else drawRoom(ctx,W,H);
-    drawLava(setupMode?.6:1);
+    drawLava(setupMode?.28:1);
   const order=cells.slice().sort((a,b)=>a.v-b.v||a.u-b.u);
   if(setupMode){for(const c of order){const t=c.type;c.type='rock';c.t0=-9;c.sink=0;drawTileGhost(c);c.type=t;}}
   else{
@@ -618,7 +626,8 @@ function drawOverlay(){
   const lv=$('lvl');if(lv.classList.contains('on')){ctx.save();const F=Math.min(44,W*.06);ctx.font=`900 ${F}px Grandstander,sans-serif`;ctx.textAlign='center';ctx.lineWidth=F*.14;ctx.strokeStyle=INK;ctx.lineJoin='round';
     ctx.strokeText(lv.textContent,W/2,top+f*6);ctx.fillStyle='#FFD84D';ctx.fillText(lv.textContent,W/2,top+f*6);ctx.restore();}
 }
-function drawTileGhost(c){ctx.save();ctx.globalAlpha=.55;const lw=2;slab(c,.42,.0,'#B9A794','#7D6A58',lw);ctx.restore();}
+function drawTileGhost(c){const pts=tileShape(c,.42).map(([u,v])=>P(u,v)),p=new Path2D();pts.forEach((q,i)=>i?p.lineTo(q.x,q.y):p.moveTo(q.x,q.y));p.closePath();
+  ctx.save();ctx.lineWidth=2;ctx.strokeStyle='rgba(255,255,255,.85)';ctx.stroke(p);ctx.restore();}
 
 setLang(lang);loadBest();
 requestAnimationFrame(frame);
