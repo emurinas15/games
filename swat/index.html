@@ -266,11 +266,11 @@ function rackets(){
   const out=[];
   if(mode==='camera'){
     const [a,b]=body.hands,F=frame0(),r=Math.max(26,F.sw*.27);
-    if(twoOn&&a.ok&&b.ok&&Math.hypot(a.x-b.x,a.y-b.y)<F.sw*.55)out.push({id:'big',x:(a.x+b.x)/2,y:(a.y+b.y)/2,r:r*1.9,a:(a.a+b.a)/2,big:true});
+    if(twoOn&&a.ok&&b.ok&&Math.hypot(a.x-b.x,a.y-b.y)<F.sw*.55)out.push({id:'big',x:(a.x+b.x)/2,y:(a.y+b.y)/2,r:r*1.33,a:(a.a+b.a)/2,big:true});
     else body.hands.forEach((h,j)=>{if(h.ok)out.push({id:'h'+j,x:h.x,y:h.y,r,a:h.a,big:false});});
   } else {
     const F=frame0(),r=Math.max(26,F.sw*.27),pts=[...touches.values()];
-    if(twoOn&&pts.length>=2&&Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)<F.sw*.55)out.push({id:'big',x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2,r:r*1.9,a:0,big:true});
+    if(twoOn&&pts.length>=2&&Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)<F.sw*.55)out.push({id:'big',x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2,r:r*1.33,a:0,big:true});
     else pts.slice(0,2).forEach((p,j)=>out.push({id:'t'+j,x:p.x,y:p.y,r,a:0,big:false}));
   }
   return out;
