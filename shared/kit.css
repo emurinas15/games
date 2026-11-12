@@ -69,3 +69,4 @@ details[open] summary::after{content:" ▴"}
 .lv .sp{display:block;font-size:11px;opacity:.7;letter-spacing:1px}
 .mini{font-size:12px;opacity:.7;text-align:center;margin-top:8px}
 [dir=rtl] .g-body{text-align:right}
+[hidden]{display:none!important}
