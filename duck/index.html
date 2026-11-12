@@ -250,7 +250,7 @@ function makeBuses(a){
 function applyGains(now){
   if(!AC||!BUS.master)return;const t=AC.currentTime;
   const set=(n,v)=>{n.gain.cancelScheduledValues(t);if(now)n.gain.setValueAtTime(v,t);else n.gain.setTargetAtTime(v,t,.08);};
-  set(BUS.master,soundOn?1:0);set(BUS.sfx,sfxOn?1:0);set(BUS.music,musicOn?.4:0);set(BUS.pond,pondOn?.6:0);
+  set(BUS.master,soundOn?1:0);set(BUS.sfx,sfxOn?1:0);set(BUS.music,musicOn?.32:0);set(BUS.pond,pondOn?.6:0);
 }
 const MU={timer:null,step:0,next:0,on:false,nat:null};
 const mhz=m=>440*Math.pow(2,(m-69)/12);

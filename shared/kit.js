@@ -40,7 +40,7 @@ function makeBuses(a) {
 export function applyGains(now) {
   const a = S.AC, B = S.BUS; if (!a || !B.master) return; const t = a.currentTime;
   const set = (n, v) => { n.gain.cancelScheduledValues(t); if (now) n.gain.setValueAtTime(v, t); else n.gain.setTargetAtTime(v, t, .08); };
-  set(B.master, S.soundOn ? 1 : 0); set(B.sfx, S.sfxOn ? 1 : 0); set(B.music, S.musicOn ? .4 : 0); set(B.amb, S.ambOn ? .6 : 0);
+  set(B.master, S.soundOn ? 1 : 0); set(B.sfx, S.sfxOn ? 1 : 0); set(B.music, S.musicOn ? .32 : 0); set(B.amb, S.ambOn ? .6 : 0);
 }
 document.addEventListener('visibilitychange', () => { if (!S.AC) return; if (document.hidden) S.AC.suspend(); else if (S.mu.on) S.AC.resume(); });
 
@@ -141,7 +141,8 @@ const TRACKS = {
       if (i === 2 || i === 4) this.chords[b].forEach(n => celesta(n + 12, t, .035)); } }
 };
 /* one note of a styled arrangement (see songs.js): real sample, or a synth stand-in */
-function playEvent([inst, m, v, len, wet], t) {
+function playEvent([inst, m, v, len, wet, delay], t) {
+  if (delay) t += delay;
   if (inst === '~snare') { const a = S.AC, n = a.sampleRate * .12, b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0);
     for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n) ** 3;
     const src = a.createBufferSource(); src.buffer = b; const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = .7;

@@ -61,19 +61,24 @@ export const STYLES = {
     if (i === 2 || i === 6) ev.push(['~snare', 0, .18, .1, 0]);
     if (i === 0) ev.push(['pizzicato_strings', ch[0] - 12, .12, .3, .2]);
     return ev.map(e => e[0][0] === '~' ? e : [e[0], minor(e[1]), e[2], e[3], e[4]]); } },
-  /* Copy the Sprout: acoustic and natural — flute, fingerpicked nylon guitar, bass */
+  /* Copy the Sprout: natural, Irish-flute feel — wooden flute with little 'cut' grace notes,
+     a soft recorder harmony in the middle sections, fingerpicked nylon guitar, bass */
   natural: { bpm: 88, play(s) {
-    const { mel, ch, root, i } = at(s), ev = [];
-    if (mel != null) ev.push(['flute', mel, .2, .9, .35]);
-    ev.push(['acoustic_guitar_nylon', ch[[0, 1, 2, 1, 0, 2, 1, 2][i]], .09, .9, .25]);
-    if (i === 0 || i === 4) ev.push(['acoustic_bass', root, .22, 1.1, .1]);
+    const { mel, ch, root, i, sec } = at(s), ev = [];
+    if (mel != null) {
+      if (i % 4 === 0 && mel < 86) { ev.push(['flute', scaleStep(mel, 1), .1, .07, .3]); ev.push(['flute', mel, .24, 1, .4, .05]); }   // Irish cut
+      else ev.push(['flute', mel, .24, 1, .4]);
+      if (sec[0] === 'B') ev.push(['recorder', scaleStep(scaleStep(mel, -1), -1), .1, .9, .4]);   // a third below
+    }
+    ev.push(['acoustic_guitar_nylon', ch[[0, 1, 2, 1, 0, 2, 1, 2][i]], .07, .9, .3]);
+    if (i === 0 || i === 4) ev.push(['acoustic_bass', root, .2, 1.1, .1]);
     return ev; } }
 };
 export const STEPS = PLAN.length * 32;   // 256 eighth-notes = 32 bars
 function at(s) {
   s = ((s % STEPS) + STEPS) % STEPS;
   const sec = SECTIONS[Math.floor(s / 32)], k = s % 32, bar = Math.floor(k / 8);
-  return { mel: sec.mel[k], ch: sec.ch[bar], root: sec.root[bar], i: k % 8 };
+  return { mel: sec.mel[k], ch: sec.ch[bar], root: sec.root[bar], i: k % 8, sec: PLAN[Math.floor(s / 32)] };
 }
 /* every sampled note a style needs: { instrument: [midi...] } */
 export function styleNotes(name) {

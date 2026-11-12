@@ -109,10 +109,10 @@ const UI={
   g1:"The sprout shows a pose like a mirror. The child copies it with the arms and holds it until the flower on the sprout's head opens. Works sitting in a chair or wheelchair.",
   hold:"Hold for",s5:"5 sec",s10:"10 sec",exact:"How exact",easy:"Easy",medium:"Medium",exactv:"Exact",
   upright:"Back upright check",on:"On",off:"Off",
-  g2:"★ Place the phone about 1–1.5 m away so the head, shoulders and hands are all in view. The upright check stops leaning from counting.",
+  g2:"★ Place the phone about 1.5–2 m away, so the head and both hands fit even with the arms stretched out to the sides. The upright check stops leaning from counting.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
   over:"Great copying!",copied:"poses copied",again:"Play again",
-  ready:"Getting ready…",arms:"Show me your arms!",back:"Move back a little",tall:"Sit up tall!",yay:"Yay!",
+  ready:"Getting ready…",arms:"Show me your arms!",back:"Move back so your arms fit on the screen",tall:"Sit up tall!",yay:"Yay!",
   nocam:"No camera here. Press and hold the screen to pretend you're holding the pose.",camhere:"Your camera picture shows here",
   poses:{sunshine:"Sunshine",rocket:"Rocket",airplane:"Airplane",cactus:"Cactus",wings:"Wings",upoutL:"Up and out",upoutR:"Up and out",pickmeL:"Pick me!",pickmeR:"Pick me!"}},
  he:{title:"חקו את הנבט",sub:"עשו כמו הנבט והחזיקו עד שהפרח נפתח!",play:"שחקו",
@@ -120,10 +120,10 @@ const UI={
   g1:"הנבט מראה תנוחה כמו מראה. הילד מחקה אותה עם הידיים ומחזיק עד שהפרח על ראש הנבט נפתח. מתאים גם בישיבה על כיסא או כיסא גלגלים.",
   hold:"להחזיק",s5:"5 שניות",s10:"10 שניות",exact:"כמה מדויק",easy:"סלחני",medium:"בינוני",exactv:"מדויק",
   upright:"בדיקת גב זקוף",on:"פועל",off:"כבוי",
-  g2:"★ הניחו את הטלפון במרחק של מטר עד מטר וחצי, כך שרואים את הראש, הכתפיים והידיים. בדיקת הגב הזקוף מונעת מהטיה של הגוף להיחשב.",
+  g2:"★ הניחו את הטלפון במרחק של מטר וחצי עד שני מטרים, כך שהראש ושתי הידיים נכנסים למסך גם כשהידיים פרושות לצדדים. בדיקת הגב הזקוף מונעת מהטיה של הגוף להיחשב.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
   over:"איזה חיקוי!",copied:"תנוחות",again:"עוד פעם",
-  ready:"מתכוננים…",arms:"תראו לי את הידיים!",back:"זוזו קצת אחורה",tall:"שבו זקוף!",yay:"יש!",
+  ready:"מתכוננים…",arms:"תראו לי את הידיים!",back:"זוזו אחורה כדי שהידיים ייכנסו למסך",tall:"שבו זקוף!",yay:"יש!",
   nocam:"אין כאן מצלמה. לחצו והחזיקו את המסך כאילו אתם מחזיקים את התנוחה.",camhere:"כאן תופיע תמונת המצלמה",
   poses:{sunshine:"שמש",rocket:"טיל",airplane:"מטוס",cactus:"קקטוס",wings:"כנפיים",upoutL:"למעלה ולצד",upoutR:"למעלה ולצד",pickmeL:"אני! אני!",pickmeR:"אני! אני!"}}
 };
@@ -180,10 +180,10 @@ function tone({f0=440,f1=f0,dur=.15,type='sine',vol=.22,at=0}){const a=AC;if(!a)
   o.connect(g);g.connect(S.BUS.sfx);o.start(t);o.stop(t+dur+.02);}
 const SFX={
   boing(){tone({f0:200,f1:560,dur:.22});},
-  yay(){[523,659,784,1047].forEach((f,i)=>tone({f0:f,dur:.25,type:'triangle',vol:.2,at:i*.09}));tone({f0:1568,f1:2093,dur:.4,type:'sine',vol:.12,at:.4});},
+  yay(){[523,659,784,1047].forEach((f,i)=>tone({f0:f,dur:.3,type:'triangle',vol:.45,at:i*.09}));tone({f0:1568,f1:2093,dur:.45,type:'sine',vol:.28,at:.4});},   // bloom: clearly above the music
   tick(p){tone({f0:500+p*500,dur:.06,type:'triangle',vol:.08});},
   go(){tone({f0:990,dur:.2,type:'triangle'});},
-  end(){[784,988,1175,1568].forEach((f,i)=>tone({f0:f,dur:.3,type:'triangle',vol:.2,at:i*.12}));}
+  end(){[784,988,1175,1568].forEach((f,i)=>tone({f0:f,dur:.35,type:'triangle',vol:.42,at:i*.12}));}
 };
 
 /* ============ CANVAS + ART ============ */
@@ -323,13 +323,17 @@ function track(now){
   if(a.s.x>b.s.x)[a,b]=[b,a];       // a = screen-left arm
   const vis=[a.s,a.e,a.w,b.s,b.e,b.w].every(p=>p.v>.45);
   const nose=P(0);
-  if(!vis){kid.ok=false;kid.far=nose.v>.5;return;}
+  if(!vis){kid.ok=false;kid.far=a.s.v>.45&&b.s.v>.45;return;}   // shoulders seen but not the hands -> too close
   const ang=(arm,side)=>[outAngle(side,arm.e.x-arm.s.x,arm.e.y-arm.s.y),outAngle(side,arm.w.x-arm.e.x,arm.w.y-arm.e.y)];
   const nL=ang(a,-1),nR=ang(b,1),k=kid.ok?.5:1;
   kid.L=[angLerp(kid.L[0],nL[0],k),angLerp(kid.L[1],nL[1],k)];kid.R=[angLerp(kid.R[0],nR[0],k),angLerp(kid.R[1],nR[1],k)];
   kid.hands={L:{x:a.w.x,y:a.w.y},R:{x:b.w.x,y:b.w.y},sw:Math.hypot(b.s.x-a.s.x,b.s.y-a.s.y)};
   const roll=Math.atan2(b.s.y-a.s.y,b.s.x-a.s.x)/D2R,mid=(a.s.x+b.s.x)/2;
-  kid.upright=Math.abs(roll)<12&&Math.abs(nose.x-mid)<kid.hands.sw*.32;
+  // 'sit up tall' only for a clear lean (shoulders tilted > 20° or head well off the middle) that lasts over a second;
+  // raising one arm lifts that shoulder a little, which used to trigger it
+  const ok=Math.abs(roll)<20&&Math.abs(nose.x-mid)<kid.hands.sw*.45;
+  kid.badSince=ok?0:(kid.badSince||now);kid.upright=ok||now-kid.badSince<1000;
+  kid.close=kid.hands.sw>W*.28;   // arms out to the sides need about 3.5 shoulder widths
   kid.ok=true;kid.lastSeen=now;
 }
 function armMatch(target,actual){
@@ -395,12 +399,12 @@ function frame(now){
   else if(state==='hold'){
     let matched=false;
     if(mode==='camera'){
-      if(!kid.ok||now-kid.lastSeen>600){msg(kid.far?UI[lang].arms:UI[lang].arms);kid.okL=kid.okR=false;}
+      if(!kid.ok||now-kid.lastSeen>600){msg(kid.far?UI[lang].back:UI[lang].arms);kid.okL=kid.okR=false;}
       else{
         const P=POSES[cur];kid.okL=armMatch(P.L,kid.L);kid.okR=armMatch(P.R,kid.R);
         const up=upright==='off'||kid.upright;
         matched=kid.okL&&kid.okR&&up;
-        msg(kid.okL&&kid.okR&&!up?UI[lang].tall:'');
+        msg(kid.okL&&kid.okR&&!up?UI[lang].tall:(!matched&&kid.close?UI[lang].back:''));
       }
     } else matched=pressing;
     if(matched){prog+=dt/holdSec;tick+=dt;if(tick>.5){tick=0;SFX.tick(prog);}}
