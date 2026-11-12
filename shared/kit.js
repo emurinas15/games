@@ -2,6 +2,7 @@
    Sound (music, ambience, effects, mute), sticker drawing helpers, cartoon kid,
    playroom backgrounds and on-device face tracking. Nothing is recorded or sent. */
 
+import { STYLES, styleNotes } from './songs.js';
 export const INK = '#2b2118';
 export const $ = id => document.getElementById(id);
 export const LS = {
@@ -22,7 +23,7 @@ export const S = {
 
 export function audio() {
   if (!S.AC) { try { S.AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
-  if (!S.BUS.master) { makeBuses(S.AC); loadSamples(S.AC, SONG_NOTES[S.track] || {}); }
+  if (!S.BUS.master) { makeBuses(S.AC); loadSamples(S.AC, SONG_NOTES[S.track] || (STYLES[S.track] ? styleNotes(S.track) : {})); }
   if (S.AC.state === 'suspended') S.AC.resume();
   return S.AC;
 }
@@ -139,8 +140,25 @@ const TRACKS = {
       if (i === 0) bass(this.roots[b], t, .18, 1.0);
       if (i === 2 || i === 4) this.chords[b].forEach(n => celesta(n + 12, t, .035)); } }
 };
+/* one note of a styled arrangement (see songs.js): real sample, or a synth stand-in */
+function playEvent([inst, m, v, len, wet], t) {
+  if (inst === '~snare') { const a = S.AC, n = a.sampleRate * .12, b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n) ** 3;
+    const src = a.createBufferSource(); src.buffer = b; const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = .7;
+    const g = a.createGain(); g.gain.value = v * 2; src.connect(f); f.connect(g); g.connect(S.BUS.music); src.start(t); return; }
+  const g = playSample(S.AC, inst, m, t, v / .7, S.BUS.music, len);
+  if (g) { if (wet) { const w = S.AC.createGain(); w.gain.value = wet; g.connect(w); w.connect(S.BUS.rev); } return; }
+  if (m < 55) bass(m, t, v, Math.min(1, len)); else kalimba(m, t, v);
+}
 function musicTick() {
   const a = S.AC, M = S.mu; if (!M.on || !a) return;
+  const style = STYLES[S.track];
+  if (style) {
+    const sd = 60 / (S.bpmFixed ? S.bpm() : style.bpm) / 2;
+    if (M.next < a.currentTime - .5) M.next = a.currentTime + .05;
+    while (M.next < a.currentTime + .15) { if (S.musicOn && S.soundOn) for (const e of style.play(M.step)) playEvent(e, M.next); M.step++; M.next += sd; }
+    return;
+  }
   const tr = TRACKS[S.track], sd = 60 / S.bpm() / tr.spb;
   if (M.next < a.currentTime - .5) M.next = a.currentTime + .05;
   while (M.next < a.currentTime + .15) { if (S.musicOn && S.soundOn) tr.play(M.step % tr.len, M.next); M.step++; M.next += sd; }

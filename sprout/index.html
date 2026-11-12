@@ -42,6 +42,9 @@ summary::-webkit-details-marker{display:none}
 summary::after{content:" ▾"}details[open] summary::after{content:" ▴"}
 .g-body{font-size:14px;line-height:1.45;padding:4px 2px}
 .g-body p{margin:6px 0}
+.tr{display:flex;gap:8px;align-items:center}
+.snd{width:44px;height:38px;border:3px solid var(--ink);border-radius:999px;background:#fff;box-shadow:0 3px 0 var(--ink);font-size:20px;line-height:1;cursor:pointer;padding:0}
+.snd[aria-pressed="true"]{background:#eee}
 .g-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0;flex-wrap:wrap}
 .seg{display:flex;border:3px solid var(--ink);border-radius:999px;overflow:hidden;background:#fff}
 .mini{font-size:12px;opacity:.7;text-align:center;margin-top:8px}
@@ -55,7 +58,8 @@ summary::after{content:" ▾"}details[open] summary::after{content:" ▴"}
 <video id="v" playsinline muted></video>
 <div class="top">
   <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 33 C 10 20, 20 9, 34 6 C 33 20, 24 31, 8 33 Z" fill="#7DCB6B" stroke="#2b2118" stroke-width="3.5" stroke-linejoin="round"/><path d="M11 30 C 17 23, 23 16, 29 11" fill="none" stroke="#2b2118" stroke-width="2.5" stroke-linecap="round"/></svg><span>Bamboo Physio</span></div>
-  <div class="lang"><button id="lang-en" aria-pressed="true">EN</button><button id="lang-he" aria-pressed="false">עב</button></div>
+  <div class="tr"><button class="snd" id="snd" aria-pressed="false">🔊</button>
+  <div class="lang"><button id="lang-en" aria-pressed="true">EN</button><button id="lang-he" aria-pressed="false">עב</button></div></div>
 </div>
 <div class="bubble" id="bubble"></div>
 <div class="count" id="count"></div>
@@ -75,6 +79,9 @@ summary::after{content:" ▾"}details[open] summary::after{content:" ▴"}
       <div class="g-row"><span id="t-exact"></span><div class="seg" id="seg-exact"><button data-v="easy"></button><button data-v="medium"></button><button data-v="exact"></button></div></div>
       <div class="g-row"><span id="t-upright"></span><div class="seg" id="seg-up"><button data-v="on"></button><button data-v="off"></button></div></div>
       <p id="t-g2"></p>
+      <div class="g-row"><span id="t-music">Music</span><div class="seg" id="music-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-amb">Garden sounds</span><div class="seg" id="amb-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-sfx">Sound effects</span><div class="seg" id="sfx-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
       <p class="mini" id="t-legal"></p>
     </div>
   </details>
@@ -88,6 +95,13 @@ summary::after{content:" ▾"}details[open] summary::after{content:" ▴"}
 </div>
 
 <script type="module">
+import {S,audio as kitAudio,musicStart,musicStop,bindSound} from '../shared/kit.js';
+S.track='natural';S.amb='pond';
+const SOUND_TXT={en:{music:"Music",amb:"Garden sounds",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off"},
+  he:{music:"מוזיקה",amb:"צלילי גינה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול"}};
+const soundLang=()=>document.documentElement.lang==='he'?'he':'en';
+let syncSound=()=>{};
+function soundLabels(){const u=SOUND_TXT[soundLang()];for(const k of ['music','amb','sfx']){const e=document.getElementById('t-'+k);if(e)e.textContent=u[k];}syncSound();}
 /* ============ TEXT ============ */
 const UI={
  en:{title:"Copy the Sprout",sub:"Copy the sprout's pose and hold it until the flower opens!",play:"Play",
@@ -96,7 +110,7 @@ const UI={
   hold:"Hold for",s5:"5 sec",s10:"10 sec",exact:"How exact",easy:"Easy",medium:"Medium",exactv:"Exact",
   upright:"Back upright check",on:"On",off:"Off",
   g2:"★ Place the phone about 1–1.5 m away so the head, shoulders and hands are all in view. The upright check stops leaning from counting.",
-  legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio",
+  legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
   over:"Great copying!",copied:"poses copied",again:"Play again",
   ready:"Getting ready…",arms:"Show me your arms!",back:"Move back a little",tall:"Sit up tall!",yay:"Yay!",
   nocam:"No camera here. Press and hold the screen to pretend you're holding the pose.",camhere:"Your camera picture shows here",
@@ -107,7 +121,7 @@ const UI={
   hold:"להחזיק",s5:"5 שניות",s10:"10 שניות",exact:"כמה מדויק",easy:"סלחני",medium:"בינוני",exactv:"מדויק",
   upright:"בדיקת גב זקוף",on:"פועל",off:"כבוי",
   g2:"★ הניחו את הטלפון במרחק של מטר עד מטר וחצי, כך שרואים את הראש, הכתפיים והידיים. בדיקת הגב הזקוף מונעת מהטיה של הגוף להיחשב.",
-  legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio",
+  legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
   over:"איזה חיקוי!",copied:"תנוחות",again:"עוד פעם",
   ready:"מתכוננים…",arms:"תראו לי את הידיים!",back:"זוזו קצת אחורה",tall:"שבו זקוף!",yay:"יש!",
   nocam:"אין כאן מצלמה. לחצו והחזיקו את המסך כאילו אתם מחזיקים את התנוחה.",camhere:"כאן תופיע תמונת המצלמה",
@@ -136,7 +150,7 @@ const POSES={
 const TOL={easy:42,medium:30,exact:20};
 const ROUND=6;
 
-function setLang(l){
+function setLang(l){queueMicrotask(soundLabels);
   lang=l;LS.set('bamboo-lang',l);const u=UI[l];
   document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
   for(const k of ['title','sub','play','privacy','grown','g1','hold','exact','upright','g2','legal','over','copied','again'])$('t-'+k).textContent=u[k];
@@ -156,13 +170,14 @@ document.querySelectorAll('#seg-hold button').forEach(b=>b.onclick=()=>{holdSec=
 document.querySelectorAll('#seg-exact button').forEach(b=>b.onclick=()=>{exact=b.dataset.v;LS.set('sp-exact',exact);syncSeg()});
 document.querySelectorAll('#seg-up button').forEach(b=>b.onclick=()=>{upright=b.dataset.v;LS.set('sp-up',upright);syncSeg()});
 $('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
+syncSound=bindSound(()=>SOUND_TXT[soundLang()]);soundLabels();
 
 /* ============ SOUND ============ */
 let AC=null;
-function audio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();return AC;}
+function audio(){AC=kitAudio();return AC;}   // shared audio: mute button and sound switches apply
 function tone({f0=440,f1=f0,dur=.15,type='sine',vol=.22,at=0}){const a=AC;if(!a)return;const t=a.currentTime+at;const o=a.createOscillator(),g=a.createGain();o.type=type;
   o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+dur);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
-  o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+dur+.02);}
+  o.connect(g);g.connect(S.BUS.sfx);o.start(t);o.stop(t+dur+.02);}
 const SFX={
   boing(){tone({f0:200,f1:560,dur:.22});},
   yay(){[523,659,784,1047].forEach((f,i)=>tone({f0:f,dur:.25,type:'triangle',vol:.2,at:i*.09}));tone({f0:1568,f1:2093,dur:.4,type:'sine',vol:.12,at:.4});},
@@ -343,14 +358,14 @@ function nextPose(){
 }
 function updCount(){const c=$('count');c.textContent=(done)+' / '+ROUND;c.classList.toggle('on',state!=='menu'&&state!=='over');}
 async function play(){
-  audio();SFX.go();$('start').hidden=true;$('end').hidden=true;
+  audio();SFX.go();musicStart();$('start').hidden=true;$('end').hidden=true;
   done=0;queue=pickRound();
   if(!camTried){msg(UI[lang].ready);try{await startCamera();mode='camera';}catch(e){mode='finger';const t=$('toast');t.textContent=UI[lang].nocam;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),6000);}msg('');}
   else mode=camOK?'camera':'finger';
   nextPose();
 }
 $('play').onclick=play;$('again').onclick=play;
-function endGame(){state='over';cur=null;showBubble();updCount();msg('');setSproutTarget('rocket');sp.dance=1;
+function endGame(){musicStop();state='over';cur=null;showBubble();updCount();msg('');setSproutTarget('rocket');sp.dance=1;
   $('final').textContent=done;$('end').hidden=false;SFX.end();
   for(let i=0;i<30;i++)spawnLeaf();}
 function spawnLeaf(){leaves.push({x:Math.random()*W,y:-20-Math.random()*H*.3,vx:(Math.random()-.5)*40,vy:60+Math.random()*80,r:Math.random()*6,vr:(Math.random()-.5)*4,s:10+Math.random()*10,c:Math.random()<.5?'#8BD16B':(Math.random()<.5?'#FF9FB0':'#FFD84D'),life:6});}

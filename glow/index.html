@@ -79,7 +79,7 @@ html,body{background:#4A3E78}
 </div>
 
 <script type="module">
-import {INK,$,LS,S,audio,tone,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom,drawKid,startFaceTracker,faceFrame,drawMirroredVideo,coverMap,playSample} from '../shared/kit.js';
+import {INK,$,LS,S,audio,tone,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom,drawKid,startFaceTracker,faceFrame,drawMirroredVideo,coverMap,playSample,loadSamples} from '../shared/kit.js';
 
 /* ================= TEXT ================= */
 const UI={
@@ -127,7 +127,7 @@ let guideOn=LS.get('gs-guide','1')==='1';
 let best=+LS.get('gs-best-'+far+holdSec,'0')||0;
 const loadBest=()=>{best=+LS.get('gs-best-'+far+holdSec,'0')||0;$('best').textContent=best?Math.round(best):'–';};
 
-S.track='night'; S.amb='night'; S.bpm=()=>76;
+S.track='lullaby'; S.amb='night';
 const syncSound=bindSound(()=>UI[lang]);
 
 function segs(){
@@ -246,7 +246,7 @@ function showWhere(){const w=$('where');if(state==='play'&&cur()&&!fly){w.textCo
 let msgNow='';function msg(t){const m=$('msg');if(t){m.textContent=t;m.classList.add('on')}else m.classList.remove('on');msgNow=t;}
 
 async function play(){
-  audio();SFX.go();musicStart();
+  audio();loadSamples(S.AC,{kalimba:CLIMB});SFX.go();musicStart();
   $('start').hidden=true;$('end').hidden=true;
   score=0;newRound();buildJar();head.tx=head.ty=0;$('score').textContent='0';loadBest();$('hud').classList.add('on');
   if(!camTried){

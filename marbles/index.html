@@ -119,7 +119,7 @@ function cfg(){return {n:count,rad:.095/WIDTH[size],G:5.0,curve:.9,damp:2.0,dead
 const STEADY={g:1,d:1};
 let best=0; const loadBest=()=>{best=+LS.get('mp-best-'+size+'-'+count,'0')||0;}; loadBest();
 
-S.track='pond'; S.amb='pond'; S.bpm=()=>BPM[size];
+S.track='baroque'; S.amb='pond'; S.bpm=()=>BPM[size]; S.bpmFixed=true;
 const syncSound=bindSound(()=>UI[lang]);
 
 function setLang(l){
