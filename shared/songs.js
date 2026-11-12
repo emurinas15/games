@@ -70,6 +70,50 @@ export const STYLES = {
     if (i === 2 || i === 6) ev.push(['xylophone', ch[2] - 12, .08, .25, .2]);
     if (i === 0) for (const n of [ch[0], ch[2]]) ev.push(['choir_aahs', n, .06, 2.3, .6]);
     return ev; } },
+  /* Floor Is Lava: tropical volcano island — bouncy marimba melody, kalimba off-beat chords,
+     plucky acoustic bass, a soft timpani 'rumble' at the start of each section */
+  island: { bpm: 112, play(s) {
+    const { mel, ch, root, i } = at(s), ev = [], k = ((s % STEPS) + STEPS) % STEPS % 32;
+    if (mel != null) ev.push(['marimba', mel, .28, .6, .25]);
+    if (i === 2 || i === 6) for (const n of ch.slice(1)) ev.push(['kalimba', n + 12, .07, .5, .35]);
+    if (i === 0) ev.push(['acoustic_bass', root, .24, .45, .08]);
+    if (i === 3) ev.push(['acoustic_bass', root + 7, .16, .3, .08]);
+    if (i === 4) ev.push(['acoustic_bass', root + 12 > 55 ? root : root + 12, .18, .35, .08]);
+    if (k === 0) ev.push(['timpani', root - 12, .22, 1.6, .3]);
+    return ev; } },
+  /* ---- Spider Swat music options (12 Nov evening) — same melody, spider twists ---- */
+  /* A · Sneaky tiptoe: staccato bassoon melody, tiptoeing pizzicato, a little leg-skitter every 2 bars */
+  spiderTiptoe: { bpm: 100, play(s) {
+    const { mel, ch, root, i } = at(s), ev = [], k = ((s % STEPS) + STEPS) % STEPS % 32;
+    if (mel != null) ev.push(['bassoon', mel - 12, .3, .28, .2]);
+    if (i % 2 === 0) ev.push(['pizzicato_strings', i % 4 === 0 ? root : ch[0], .14, .3, .2]);
+    if (k % 16 === 14) ev.push(['~skitter', 0, .5, 0, 0]);
+    return ev; } },
+  /* B · Haunted harpsichord: harpsichord melody, slow low cello, a web 'twang' each section, soft choir in the middle */
+  spiderHarpsi: { bpm: 96, play(s) {
+    const { mel, ch, root, i, sec } = at(s), ev = [], k = ((s % STEPS) + STEPS) % STEPS % 32;
+    if (mel != null) ev.push(['harpsichord', mel, .28, .7, .35]);
+    if (i === 0) ev.push(['cello', root, .2, 2.2, .45]);
+    if (k === 0) ev.push(['~twang', 0, .6, 0, 0]);
+    if (sec[0] === 'B' && i === 0) ev.push(['choir_aahs', ch[2], .06, 2.2, .7]);
+    return ev; } },
+  /* C · Attic music box: slow music box, celesta sparkle, soft bass, a creaky door now and then */
+  spiderBox: { bpm: 80, play(s) {
+    const { mel, root, i } = at(s), ev = [], k = ((s % STEPS) + STEPS) % STEPS % 64;
+    if (mel != null) ev.push(['music_box', mel, .3, 1.4, .5]);
+    if (i === 0 && mel != null) ev.push(['celesta', mel + 12, .07, 1.2, .6]);
+    if (i === 0) ev.push(['acoustic_bass', root, .15, 1.6, .2]);
+    if (k === 60) ev.push(['~creak', 0, .5, 0, 0]);
+    return ev; } },
+  /* D · Spooky swing: swung vibraphone melody, walking bass, soft brushes, a skitter fill */
+  spiderSwing: { bpm: 116, play(s) {
+    const { mel, ch, root, i } = at(s), ev = [], k = ((s % STEPS) + STEPS) % STEPS % 32, sw = i % 2 ? .085 : 0;
+    if (mel != null) ev.push(['vibraphone', mel, .26, .8, .35, sw]);
+    if (i % 2 === 0) { const fit = x => { while (x >= root + 12) x -= 12; while (x < root) x += 12; return x; };
+      ev.push(['acoustic_bass', [root, fit(ch[1]), fit(ch[2]), fit(ch[1])][i / 2], .2, .4, .08]); }
+    if (i === 2 || i === 6) ev.push(['~brush', 0, .35, 0, 0, sw]);
+    if (k === 30) ev.push(['~skitter', 0, .45, 0, 0]);
+    return ev; } },
   /* Copy the Sprout: natural, Irish-flute feel — wooden flute with little 'cut' grace notes,
      a soft recorder harmony in the middle sections, fingerpicked nylon guitar, bass */
   natural: { bpm: 88, play(s) {

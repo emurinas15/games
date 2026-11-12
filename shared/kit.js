@@ -140,6 +140,36 @@ const TRACKS = {
       if (i === 0) bass(this.roots[b], t, .18, 1.0);
       if (i === 2 || i === 4) this.chords[b].forEach(n => celesta(n + 12, t, .035)); } }
 };
+/* little spider effects that can sit inside a music arrangement (and be played on their own) */
+export const SPIDER_FX = {
+  // eight tiny leg taps running past, left to right
+  '~skitter'(t, v, bus) { const a = S.AC;
+    for (let k = 0; k < 8; k++) { const tt = t + k * .045 + (k % 2) * .012, o = a.createOscillator(), g = a.createGain(), f = a.createBiquadFilter();
+      o.type = 'square'; o.frequency.setValueAtTime(1700 + (k % 3) * 260, tt); f.type = 'bandpass'; f.frequency.value = 2600; f.Q.value = 4;
+      g.gain.setValueAtTime(.0001, tt); g.gain.exponentialRampToValueAtTime(.09 * v, tt + .003); g.gain.exponentialRampToValueAtTime(.0001, tt + .03);
+      const pn = a.createStereoPanner ? a.createStereoPanner() : null; o.connect(f); f.connect(g);
+      if (pn) { pn.pan.value = -.8 + k * .22; g.connect(pn); pn.connect(bus); } else g.connect(bus); o.start(tt); o.stop(tt + .04); } },
+  // a plucked, boingy web thread
+  '~twang'(t, v, bus) { const a = S.AC, o = a.createOscillator(), o2 = a.createOscillator(), g = a.createGain(), lp = a.createBiquadFilter();
+    o.type = 'sawtooth'; o.frequency.setValueAtTime(330, t); o.frequency.exponentialRampToValueAtTime(196, t + .5);
+    o2.type = 'sine'; o2.frequency.value = 6; const d = a.createGain(); d.gain.value = 14; o2.connect(d); d.connect(o.frequency);
+    lp.type = 'lowpass'; lp.frequency.setValueAtTime(2400, t); lp.frequency.exponentialRampToValueAtTime(500, t + .6);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.18 * v, t + .006); g.gain.exponentialRampToValueAtTime(.0001, t + .8);
+    o.connect(lp); lp.connect(g); g.connect(bus); o.start(t); o2.start(t); o.stop(t + .85); o2.stop(t + .85); },
+  // a slow creaky door / old floorboard
+  '~creak'(t, v, bus) { const a = S.AC, o = a.createOscillator(), g = a.createGain(), bp = a.createBiquadFilter(), am = a.createOscillator(), ad = a.createGain();
+    o.type = 'sawtooth'; o.frequency.setValueAtTime(95, t); o.frequency.linearRampToValueAtTime(140, t + .7); o.frequency.linearRampToValueAtTime(110, t + 1.1);
+    am.type = 'square'; am.frequency.setValueAtTime(18, t); am.frequency.linearRampToValueAtTime(30, t + 1.1); ad.gain.value = .5;
+    bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = 5;
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.07 * v, t + .15); g.gain.setValueAtTime(.07 * v, t + .9); g.gain.exponentialRampToValueAtTime(.0001, t + 1.2);
+    const mod = a.createGain(); mod.gain.value = .5; am.connect(ad); ad.connect(mod.gain);
+    o.connect(bp); bp.connect(mod); mod.connect(g); g.connect(bus); o.start(t); am.start(t); o.stop(t + 1.25); am.stop(t + 1.25); },
+  // soft jazz brush
+  '~brush'(t, v, bus) { const a = S.AC, n = a.sampleRate * .16, b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2) * Math.min(1, i / (n * .15));
+    const src = a.createBufferSource(); src.buffer = b; const f = a.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 3000;
+    const g = a.createGain(); g.gain.value = .35 * v; src.connect(f); f.connect(g); g.connect(bus); src.start(t); }
+};
 /* one note of a styled arrangement (see songs.js): real sample, or a synth stand-in */
 function playEvent([inst, m, v, len, wet, delay], t) {
   if (delay) t += delay;
@@ -147,6 +177,7 @@ function playEvent([inst, m, v, len, wet, delay], t) {
     for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n) ** 3;
     const src = a.createBufferSource(); src.buffer = b; const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = .7;
     const g = a.createGain(); g.gain.value = v * 2; src.connect(f); f.connect(g); g.connect(S.BUS.music); src.start(t); return; }
+  if (SPIDER_FX[inst]) { SPIDER_FX[inst](t, v, S.BUS.music); return; }
   const g = playSample(S.AC, inst, m, t, v / .7, S.BUS.music, len);
   if (g) { if (wet) { const w = S.AC.createGain(); w.gain.value = wet; g.connect(w); w.connect(S.BUS.rev); } return; }
   if (m < 55) bass(m, t, v, Math.min(1, len)); else kalimba(m, t, v);

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Spider Swat · music options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Grandstander:wght@700;900&family=Fredoka:wght@500;600;700&family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#2b2118;--cream:#FFF8EC;--sun:#FFD84D;--leaf:#5DB760;--purple:#B79CE8}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#2E2445 radial-gradient(circle at 50% -10%,#5B4785,#2E2445 70%) fixed;font-family:Andika,Fredoka,sans-serif;color:var(--ink);padding:18px 14px 40px}
+h1{font:900 30px Grandstander,sans-serif;color:var(--sun);-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:0 3px 0 var(--ink);text-align:center;margin:6px 0 4px}
+.lead{color:#F3ECFF;text-align:center;font:600 15px Fredoka,sans-serif;margin:0 auto 16px;max-width:460px;line-height:1.35}
+.wrap{max-width:480px;margin:0 auto}
+.card{background:var(--cream);border:4px solid var(--ink);border-radius:26px;box-shadow:0 5px 0 var(--ink);padding:12px 14px;margin:0 0 14px;display:flex;gap:12px;align-items:center}
+.card.on{background:#FFF1B8}
+.card .tx{flex:1}
+.card h2{font:700 19px Fredoka,sans-serif;margin:0 0 2px}
+.card p{margin:0;font-size:14px;line-height:1.35;opacity:.85}
+.card .tag{display:inline-block;font:700 11px Fredoka,sans-serif;background:var(--purple);border:2px solid var(--ink);border-radius:999px;padding:1px 8px;margin-bottom:4px}
+.play{flex:none;width:62px;height:62px;border-radius:50%;border:4px solid var(--ink);background:var(--leaf);box-shadow:0 4px 0 var(--ink);font-size:26px;color:#fff;cursor:pointer;padding:0}
+.play:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.card.on .play{background:#FF8A6B}
+.panel{background:var(--cream);border:4px solid var(--ink);border-radius:26px;box-shadow:0 5px 0 var(--ink);padding:12px 14px;margin:0 0 14px}
+.panel h3{font:700 17px Fredoka,sans-serif;margin:0 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:3px solid var(--ink);border-radius:999px;background:#fff;font:700 14px Fredoka,sans-serif;padding:6px 12px;cursor:pointer;box-shadow:0 3px 0 var(--ink);color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--sun)}
+.chip:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.small{font-size:13px;opacity:.8;margin:8px 0 0}
+.foot{color:#CFC3EA;font-size:12px;text-align:center;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Spider Swat music</h1>
+<p class="lead">Same Bamboo melody in every option. Tap ▶ to listen, then mix in a background sound and the game's own effects to hear it the way a child would.</p>
+
+<div id="opts"></div>
+
+<div class="panel">
+  <h3>Background sound</h3>
+  <div class="chips" id="amb"></div>
+  <p class="small">Plays quietly under the music during the game.</p>
+</div>
+
+<div class="panel">
+  <h3>Spider effects</h3>
+  <div class="chips" id="fx"></div>
+  <p class="small">“Game moments” plays spiders dropping in and getting swatted over the music, every few seconds.</p>
+</div>
+
+<p class="foot">Test page · Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0</p>
+</div>
+
+<script type="module">
+import {$,S,audio,applyGains,tone,noise,musicStart,musicStop,loadSamples,SPIDER_FX} from '../../shared/kit.js';
+import {styleNotes} from '../../shared/songs.js';
+
+const OPTS=[
+ {id:'spiderTiptoe',tag:'A',name:'Sneaky tiptoe',desc:'Staccato bassoon on tiptoes, plucked strings like little steps, and a spider skitter every two bars.'},
+ {id:'spiderHarpsi',tag:'B',name:'Haunted harpsichord',desc:'Old-castle harpsichord, a deep slow cello, a web “twang” at each new part and a soft ghostly choir.'},
+ {id:'spiderBox',tag:'C',name:'Attic music box',desc:'A slow wind-up music box with celesta sparkles, soft bass and a creaky door now and then.'},
+ {id:'spiderSwing',tag:'D',name:'Spooky swing',desc:'Jazzy swung vibraphone, a walking bass, soft brushes and a skitter fill — sneaky and fun.'},
+ {id:'spooky',tag:'Now',name:'Current: Halloween xylophone',desc:'What the game plays today, for comparison.'}
+];
+S.ambOn=false; S.soundOn=true; S.musicOn=true; S.sfxOn=true;   // this page runs its own background sounds
+let cur=null;
+
+const box=$('opts');
+for(const o of OPTS){
+  const c=document.createElement('div');c.className='card';c.innerHTML=`<div class="tx"><span class="tag">${o.tag}</span><h2>${o.name}</h2><p>${o.desc}</p></div><button class="play" aria-label="Play ${o.name}">▶</button>`;
+  c.querySelector('.play').onclick=()=>toggle(o.id);o.el=c;box.appendChild(c);
+}
+function toggle(id){
+  const a=audio();applyGains();
+  if(cur===id){musicStop();cur=null;}
+  else{musicStop();S.track=id;loadSamples(a,styleNotes(id));cur=id;setTimeout(()=>{if(cur===id)musicStart();},250);}
+  for(const o of OPTS){const on=o.id===cur;o.el.classList.toggle('on',on);o.el.querySelector('.play').textContent=on?'■':'▶';}
+  if(!cur)stopAmb();else startAmb();
+  moments(cur&&momentsOn);
+}
+
+/* ---------- background sounds (own bus on this page) ---------- */
+const AMBS=[{id:'off',name:'None'},{id:'attic',name:'Attic wind'},{id:'night',name:'Night crickets'},{id:'cave',name:'Cave drips'},{id:'forest',name:'Creepy forest'}];
+let ambSel='off',ambStop=null;
+const ambBox=$('amb');
+for(const m of AMBS){const b=document.createElement('button');b.className='chip';b.textContent=m.name;b.dataset.v=m.id;b.onclick=()=>{ambSel=m.id;markAmb();audio();if(cur)startAmb();else{stopAmb();if(ambSel!=='off'){startAmb();setTimeout(()=>{if(!cur)stopAmb();},5000);}}};ambBox.appendChild(b);}
+function markAmb(){ambBox.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===ambSel));}
+markAmb();
+function stopAmb(){if(ambStop){ambStop();ambStop=null;}}
+function startAmb(){stopAmb();if(ambSel==='off')return;const a=audio(),out=a.createGain();out.gain.value=.5;out.connect(S.BUS.master);
+  const timers=[];let alive=true;const later=(f,ms)=>timers.push(setTimeout(()=>alive&&f(),ms));
+  const noiseLoop=(sec,lpF,vol,type='lowpass')=>{const len=a.sampleRate*sec,b=a.createBuffer(1,len,a.sampleRate),d=b.getChannelData(0);let l=0;
+    for(let i=0;i<len;i++){l=(l+.03*(Math.random()*2-1))/1.03;d[i]=l*4;}
+    const s=a.createBufferSource();s.buffer=b;s.loop=true;const f=a.createBiquadFilter();f.type=type;f.frequency.value=lpF;const g=a.createGain();g.gain.value=vol;
+    s.connect(f);f.connect(g);g.connect(out);s.start();return {s,f,g};};
+  const srcs=[];
+  if(ambSel==='attic'){const w=noiseLoop(4,700,.35,'bandpass');w.f.Q.value=1.2;srcs.push(w.s);
+    const gust=()=>{const t=a.currentTime;w.f.frequency.setTargetAtTime(400+Math.random()*700,t,.8);w.g.gain.setTargetAtTime(.15+Math.random()*.35,t,.9);later(gust,1500+Math.random()*2000);};gust();
+    const cr=()=>{SPIDER_FX['~creak'](a.currentTime+.05,.8,out);later(cr,5000+Math.random()*6000);};later(cr,2500);}
+  if(ambSel==='night'){const w=noiseLoop(3,380,.25);srcs.push(w.s);
+    const ck=()=>{const t=a.currentTime+.05,f=4300+Math.random()*400;for(let k=0;k<3;k++){const tt=t+k*.045,o=a.createOscillator(),g=a.createGain();o.frequency.value=f;g.gain.setValueAtTime(.0001,tt);g.gain.exponentialRampToValueAtTime(.025,tt+.004);g.gain.exponentialRampToValueAtTime(.0001,tt+.03);o.connect(g);g.connect(out);o.start(tt);o.stop(tt+.04);}later(ck,450+Math.random()*800);};ck();
+    const owl=()=>{[0,.45].forEach((d,k)=>{const tt=a.currentTime+d,o=a.createOscillator(),g=a.createGain();o.frequency.setValueAtTime(420-k*20,tt);o.frequency.exponentialRampToValueAtTime(380-k*20,tt+.35);g.gain.setValueAtTime(.0001,tt);g.gain.exponentialRampToValueAtTime(.05,tt+.06);g.gain.exponentialRampToValueAtTime(.0001,tt+.4);o.connect(g);g.connect(out);o.start(tt);o.stop(tt+.45);});later(owl,7000+Math.random()*6000);};later(owl,3000);}
+  if(ambSel==='cave'){const w=noiseLoop(4,250,.3);srcs.push(w.s);
+    const echo=a.createDelay();echo.delayTime.value=.33;const fb=a.createGain();fb.gain.value=.4;echo.connect(fb);fb.connect(echo);echo.connect(out);
+    const drip=()=>{const t=a.currentTime+.03,f=900+Math.random()*900,o=a.createOscillator(),g=a.createGain();o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(f*1.9,t+.06);
+      g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.12,t+.005);g.gain.exponentialRampToValueAtTime(.0001,t+.09);o.connect(g);g.connect(out);g.connect(echo);o.start(t);o.stop(t+.1);later(drip,600+Math.random()*1800);};drip();}
+  if(ambSel==='forest'){const w=noiseLoop(4,900,.22,'bandpass');srcs.push(w.s);
+    const rust=()=>{const t=a.currentTime;w.g.gain.setTargetAtTime(.08+Math.random()*.3,t,.4);later(rust,800+Math.random()*1200);};rust();
+    const crow=()=>{const t=a.currentTime+.05;for(let k=0;k<2;k++){const tt=t+k*.32,o=a.createOscillator(),g=a.createGain(),f=a.createBiquadFilter();o.type='sawtooth';o.frequency.setValueAtTime(560,tt);o.frequency.exponentialRampToValueAtTime(380,tt+.22);f.type='bandpass';f.frequency.value=1300;f.Q.value=3;
+      g.gain.setValueAtTime(.0001,tt);g.gain.exponentialRampToValueAtTime(.05,tt+.02);g.gain.exponentialRampToValueAtTime(.0001,tt+.25);o.connect(f);f.connect(g);g.connect(out);o.start(tt);o.stop(tt+.27);}later(crow,6000+Math.random()*7000);};later(crow,2000);
+    const sk=()=>{SPIDER_FX['~skitter'](a.currentTime+.05,.5,out);later(sk,4000+Math.random()*5000);};later(sk,3500);}
+  ambStop=()=>{alive=false;timers.forEach(clearTimeout);srcs.forEach(s=>{try{s.stop()}catch(e){}});out.gain.setTargetAtTime(0,a.currentTime,.05);setTimeout(()=>out.disconnect(),400);};
+}
+
+/* ---------- spider effects ---------- */
+const FX={
+  whack(){noise({dur:.1,freq:1500,vol:.55,type:'bandpass'});tone({f0:240,f1:90,dur:.16,type:'sine',vol:.45});},
+  poof(){noise({dur:.35,freq:700,vol:.4,type:'lowpass',at:.02});},
+  whee(){tone({f0:500,f1:1500,dur:.5,type:'sine',vol:.13,at:.04});noise({dur:.35,freq:2500,vol:.12,type:'highpass',at:.02});}
+};
+const fxOne=k=>{const a=audio();applyGains();SPIDER_FX[k](a.currentTime+.03,1,S.BUS.sfx);};
+const FXB=[
+ {name:'Skitter',run:()=>fxOne('~skitter')},
+ {name:'Web twang',run:()=>fxOne('~twang')},
+ {name:'Creak',run:()=>fxOne('~creak')},
+ {name:'Swat',run:()=>{audio();applyGains();FX.whack();FX.poof();FX.whee();}},
+ {name:'Game moments',toggle:true}
+];
+let momentsOn=false,momT=0;
+const fxBox=$('fx');
+for(const f of FXB){const b=document.createElement('button');b.className='chip';b.textContent=f.name;
+  if(f.toggle){b.setAttribute('aria-pressed','false');b.onclick=()=>{momentsOn=!momentsOn;b.setAttribute('aria-pressed',momentsOn);moments(momentsOn&&!!cur);if(momentsOn&&!cur)toggle(OPTS[0].id);};}
+  else b.onclick=f.run;fxBox.appendChild(b);}
+function moments(on){clearTimeout(momT);if(!on)return;
+  const step=()=>{if(!momentsOn||!cur)return;const a=audio();
+    SPIDER_FX['~twang'](a.currentTime+.02,.5,S.BUS.sfx);   // a spider drops in on its thread
+    setTimeout(()=>{if(momentsOn&&cur){FX.whack();FX.poof();FX.whee();}},900+Math.random()*900);   // ...and gets swatted
+    momT=setTimeout(step,2200+Math.random()*1800);};
+  momT=setTimeout(step,800);}
+</script>
+</body>
+</html>
