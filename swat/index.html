@@ -86,10 +86,10 @@ const UI={
   g2:"★ Sit the child so the whole upper body shows: head, both shoulders and both hands. About 1–1.5 m from the phone, phone standing upright.",
   g3:"★ Near keeps the spiders within easy reach; Far makes the child stretch the arms all the way.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
-  left:"seconds left",best:"best",sec2:"spiders swatted",over:"Great swatting!",again:"Play again",newbest:"New record!",bestis:"Best: ",
+  left:"seconds left",best:"best",sec2:"spiders swatted",over:["Well done!","Great swatting!","Super swats!","Spider champion!"],again:"Play again",newbest:"New record!",bestis:"Best: ",
   ready:"Getting ready…",body:"Show me your arms and shoulders!",back:"Move back a little so I can see your arms",
   nocam:"No camera here. Touch the spiders to swat them (two fingers = two rackets).",aria:"Game area",
-  level:"More spiders!",red:"Red spiders!",helmet:"Knight spiders!",blue:"Sneaky blue spiders!"},
+  level:"More spiders!",red:"Red spiders!",helmet:"Tough spiders!",blue:"Sneaky blue spiders!"},
  he:{title:"מחבט עכבישים",sub:"הידיים שלכם הן מחבטים. העיפו את העכבישים!",play:"שחקו",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
   g1:"מיועד לילדים שמשחקים בישיבה. כל יד הופכת למחבט. עכבישים יורדים על חוטים מסביב לילד: גבוה למעלה, לצדדים ובאלכסונים, כך שהידיים מגיעות לכל הכיוונים. מחברים את שתי הידיים יחד ומקבלים מחבט ענק שמעיף כמה עכבישים בבת אחת ומכה פי שניים. כל 10 שניות מגיעים עוד עכבישים. מ־30 שניות מופיעים עכבישים אדומים (2 מכות, או מכה אחת במחבט הענק), ומ־45 שניות עכבישים אדומים עם קסדת אביר (4 מכות, או 2 מכות במחבט הענק). אחרי דקה מגיעים עכבישים כחולים: אם יד מתקרבת אליהם לאט הם מושכים את עצמם למעלה לשנייה וחוזרים למטה, כך שהילד צריך להושיט יד מהר. העכבישים מגיעים בשלושה גדלים (הקטנים קשים יותר לפגיעה), כל אחד תלוי בערך 3 שניות, ועד 5 בבת אחת.",
@@ -98,10 +98,10 @@ const UI={
   g2:"★ הושיבו את הילד כך שכל פלג הגוף העליון נראה: הראש, שתי הכתפיים ושתי הידיים. בערך מטר עד מטר וחצי מהטלפון, כשהטלפון עומד ישר.",
   g3:"★ ״קרוב״ משאיר את העכבישים בהישג יד; ״רחוק״ דורש מתיחה מלאה של הידיים.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
-  left:"שניות נשארו",best:"שיא",sec2:"עכבישים הועפו",over:"איזה מחבטים!",again:"עוד פעם",newbest:"שיא חדש!",bestis:"השיא: ",
+  left:"שניות נשארו",best:"שיא",sec2:"עכבישים הועפו",over:["כל הכבוד!","חבטות חזקות!","איזה כוח!","אלופי העכבישים!"],again:"עוד פעם",newbest:"שיא חדש!",bestis:"השיא: ",
   ready:"מתכוננים…",body:"תראו לי את הידיים והכתפיים!",back:"זוזו קצת אחורה כדי שאראה את הידיים",
   nocam:"אין כאן מצלמה. געו בעכבישים כדי להעיף אותם (שתי אצבעות = שני מחבטים).",aria:"אזור המשחק",
-  level:"עוד עכבישים!",red:"עכבישים אדומים!",helmet:"עכבישי אבירים!",blue:"עכבישים כחולים ערמומיים!"}
+  level:"עוד עכבישים!",red:"עכבישים אדומים!",helmet:"עכבישים קשוחים!",blue:"עכבישים כחולים ערמומיים!"}
 };
 
 let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
@@ -236,6 +236,7 @@ addEventListener('pointerup',e=>{if(e.pointerType!=='mouse')touches.delete(e.poi
 addEventListener('pointercancel',e=>touches.delete(e.pointerId));
 
 /* ================= GAME ================= */
+let pending=null;   // special spider promised after a banner
 let state='menu',tNow=0,elapsed=0,score=0,countT=0,lastNew=false,level=0,nextSpawn=0,announced={};
 let spiders=[],helmets=[],pops=[],puffs=[],strands=[];
 const rkPrev=new Map(),rkVel={};   // racket speed, for the blue spiders' dodge
@@ -245,20 +246,21 @@ function frame0(){ // shoulders and size used to place the spiders
   if(mode==='camera'&&body.ok)return {shL:body.shL,shR:body.shR,sw:body.sw};
   const sw=Math.min(W*.36,H*.2);return {shL:{x:W/2-sw/2,y:H*.66},shR:{x:W/2+sw/2,y:H*.66},sw};
 }
-function spawn(){
+function spawn(force){
   const F=frame0(),side=Math.random()<.5?-1:1,sh=side<0?F.shL:F.shR;
   const ang=[90,65,40,15,115][Math.floor(Math.random()*5)]*Math.PI/180;   // up, high diagonal, diagonal, sideways, across over the head
   const dist=F.sw*(reach==='far'?1.55:1.15)*(.9+Math.random()*.2);
   const size=Math.floor(Math.random()*3),s=Math.max(22,F.sw*[.2,.3,.42][size]);   // small = harder to hit, big = easier
   let x=sh.x+side*Math.cos(ang)*dist,y=sh.y-Math.sin(ang)*dist;
   x=Math.max(s*1.2,Math.min(W-s*1.2,x));y=Math.max(H*.2,Math.min(H*.78,y));
-  if(spiders.some(o=>o.state!=='fly'&&Math.hypot(o.x-x,o.ty-y)<s*2.2))return;   // don't stack spiders
+  if(spiders.some(o=>o.state!=='fly'&&Math.hypot(o.x-x,o.ty-y)<s*2.2))return false;   // don't stack spiders
   let type='n';const r=Math.random();
   if(elapsed>=60){if(r<.2)type='b';else if(r<.36)type='h';else if(r<.58)type='r';}
   else if(elapsed>=45){if(r<.18)type='h';else if(r<.45)type='r';}
   else if(elapsed>=30){if(r<.4)type='r';}
+  if(force)type=force;
   spiders.push({id:Math.random(),x,ty:y,y:-40,s,type,hp:SPIDER[type].hp,state:'down',t0:tNow,life:3+(type==='h'?2:type==='r'||type==='b'?1:0),hangT:0,dodgeReady:0,face:'happy',swing:0,sv:0,faceT:0,k:1});
-  FX.zip();
+  FX.zip();return true;
 }
 function rackets(){
   const out=[];
@@ -294,7 +296,7 @@ let msgNow='';function msg(t){const m=$('msg');if(t){m.textContent=t;m.classList
 async function play(){
   audio();SFX.go();musicStart();
   $('start').hidden=true;$('end').hidden=true;
-  score=0;elapsed=0;level=0;spiders=[];helmets=[];pops=[];puffs=[];strands=[];announced={};prevHit.clear();
+  score=0;elapsed=0;level=0;pending=null;spiders=[];helmets=[];pops=[];puffs=[];strands=[];announced={};prevHit.clear();
   $('score').textContent='0';$('time').textContent=roundLen;loadBest();$('hud').classList.add('on');
   if(!camTried){
     camTried=true;msg(UI[lang].ready);state='ready';
@@ -311,7 +313,7 @@ function endGame(){
   fillEnd(lastNew);$('end').hidden=false;SFX.chime();
 }
 function fillEnd(nb){const u=UI[lang];$('final').textContent=score;$('newbest').hidden=!nb;$('newbest').textContent=u.newbest;
-  $('best-line').textContent=u.bestis+best;$('t-privacy2').textContent=u.privacy;$('t-over').textContent=u.over;$('t-sec2').textContent=u.sec2;}
+  $('best-line').textContent=u.bestis+best;$('t-privacy2').textContent=u.privacy;$('t-over').textContent=u.over[score<10?0:score<25?1:score<40?2:3];$('t-sec2').textContent=u.sec2;}
 
 let last=performance.now(),demoNext=0;
 function frame(now){
@@ -337,12 +339,14 @@ function frame(now){
       if(msgNow)msg('');
       const tc=mode==='camera'&&body.close;$('toast').textContent=UI[lang].back;$('toast').classList.toggle('on',!!tc);
       elapsed+=dt;$('time').textContent=Math.max(0,Math.ceil(roundLen-elapsed));
+      // special spiders: banner exactly at 30 / 45 / 60 s, and one of them arrives 1-4 s later
+      const due=()=>tNow+1+Math.random()*3;let special=false;
+      if(elapsed>=60&&!announced.b){announced.b=1;special=true;showLevel(UI[lang].blue);pending={type:'b',at:due()};}
+      else if(elapsed>=45&&!announced.h){announced.h=1;special=true;showLevel(UI[lang].helmet);pending={type:'h',at:due()};}
+      else if(elapsed>=30&&!announced.r){announced.r=1;special=true;showLevel(UI[lang].red);pending={type:'r',at:due()};}
       const lv=Math.floor(elapsed/10);
-      if(lv>level){level=lv;
-        if(elapsed>=60&&!announced.b){announced.b=1;showLevel(UI[lang].blue);}
-        else if(elapsed>=45&&!announced.h){announced.h=1;showLevel(UI[lang].helmet);}
-        else if(elapsed>=30&&!announced.r){announced.r=1;showLevel(UI[lang].red);}
-        else showLevel(UI[lang].level);}
+      if(lv>level){level=lv;if(!special&&lv*10%30!==0)showLevel(UI[lang].level);}
+      if(pending&&tNow>=pending.at&&spawn(pending.type))pending=null;
       const maxOn=Math.min(5,2+level),interval=Math.max(.6,2.0-level*.25);
       if(tNow>nextSpawn&&spiders.filter(s=>s.state!=='fly'&&s.state!=='gone').length<maxOn){spawn();nextSpawn=tNow+interval*(.7+Math.random()*.6);}
       // swats: a racket newly touching a spider counts as one hit
