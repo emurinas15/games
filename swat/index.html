@@ -109,7 +109,7 @@ let roundLen=+LS.get('sw-round','90'); if(![60,90,120].includes(roundLen))roundL
 let reach=LS.get('sw-reach','near'); if(!['near','far'].includes(reach))reach='near';
 let twoOn=LS.get('sw-two','1')==='1';
 let best=0; const loadBest=()=>{best=+LS.get('sw-best-'+roundLen+reach,'0')||0;$('best').textContent=best;};
-S.track='pond'; S.amb='pond'; S.bpm=()=>104;   // the duck's Pond Stroll melody (Edgar: the minor 'action' version sounded awful)
+S.track='spooky'; S.amb='pond';   // the duck's melody (major) with Halloween instruments: xylophone, tuba, ghostly choir
 const syncSound=bindSound(()=>UI[lang]);
 
 function segs(){

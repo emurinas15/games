@@ -61,6 +61,15 @@ export const STYLES = {
     if (i === 2 || i === 6) ev.push(['~snare', 0, .18, .1, 0]);
     if (i === 0) ev.push(['pizzicato_strings', ch[0] - 12, .12, .3, .2]);
     return ev.map(e => e[0][0] === '~' ? e : [e[0], minor(e[1]), e[2], e[3], e[4]]); } },
+  /* Spider Swat: playful Halloween — same major melody on xylophone 'bones', tuba oom-pah, soft ghostly choir */
+  spooky: { bpm: 104, play(s) {
+    const { mel, ch, root, i } = at(s), ev = [];
+    if (mel != null) ev.push(['xylophone', mel, .26, .5, .3]);
+    if (i === 0) ev.push(['tuba', root - 12, .26, .35, .1]);
+    if (i === 4) ev.push(['tuba', root - 5, .22, .35, .1]);
+    if (i === 2 || i === 6) ev.push(['xylophone', ch[2] - 12, .08, .25, .2]);
+    if (i === 0) for (const n of [ch[0], ch[2]]) ev.push(['choir_aahs', n, .06, 2.3, .6]);
+    return ev; } },
   /* Copy the Sprout: natural, Irish-flute feel — wooden flute with little 'cut' grace notes,
      a soft recorder harmony in the middle sections, fingerpicked nylon guitar, bass */
   natural: { bpm: 88, play(s) {
