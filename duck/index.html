@@ -223,7 +223,7 @@ function tone({f0=440,f1=f0,dur=.15,type='sine',vol=.25,at=0,filter=null,q=1}){
   node.connect(g);g.connect(BUS.sfx);o.start(t);o.stop(t+dur+.02);
 }
 const SFX={
-  quack(at=0,p=1){tone({f0:620*p,f1:420*p,dur:.13,type:'sawtooth',vol:.28,at,filter:1300,q:3});tone({f0:640*p,f1:380*p,dur:.16,type:'sawtooth',vol:.25,at:at+.17,filter:1200,q:3});},
+  quack(at=0,p=1){tone({f0:620*p,f1:420*p,dur:.13,type:'sawtooth',vol:.364,at,filter:1300,q:3});tone({f0:640*p,f1:380*p,dur:.16,type:'sawtooth',vol:.325,at:at+.17,filter:1200,q:3});},   // 30% louder (12 Nov)
   fall(){tone({f0:900,f1:180,dur:.7,type:'sine',vol:.22});this.quack(.05,1.25);},
   poof(){const a=AC;if(!a)return;const n=a.sampleRate*.25,b=a.createBuffer(1,n,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n)**2;
     const s=a.createBufferSource();s.buffer=b;const f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=900;const g=a.createGain();g.gain.value=.35;s.connect(f);f.connect(g);g.connect(BUS.sfx);s.start();},
@@ -284,7 +284,7 @@ const BPM={yellow:84,red:104,black:132};   // music tempo follows the duck
 function mPlay(s,t){
   const b=Math.floor(s/8),i=s%8,q=quackMode?QUACKS[quackMode][s]:null;
   if(POND.mel[s]&&!(quackMode&&s===30))mMarimba(POND.mel[s],t,.28);
-  if(q)mQuack(q[0],t,.22,q[1]);
+  if(q)mQuack(q[0],t,.286,q[1]);   // quacks in the tune 30% louder (12 Nov)
   if([0,3,4,6].includes(i))POND.chords[b].forEach((n,k)=>mUke(n,t+k*.018,.07));
   if(i===0||i===4)mBass(POND.roots[b],t,.22);
   if(i===2||i===6)mPlip(t,.05);
