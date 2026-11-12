@@ -292,3 +292,22 @@ export function drawMirroredVideo(c, video, W, H) {
   const m = coverMap(video, W, H); c.save(); c.translate(W, 0); c.scale(-1, 1);
   c.drawImage(video, W - m.ox - m.vw * m.s, m.oy, m.vw * m.s, m.vh * m.s); c.restore();
 }
+
+/* ======================= CAMERA / BODY (POSE) TRACKING ======================= */
+export async function startPoseTracker(video) {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('nocam');
+  const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+  video.srcObject = stream; await video.play();
+  const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
+  const files = await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+  const opts = d => ({ baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task', delegate: d }, runningMode: 'VIDEO', numPoses: 1 });
+  try { return await vision.PoseLandmarker.createFromOptions(files, opts('GPU')); }
+  catch (e) { return await vision.PoseLandmarker.createFromOptions(files, opts('CPU')); }
+}
+/* pose landmarks -> mirrored screen points with visibility (v) */
+export function poseFrame(tracker, video, now, W, H) {
+  let res; try { res = tracker.detectForVideo(video, now); } catch (e) { return null; }
+  const lm = res && res.landmarks && res.landmarks[0]; if (!lm) return null;
+  const m = coverMap(video, W, H);
+  return i => ({ x: m.ox + (1 - lm[i].x) * m.vw * m.s, y: m.oy + lm[i].y * m.vh * m.s, v: lm[i].visibility ?? 1 });
+}
