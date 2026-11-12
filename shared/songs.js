@@ -87,7 +87,7 @@ export const STYLES = {
     const { mel, ch, root, i } = at(s), ev = [], k = ((s % STEPS) + STEPS) % STEPS % 32;
     if (mel != null) ev.push(['bassoon', mel - 12, .3, .28, .2]);
     if (i % 2 === 0) ev.push(['pizzicato_strings', i % 4 === 0 ? root : ch[0], .14, .3, .2]);
-    if (k % 16 === 14) ev.push(['~skitter', 0, .5, 0, 0]);
+    if (k % 16 === 14) ev.push(['~skitter', 0, .6, 0, 0]);   // 20% louder (Edgar, 12 Nov)
     return ev; } },
   /* B · Haunted harpsichord: harpsichord melody, slow low cello, a web 'twang' each section, soft choir in the middle */
   spiderHarpsi: { bpm: 96, play(s) {

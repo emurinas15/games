@@ -109,7 +109,7 @@ let roundLen=+LS.get('sw-round','90'); if(![60,90,120].includes(roundLen))roundL
 let reach=LS.get('sw-reach','near'); if(!['near','far'].includes(reach))reach='near';
 let twoOn=LS.get('sw-two','1')==='1';
 let best=0; const loadBest=()=>{best=+LS.get('sw-best-'+roundLen+reach,'0')||0;$('best').textContent=best;};
-S.track='spooky'; S.amb='pond';   // the duck's melody (major) with Halloween instruments: xylophone, tuba, ghostly choir
+S.track='spiderTiptoe'; S.amb='pond';   // Edgar's pick (12 Nov): option A 'Sneaky tiptoe' - staccato bassoon, pizzicato tiptoes, spider skitter
 const syncSound=bindSound(()=>UI[lang]);
 
 function segs(){
