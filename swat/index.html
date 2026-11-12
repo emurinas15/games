@@ -80,7 +80,7 @@ import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,stick
 const UI={
  en:{title:"Spider Swat",sub:"Your hands are rackets. Swat the spiders away!",play:"Play",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
-  g1:"Made for children who play sitting down. Each hand becomes a paddle racket. Spiders drop on their threads all around the child: high up, out to the sides and on the diagonals, so the arms reach in every direction. Put both hands together to make one big racket that swats several spiders at once and hits twice as hard. Every 10 seconds more spiders come. From 30 seconds there are red spiders (2 hits, or 1 big-racket hit), and from 45 seconds red spiders with knight helmets (4 hits, or 2 big-racket hits). After a minute come blue spiders: if a hand comes toward them slowly they pull themselves up for a second and drop back, so the child has to reach quickly. Spiders come in three sizes (small ones are harder to hit) and each hangs for about 3 seconds, up to 5 at a time.",
+  g1:"Made for children who play sitting down. Each hand becomes a paddle racket. Spiders drop on their threads all around the child: high up, out to the sides and on the diagonals, so the arms reach in every direction. Put both hands together to make one big racket that swats several spiders at once and hits twice as hard. Every 10 seconds more spiders come. From 30 seconds there are red spiders (2 hits, or 1 big-racket hit), and from 45 seconds red spiders with knight helmets (4 hits, or 2 big-racket hits). All spiders watch the rackets. Purple spiders pull themselves up out of the way when a hand comes slowly, then drop back; after a minute come blue spiders, which dodge twice as fast, so the child has to reach quickly. Red spiders never dodge: they rely on being tough. Spiders come in three sizes (small ones are harder to hit) and each hangs for about 3 seconds, up to 5 at a time.",
   round:"Round",reach:"Reach",near:"Near",far:"Far",two:"Two-hand racket",
   music:"Music",amb:"Garden sounds",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
   g2:"★ Sit the child so the whole upper body shows: head, both shoulders and both hands. About 1–1.5 m from the phone, phone standing upright.",
@@ -92,7 +92,7 @@ const UI={
   level:"More spiders!",red:"Red spiders!",helmet:"Tough spiders!",blue:"Sneaky blue spiders!"},
  he:{title:"מחבט עכבישים",sub:"הידיים שלכם הן מחבטים. העיפו את העכבישים!",play:"שחקו",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
-  g1:"מיועד לילדים שמשחקים בישיבה. כל יד הופכת למחבט. עכבישים יורדים על חוטים מסביב לילד: גבוה למעלה, לצדדים ובאלכסונים, כך שהידיים מגיעות לכל הכיוונים. מחברים את שתי הידיים יחד ומקבלים מחבט ענק שמעיף כמה עכבישים בבת אחת ומכה פי שניים. כל 10 שניות מגיעים עוד עכבישים. מ־30 שניות מופיעים עכבישים אדומים (2 מכות, או מכה אחת במחבט הענק), ומ־45 שניות עכבישים אדומים עם קסדת אביר (4 מכות, או 2 מכות במחבט הענק). אחרי דקה מגיעים עכבישים כחולים: אם יד מתקרבת אליהם לאט הם מושכים את עצמם למעלה לשנייה וחוזרים למטה, כך שהילד צריך להושיט יד מהר. העכבישים מגיעים בשלושה גדלים (הקטנים קשים יותר לפגיעה), כל אחד תלוי בערך 3 שניות, ועד 5 בבת אחת.",
+  g1:"מיועד לילדים שמשחקים בישיבה. כל יד הופכת למחבט. עכבישים יורדים על חוטים מסביב לילד: גבוה למעלה, לצדדים ובאלכסונים, כך שהידיים מגיעות לכל הכיוונים. מחברים את שתי הידיים יחד ומקבלים מחבט ענק שמעיף כמה עכבישים בבת אחת ומכה פי שניים. כל 10 שניות מגיעים עוד עכבישים. מ־30 שניות מופיעים עכבישים אדומים (2 מכות, או מכה אחת במחבט הענק), ומ־45 שניות עכבישים אדומים עם קסדת אביר (4 מכות, או 2 מכות במחבט הענק). כל העכבישים מסתכלים על המחבטים. העכבישים הסגולים מושכים את עצמם למעלה כשיד מתקרבת לאט, ואז חוזרים למטה; אחרי דקה מגיעים עכבישים כחולים שמתחמקים מהר פי שניים, כך שהילד צריך להושיט יד מהר. העכבישים האדומים אף פעם לא מתחמקים: הם סומכים על הקשיחות שלהם. העכבישים מגיעים בשלושה גדלים (הקטנים קשים יותר לפגיעה), כל אחד תלוי בערך 3 שניות, ועד 5 בבת אחת.",
   round:"סבב",reach:"טווח",near:"קרוב",far:"רחוק",two:"מחבט שתי ידיים",
   music:"מוזיקה",amb:"צלילי גינה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
   g2:"★ הושיבו את הילד כך שכל פלג הגוף העליון נראה: הראש, שתי הכתפיים ושתי הידיים. בערך מטר עד מטר וחצי מהטלפון, כשהטלפון עומד ישר.",
@@ -142,7 +142,7 @@ addEventListener('resize',resize);resize();
 
 const SPIDER={b:{body:'#5FB7F0',leg:'#3E8CC4',hp:1},n:{body:'#6B5B95',leg:'#4A3E78',hp:1},r:{body:'#F0604D',leg:'#B83E33',hp:2},h:{body:'#F0604D',leg:'#B83E33',hp:4}};
 /* face: 'happy' | 'angry' | 'dizzy' | 'oops' */
-function drawSpider(c,x,y,s,type,face,t,hp,legPhase=0){
+function drawSpider(c,x,y,s,type,face,t,hp,legPhase=0,look=null){   // look: unit vector toward the nearest racket
   const D=SPIDER[type],lw=Math.max(2,s*.08);
   c.save();c.translate(x,y);
   // legs: 4 per side, soft curves
@@ -161,7 +161,7 @@ function drawSpider(c,x,y,s,type,face,t,hp,legPhase=0){
     c.beginPath();c.ellipse(0,s*.28,s*.09,s*.07,0,0,7);c.fillStyle=INK;c.fill();}
   else{
     for(const sd of [-1,1]){c.fillStyle='#fff';c.fill(ell(sd*s*.17,ey,s*.13,s*.15));c.lineWidth=lw*.7;c.stroke(ell(sd*s*.17,ey,s*.13,s*.15));
-      const px=face==='oops'?0:sd*-s*.02;c.fillStyle=INK;c.fill(ell(sd*s*.17+px,ey+s*.03,s*.07,s*.08));c.fillStyle='#fff';c.fill(ell(sd*s*.17+px+s*.025,ey,s*.025,s*.025));}
+      const px=look?look.x*s*.05:(face==='oops'?0:sd*-s*.02),py=look?look.y*s*.05:0;c.fillStyle=INK;c.fill(ell(sd*s*.17+px,ey+s*.03+py,s*.07,s*.08));c.fillStyle='#fff';c.fill(ell(sd*s*.17+px+s*.025,ey+py,s*.025,s*.025));}
     if(face==='angry'){c.lineWidth=lw;c.beginPath();c.moveTo(-s*.32,-s*.17);c.lineTo(-s*.08,-s*.1);c.moveTo(s*.32,-s*.17);c.lineTo(s*.08,-s*.1);c.stroke();
       c.beginPath();c.arc(0,s*.36,s*.1,1.15*Math.PI,1.85*Math.PI);c.stroke();}
     else if(face==='oops'){c.fillStyle=INK;c.fill(ell(0,s*.3,s*.08,s*.1));}
@@ -357,10 +357,10 @@ function frame(now){
         if(sp.state==='fly'||sp.state==='gone')continue;
         if(sp.state==='hang'&&tNow-sp.hangT>sp.life)sp.state='up';
         // blue spiders: a racket coming slowly toward them makes them pull up for a moment, then drop back
-        if(sp.type==='b'&&sp.state==='hang'&&tNow>sp.dodgeReady)for(const rk of rks){
+        if((sp.type==='b'||sp.type==='n')&&sp.state==='hang'&&tNow>sp.dodgeReady)for(const rk of rks){
           const v=rkVel[rk.id],dx=sp.x-rk.x,dy=sp.y-rk.y,d=Math.hypot(dx,dy);
           if(d<rk.r+sp.s*3.2&&d>rk.r+sp.s*.5){const toward=(v.x*dx+v.y*dy)/d;
-            if(toward>F.sw*.5&&toward<F.sw*3){sp.state='dodge';sp.dodgeT=tNow;sp.face='oops';sp.dodgeH=Math.min(sp.ty-30,Math.max(sp.s*4,F.sw*1.2));sp.life+=1.1;FX.zip();break;}}
+            if(toward>F.sw*.5&&toward<F.sw*3){sp.state='dodge';sp.dodgeT=tNow;sp.dk=sp.type==='b'?1/1.5:1/.75;sp.face='oops';sp.dodgeH=Math.min(sp.ty-30,Math.max(sp.s*4,F.sw*1.2));sp.life+=1.1*sp.dk;FX.zip();break;}}
         }
         for(const rk of rks){
           const key=rk.id+sp.id,over=Math.hypot(rk.x-sp.x,rk.y-sp.y)<rk.r+sp.s*.55;
@@ -374,7 +374,7 @@ function frame(now){
   // spider motion
   for(const sp of spiders){
     if(sp.state==='down'){sp.y+=(sp.ty-sp.y)*Math.min(1,dt*3.2);if(Math.abs(sp.y-sp.ty)<3){sp.state='hang';if(!sp.hangT)sp.hangT=tNow;}}
-    else if(sp.state==='dodge'){const k=tNow-sp.dodgeT,up=k<.3?1-Math.pow(1-k/.3,3):k<.6?1:k<1.1?1-(k-.6)/.5:0;sp.y=sp.ty-sp.dodgeH*up;
+    else if(sp.state==='dodge'){const k=(tNow-sp.dodgeT)/sp.dk,up=k<.3?1-Math.pow(1-k/.3,3):k<.6?1:k<1.1?1-(k-.6)/.5:0;sp.y=sp.ty-sp.dodgeH*up;
       if(k>=1.1){sp.state='hang';sp.y=sp.ty;sp.face='happy';sp.dodgeReady=tNow+.5;}}
     else if(sp.state==='up'){sp.y-=dt*H*.6;sp.face='happy';if(sp.y<-sp.s*2)sp.state='gone';}
     else if(sp.state==='fly'){sp.x+=sp.vx*dt;sp.y+=sp.vy*dt;sp.rot=(sp.rot||0)+sp.spin*dt;sp.k=Math.max(.25,sp.k-dt*.9);if(sp.y<-150||sp.x<-150||sp.x>W+150)sp.state='gone';}
@@ -388,6 +388,8 @@ function frame(now){
 
 function render(dt){
   ctx.setTransform(DPR,0,0,DPR,0,0);
+  const seen=state==='play'||state==='count'?rackets():[];
+  const lookAt=(x,y)=>{let best=null,bd=1e9;for(const r of seen){const d=Math.hypot(r.x-x,r.y-y);if(d<bd){bd=d;best=r;}}return best?{x:(best.x-x)/(bd||1),y:(best.y-y)/(bd||1)}:null;};
   const cam=mode==='camera'&&camOK&&state!=='menu';
   if(cam&&video.readyState>=2){drawMirroredVideo(ctx,video,W,H);ctx.fillStyle='rgba(255,248,236,.1)';ctx.fillRect(0,0,W,H);}
   else drawRoom(ctx,W,H);
@@ -398,7 +400,7 @@ function render(dt){
     if(sp.state!=='fly'){ctx.strokeStyle='rgba(255,255,255,.95)';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(sp.x,-10);ctx.quadraticCurveTo(sp.x,by*.5,bx,by-sp.s*.4);ctx.stroke();
       ctx.strokeStyle='rgba(43,33,24,.35)';ctx.lineWidth=1;ctx.stroke();}
     else{ctx.save();ctx.translate(sp.x,sp.y);ctx.rotate(sp.rot||0);ctx.scale(sp.k,sp.k);drawSpider(ctx,0,0,sp.s,sp.type,sp.face,tNow,sp.hp,sp.id*10);ctx.restore();continue;}
-    ctx.save();ctx.translate(bx,by);ctx.rotate(-sw*.6);drawSpider(ctx,0,0,sp.s,sp.type,sp.face,tNow,sp.hp,sp.id*10);ctx.restore();
+    ctx.save();ctx.translate(bx,by);ctx.rotate(-sw*.6);drawSpider(ctx,0,0,sp.s,sp.type,sp.face,tNow,sp.hp,sp.id*10,lookAt(bx,by));ctx.restore();
     if(sp.type!=='n'&&sp.hp>0&&state==='play'){ // little hearts show the hits left
       for(let i=0;i<sp.hp;i++){ctx.save();ctx.translate(bx+(i-(sp.hp-1)/2)*sp.s*.32,by+sp.s*.85);sticker(ctx,ell(0,0,sp.s*.09,sp.s*.09),'#FFD84D',2);ctx.restore();}
     }
