@@ -11,7 +11,7 @@
 <style>
 .pill.mid{display:flex;align-items:center;gap:6px}
 .pill.mid canvas{width:34px;height:34px}
-.lvl{position:fixed;left:50%;top:30%;transform:translate(-50%,-50%) scale(.6);font:900 46px Grandstander,sans-serif;color:#FFD84D;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill;text-shadow:0 4px 0 var(--ink);opacity:0;transition:opacity .25s,transform .25s;z-index:6;pointer-events:none;white-space:nowrap}
+.lvl{position:fixed;left:50%;top:30%;transform:translate(-50%,-50%) scale(.6);font:900 46px Grandstander,sans-serif;max-width:94vw;color:#FFD84D;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill;text-shadow:0 4px 0 var(--ink);opacity:0;transition:opacity .25s,transform .25s;z-index:6;pointer-events:none;white-space:nowrap}
 .lvl.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
 </style>
 </head>
@@ -290,7 +290,10 @@ function hit(sp,rk){
     sp.face='angry';sp.faceT=tNow+.7;sp.sv+=Math.sign(dx||1)*5;
   }
 }
-function showLevel(txt){const el=$('lvl');el.textContent=txt;el.classList.add('on');FX.level();setTimeout(()=>el.classList.remove('on'),1300);}
+function showLevel(txt){const el=$('lvl');el.textContent=txt;
+  // one line, shrinking the font until it fits the screen
+  let f=46;el.style.fontSize=f+'px';while(el.scrollWidth>W*.92&&f>18){f-=2;el.style.fontSize=f+'px';}
+  el.classList.add('on');FX.level();setTimeout(()=>el.classList.remove('on'),1300);}
 let msgNow='';function msg(t){const m=$('msg');if(t){m.textContent=t;m.classList.add('on')}else m.classList.remove('on');msgNow=t;}
 
 async function play(){
