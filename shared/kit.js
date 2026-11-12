@@ -40,7 +40,7 @@ function makeBuses(a) {
 export function applyGains(now) {
   const a = S.AC, B = S.BUS; if (!a || !B.master) return; const t = a.currentTime;
   const set = (n, v) => { n.gain.cancelScheduledValues(t); if (now) n.gain.setValueAtTime(v, t); else n.gain.setTargetAtTime(v, t, .08); };
-  set(B.master, S.soundOn ? 1 : 0); set(B.sfx, S.sfxOn ? 1 : 0); set(B.music, S.musicOn ? .5 : 0); set(B.amb, S.ambOn ? .6 : 0);
+  set(B.master, S.soundOn ? 1 : 0); set(B.sfx, S.sfxOn ? 1 : 0); set(B.music, S.musicOn ? .4 : 0); set(B.amb, S.ambOn ? .6 : 0);
 }
 document.addEventListener('visibilitychange', () => { if (!S.AC) return; if (document.hidden) S.AC.suspend(); else if (S.mu.on) S.AC.resume(); });
 
