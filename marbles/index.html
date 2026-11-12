@@ -12,6 +12,9 @@
 .marbles-left{display:flex;gap:3px;align-items:center;min-height:40px}
 .marbles-left canvas{width:30px;height:30px}
 .marbles-left canvas.lost{opacity:.2;filter:grayscale(1)}
+.marbles-left canvas{width:24px;height:24px}
+.pick{justify-content:center;gap:12px;margin:4px 0 10px;font:700 17px Fredoka,sans-serif}
+.pick .seg button{font-size:16px;padding:7px 14px}
 </style>
 </head>
 <body>
@@ -37,15 +40,16 @@
 <div class="card" id="start">
   <h1 id="t-title">Marble Plate</h1>
   <p class="sub" id="t-sub"></p>
-  <div class="levels" id="levels"></div>
+  <div class="g-row pick"><span id="t-size">Plate</span>
+    <div class="seg" id="size-seg"><button data-v="wide"></button><button data-v="medium"></button><button data-v="narrow"></button></div></div>
+  <div class="g-row pick"><span id="t-count">Marbles</span>
+    <div class="seg" id="count-seg"><button data-v="3">3</button><button data-v="5">5</button><button data-v="7">7</button></div></div>
   <button class="btn" id="play"><span id="t-play">Play</span></button>
   <p class="note" id="t-privacy"></p>
   <details id="grown">
     <summary id="t-grown">For grown-ups</summary>
     <div class="g-body">
       <p id="t-g1"></p>
-      <div class="g-row"><span id="t-steady">How steady</span>
-        <div class="seg" id="steady-seg"><button data-v="easy"></button><button data-v="medium"></button><button data-v="strict"></button></div></div>
       <div class="g-row"><span id="t-music">Music</span>
         <div class="seg" id="music-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
       <div class="g-row"><span id="t-amb">Pond sounds</span>
@@ -77,9 +81,9 @@ const UI={
  en:{title:"Marble Plate",sub:"Keep your head straight so the marbles stay on!",play:"Play",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
   g1:"Marbles sit on a plate on the child's head. Any tilt makes them roll, so the child keeps the head straight and level. Now and then a bee lands on the plate and the marbles wobble, so the child has to correct. Score = seconds until all the marbles fall.",
-  steady:"How steady",easy:"Easy",medium:"Medium",strict:"Strict",
+  size:"Plate",count:"Marbles",wide:"Wide",medium:"Medium",narrow:"Narrow",
   music:"Music",amb:"Pond sounds",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
-  g4:"★ Pick a dish: the Bowl has one marble and high sides, the Plate has three, the Tray has five on a flat tray. Each keeps its own record.",
+  g4:"★ Two choices: the plate size and the number of marbles. A wide plate forgives small movements; a narrow one needs a steadier head. The raised rim gives one last chance: a marble that reaches it can still be saved by levelling the head. 3, 5 or 7 marbles. Each combination keeps its own record.",
   g2:"★ Make it harder: sit on a therapy ball or a balance cushion, then stand, then stand on one leg.",
   g3:"★ Stand the phone upright at eye level, with room above the head for the plate.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
@@ -90,9 +94,9 @@ const UI={
  he:{title:"צלחת גולות",sub:"שמרו על ראש ישר כדי שהגולות לא ייפלו!",play:"שחקו",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
   g1:"על הראש של הילד יש צלחת עם גולות. כל הטיה של הראש מגלגלת אותן, אז הילד שומר על ראש ישר ומאוזן. מדי פעם דבורה נוחתת על הצלחת והגולות מתנדנדות, והילד צריך לתקן. הניקוד הוא מספר השניות עד שכל הגולות נופלות.",
-  steady:"כמה יציב",easy:"קל",medium:"בינוני",strict:"מדויק",
+  size:"צלחת",count:"גולות",wide:"רחבה",medium:"בינונית",narrow:"צרה",
   music:"מוזיקה",amb:"צלילי בריכה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
-  g4:"★ בוחרים כלי: בקערה יש גולה אחת ודפנות גבוהות, בצלחת שלוש, ובמגש חמש על משטח שטוח. לכל כלי יש שיא משלו.",
+  g4:"★ שתי בחירות: גודל הצלחת ומספר הגולות. צלחת רחבה סולחת על תנועות קטנות, וצלחת צרה דורשת ראש יציב יותר. השפה המוגבהת נותנת הזדמנות אחרונה: גולה שהגיעה אליה עוד אפשר להציל אם מיישרים את הראש. 3, 5 או 7 גולות. לכל שילוב יש שיא משלו.",
   g2:"★ להקשות: ישיבה על כדור טיפולי או כרית איזון, אחר כך עמידה, ואז עמידה על רגל אחת.",
   g3:"★ העמידו את הטלפון ישר בגובה העיניים, עם מקום מעל הראש בשביל הצלחת.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
@@ -103,34 +107,38 @@ const UI={
 };
 
 /* ================= LEVELS ================= */
-const COLORS=['#FF7A66','#5FB7F0','#8BD16B','#B79CFF','#FFC94D'];
-const DISH={
-  bowl: {n:1,rad:.16,G:3.6,curve:2.4,damp:2.6,dead:.075,bee:[13,19],kick:.35,bpm:80,sp:'●'},
-  plate:{n:3,rad:.12,G:5.0,curve:.9, damp:2.0,dead:.055,bee:[8,12], kick:.55,bpm:92,sp:'●●'},
-  tray: {n:5,rad:.10,G:6.4,curve:0,  damp:1.5,dead:.04, bee:[6,9],  kick:.7, bpm:104,sp:'●●●'}};
-const STEADY={easy:{g:.7,d:1.45},medium:{g:1,d:1},strict:{g:1.3,d:.7}};
+const COLORS=['#FF7A66','#5FB7F0','#8BD16B','#B79CFF','#FFC94D','#FF9FC6','#4FB3A9'];
+/* one plate: its width (wide = forgiving) and the number of marbles are the two difficulty choices */
+const WIDTH={wide:1.3,medium:1,narrow:.78};
+const BPM={wide:84,medium:92,narrow:100};
 let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
-let steady=LS.get('mp-steady','medium'); if(!STEADY[steady])steady='medium';
-let dish=LS.get('mp-dish','plate'); if(!DISH[dish])dish='plate';
-let best=0; const loadBest=()=>{best=+LS.get('mp-best-'+dish,'0')||0;}; loadBest();
+let size=LS.get('mp-size','medium'); if(!WIDTH[size])size='medium';
+let count=+LS.get('mp-count','3'); if(![3,5,7].includes(count))count=3;
+const dish='plate';
+function cfg(){return {n:count,rad:.095/WIDTH[size],G:5.0,curve:.9,damp:2.0,dead:.055,bee:[8,12],kick:.5,rim:.8,rimK:2.2};}
+const STEADY={g:1,d:1};
+let best=0; const loadBest=()=>{best=+LS.get('mp-best-'+size+'-'+count,'0')||0;}; loadBest();
 
-S.track='pond'; S.amb='pond'; S.bpm=()=>DISH[dish].bpm;
+S.track='pond'; S.amb='pond'; S.bpm=()=>BPM[size];
 const syncSound=bindSound(()=>UI[lang]);
 
 function setLang(l){
   lang=l;LS.set('bamboo-lang',l);const u=UI[l];
   document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
-  for(const k of ['title','sub','play','privacy','grown','g1','steady','music','amb','sfx','g2','g3','g4','legal','sec','best','sec2','over','again'])
+  for(const k of ['title','sub','play','privacy','grown','g1','size','count','music','amb','sfx','g2','g3','g4','legal','sec','best','sec2','over','again'])
     {const e=$('t-'+k);if(e)e.textContent=u[k];}
   $('t-privacy2').textContent=u.privacy;
-  document.querySelectorAll('#steady-seg button').forEach(b=>{b.textContent=u[b.dataset.v];b.setAttribute('aria-pressed',b.dataset.v===steady)});
+  document.querySelectorAll('#size-seg button').forEach(b=>{b.textContent=u[b.dataset.v];b.setAttribute('aria-pressed',b.dataset.v===size)});
+  document.querySelectorAll('#count-seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===String(count)));
   $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
   $('c').setAttribute('aria-label',u.aria);
-  buildLevels();syncSound();
+  syncSound();
   if(!$('end').hidden)fillEnd(lastNew);
 }
 $('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
-document.querySelectorAll('#steady-seg button').forEach(b=>b.onclick=()=>{steady=b.dataset.v;LS.set('mp-steady',steady);setLang(lang)});
+const pick=()=>{loadBest();$('best').textContent=Math.floor(best);audio();SFX.tink();resetMarbles();setLang(lang);};
+document.querySelectorAll('#size-seg button').forEach(b=>b.onclick=()=>{size=b.dataset.v;LS.set('mp-size',size);pick();});
+document.querySelectorAll('#count-seg button').forEach(b=>b.onclick=()=>{count=+b.dataset.v;LS.set('mp-count',count);pick();});
 
 /* ================= CANVAS + ART ================= */
 const cv=$('c'),ctx=cv.getContext('2d');
@@ -156,7 +164,7 @@ function dishShape(type,h){
 function drawDishBack(c,type,h){
   const lw=Math.max(3,h*.045);
   if(type==='bowl'){ sticker(c,ell(0,0,h,h*.2),'#C98B4A',lw); c.fillStyle='#B3773C';c.fill(ell(0,h*.03,h*.86,h*.13)); }
-  else if(type==='plate'){ sticker(c,ell(0,h*.03,h,h*.17),'#FFFFFF',lw); c.fillStyle='#E3F2FB';c.fill(ell(0,h*.03,h*.72,h*.11));
+  else if(type==='plate'){ sticker(c,ell(0,h*.03,h,h*.17),'#FFFFFF',lw);c.fillStyle='#F1F8FD';c.fill(ell(0,h*.03,h*.93,h*.15)); c.fillStyle='#E3F2FB';c.fill(ell(0,h*.03,h*.72,h*.11));
     c.strokeStyle='rgba(95,183,240,.55)';c.lineWidth=lw*.7;c.setLineDash([lw*.2,lw*2]);c.stroke(ell(0,h*.03,h*.86,h*.14));c.setLineDash([]); }
   else { sticker(c,ell(0,h*.04,h,h*.14),'#E8C07A',lw); c.fillStyle='rgba(255,255,255,.3)';c.fill(ell(-h*.4,h*.0,h*.25,h*.04)); }
 }
@@ -217,13 +225,13 @@ let marbles=[],fallers=[],stars=[],wob=0;
 const bee={on:false,phase:'',t0:0,side:1,next:0,x:0,y:0};
 
 function resetMarbles(){
-  const D=DISH[dish];marbles=[];
-  for(let i=0;i<D.n;i++){const x=D.n===1?0:(-.5+i/(D.n-1))*Math.min(.9,D.n*D.rad*2.4);marbles.push({x,v:0,col:COLORS[i%5],spin:0,id:i});}
+  const D=cfg();marbles=[];
+  for(let i=0;i<D.n;i++){const x=D.n===1?0:(-.5+i/(D.n-1))*Math.min(1.45,D.n*D.rad*2.3);marbles.push({x,v:0,col:COLORS[i%7],spin:0,id:i});}
   bee.on=false;bee.next=tNow+D.bee[0]*.7;
 }
 function buildLives(){
-  const box=$('lives');box.innerHTML='';const D=DISH[dish];
-  for(let i=0;i<D.n;i++){const c=document.createElement('canvas');c.width=60;c.height=60;const x=c.getContext('2d');drawMarble(x,30,30,24,COLORS[i%5]);
+  const box=$('lives');box.innerHTML='';const D=cfg();
+  for(let i=0;i<D.n;i++){const c=document.createElement('canvas');c.width=60;c.height=60;const x=c.getContext('2d');drawMarble(x,30,30,24,COLORS[i%7]);
     if(!marbles.find(m=>m.id===i))c.className='lost';box.appendChild(c);}
 }
 function msg(t){const m=$('msg');if(t){m.textContent=t;m.classList.add('on')}else m.classList.remove('on');msgNow=t;}
@@ -244,19 +252,20 @@ async function play(){
 $('play').onclick=play;$('again').onclick=play;
 
 function surface(){
-  if(mode==='camera'&&state!=='menu')return {x:head.x||W/2,y:head.y||H*.4,roll:head.roll,half:(head.w||W*.3)*.8};
+  if(mode==='camera'&&state!=='menu')return {x:head.x||W/2,y:head.y||H*.4,roll:head.roll,half:(head.w||W*.3)*.8*WIDTH[size]};
   const hw=Math.min(W*.46,H*.3),roll=state==='menu'?demoRoll:fingerRoll,r=hw*.5,top=-r*2.02;
-  return {x:W/2+Math.sin(roll)*-top,y:kidNeck+Math.cos(roll)*top,roll,half:hw*.66};
+  return {x:W/2+Math.sin(roll)*-top,y:kidNeck+Math.cos(roll)*top,roll,half:hw*.66*WIDTH[size]};
 }
 
 function physics(dt,roll,running){
-  const D=DISH[dish],St=STEADY[steady];
+  const D=cfg(),St=STEADY;
   const ramp=1+Math.min(.45,score/160);
   const dead=D.dead*St.d,r=Math.max(-.6,Math.min(.6,roll));
   const eff=Math.sign(r)*Math.max(0,Math.abs(r)-dead);
   for(const m of marbles){
     if(!running)break;
-    const a=D.G*St.g*ramp*Math.sin(eff)-D.curve*m.x-D.damp*m.v;
+    const over=Math.abs(m.x)-D.rim,rimPush=over>0?-Math.sign(m.x)*D.rimK*over/(1-D.rim):0;   // raised rim: pushes back harder the higher it climbs
+    const a=D.G*St.g*ramp*Math.sin(eff)-D.curve*m.x-D.damp*m.v+rimPush;
     m.v+=a*dt;
     if(eff===0&&Math.abs(m.v)<.04&&D.curve===0)m.v*=Math.pow(.05,dt);
     m.x+=m.v*dt;m.spin+=m.v*dt/D.rad;
@@ -271,23 +280,23 @@ function physics(dt,roll,running){
 
 function fallOff(m,s){
   marbles=marbles.filter(x=>x!==m);
-  const sh=dishShape(dish,s.half),lx=m.x*s.half,ly=sh.dip(Math.min(1,Math.abs(m.x)))-DISH[dish].rad*s.half;
+  const sh=dishShape(dish,s.half),lx=m.x*s.half,ly=sh.dip(Math.min(1,Math.abs(m.x)))-cfg().rad*s.half;
   fallers.push({x:s.x+Math.cos(s.roll)*lx-Math.sin(s.roll)*ly,y:s.y+Math.sin(s.roll)*lx+Math.cos(s.roll)*ly,
-    vx:Math.sign(m.x)*s.half*1.2+m.v*s.half*.5,vy:-s.half*.6,col:m.col,r:DISH[dish].rad*s.half,spin:m.spin,t:tNow,landed:false});
+    vx:Math.sign(m.x)*s.half*1.2+m.v*s.half*.5,vy:-s.half*.6,col:m.col,r:cfg().rad*s.half,spin:m.spin,t:tNow,landed:false});
   SFX.tink(1.3);buildLives();
   msg(UI[lang].oops);setTimeout(()=>{if(msgNow===UI[lang].oops)msg('')},700);
   if(!marbles.length)setTimeout(()=>{if(state==='play')endGame()},1100);
 }
 function endGame(){
   state='over';musicStop();$('hud').classList.remove('on');msg('');
-  lastNew=score>best&&score>=1;if(lastNew){best=score;LS.set('mp-best-'+dish,best.toFixed(1));SFX.star();}
+  lastNew=score>best&&score>=1;if(lastNew){best=score;LS.set('mp-best-'+size+'-'+count,best.toFixed(1));SFX.star();}
   fillEnd(lastNew);$('end').hidden=false;
 }
 function fillEnd(nb){const u=UI[lang];$('final').textContent=Math.floor(score);$('newbest').hidden=!nb;$('newbest').textContent=u.newbest;
   $('best-line').textContent=u.bestis+Math.floor(best);$('t-privacy2').textContent=u.privacy;$('t-over').textContent=u.over;$('t-sec2').textContent=u.sec2;}
 
 function updateBee(dt,s){
-  const D=DISH[dish];
+  const D=cfg();
   if(!bee.on){ if(state==='play'&&tNow>bee.next&&marbles.length){bee.on=true;bee.phase='in';bee.t0=tNow;bee.side=Math.random()<.5?-1:1;SFX.buzz();} return; }
   const k=tNow-bee.t0, land={x:s.x+Math.cos(s.roll)*bee.side*s.half*.85,y:s.y+Math.sin(s.roll)*bee.side*s.half*.85-s.half*.18};
   if(bee.phase==='in'){const p=Math.min(1,k/1.2),sx=bee.side>0?W+40:-40,sy=s.y-s.half*1.4;
@@ -322,7 +331,7 @@ function frame(now){
   else if(state==='count'){
     const n=3-Math.floor(tNow-countT),el=$('count');
     if(n>0){if(el.textContent!==String(n)){el.textContent=n;el.style.display='block';SFX.tick();}}
-    else{el.style.display='none';el.textContent='';state='play';SFX.go();bee.next=tNow+DISH[dish].bee[0]*.7;}
+    else{el.style.display='none';el.textContent='';state='play';SFX.go();bee.next=tNow+cfg().bee[0]*.7;}
   }
   else if(state==='play'){
     const lostFace=mode==='camera'&&(!head.ok||now-head.lastSeen>500);
@@ -348,11 +357,11 @@ function render(s,dt){
   if(!cam){const hw=Math.min(W*.46,H*.3);drawKid(ctx,W,H,W/2,kidNeck,hw,s.roll,tNow);}
   const show=state!=='over'&&!(cam&&!head.ok);
   if(show){
-    const h=s.half,sh=dishShape(dish,h),D=DISH[dish],r=D.rad*h;
+    const h=s.half,sh=dishShape(dish,h),D=cfg(),r=D.rad*h;
     ctx.save();ctx.translate(s.x,s.y);ctx.rotate(s.roll+Math.sin(tNow*28)*.05*wob);
     drawDishBack(ctx,dish,h);
     const order=[...marbles].sort((a,b)=>a.id-b.id);
-    for(const m of order){const cx=Math.max(-1,Math.min(1,m.x));drawMarble(ctx,m.x*h,sh.dip(Math.abs(cx))-r+ (dish==='bowl'?h*.02:0),r,m.col,m.spin);}
+    for(const m of order){const cx=Math.max(-1,Math.min(1,m.x));const lift=Math.max(0,Math.abs(cx)-cfg().rim)/(1-cfg().rim)*h*.07;drawMarble(ctx,m.x*h,sh.dip(Math.abs(cx))-r-lift,r,m.col,m.spin);}
     drawDishFront(ctx,dish,h);
     if(state==='ready'||state==='count'){ctx.globalAlpha=.9;}
     ctx.restore();
@@ -370,21 +379,6 @@ function render(s,dt){
     ctx.globalAlpha=1-k*k;sticker(ctx,starPath(s.half*.24),'#FFD84D',4);ctx.restore();}
 }
 
-/* level picker */
-function buildLevels(){
-  const box=$('levels');box.innerHTML='';
-  for(const k of Object.keys(DISH)){
-    const b=document.createElement('button');b.className='lv';b.setAttribute('aria-pressed',k===dish);
-    const c=document.createElement('canvas');c.width=128;c.height=128;const x=c.getContext('2d');
-    x.translate(64,62);const h=52,D=DISH[k],sh=dishShape(k,h);drawDishBack(x,k,h);
-    for(let i=0;i<D.n;i++){const mx=D.n===1?0:(-.5+i/(D.n-1))*Math.min(.9,D.n*D.rad*2.4);drawMarble(x,mx*h,sh.dip(Math.abs(mx))-D.rad*h+(k==='bowl'?h*.02:0),D.rad*h,COLORS[i%5]);}
-    drawDishFront(x,k,h);
-    b.appendChild(c);const l=document.createElement('span');l.textContent=UI[lang][k];b.appendChild(l);
-    const sp=document.createElement('span');sp.className='sp';sp.textContent=D.sp;b.appendChild(sp);
-    b.onclick=()=>{dish=k;LS.set('mp-dish',k);loadBest();$('best').textContent=Math.floor(best);audio();SFX.tink();resetMarbles();buildLevels();};
-    box.appendChild(b);
-  }
-}
 setLang(lang);
 $('best').textContent=Math.floor(best);
 resetMarbles();
