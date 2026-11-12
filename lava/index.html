@@ -121,7 +121,7 @@ const UI={
   rnd:"round",best:"best",sec2:"safe landings",over:["Well done!","Hot feet!","Lava hoppers!","Lava champions!"],again:"Play again",newbest:"New record!",bestis:"Best: ",
   ready:"Getting ready…",feet:"Show me your feet! Stand on the floor.",onfloor:"Step onto the lava floor!",
   setup:"Drag the 4 stones to the corners of the play area on the floor.",setok:"Ready!",setreset:"Reset",
-  nocam:"No camera here — showing the demo instead.",aria:"Game area",
+  nocam:"No camera here — showing the demo instead.",errAllow:"The camera is blocked. Allow the camera for this site in the browser settings, then tap Play again.",errNone:"No camera was found on this device.",errModel:"The movement tracking didn’t load. Check the internet connection and tap Play again.",errOther:"The camera didn’t start. Close other apps that use the camera and tap Play again.",errInApp:"Tip: open the link in Chrome or Safari, not inside another app.",aria:"Game area",
   q:"Jump on a ? block!",reveal:"Rock or glass?",melt:"Glass melts — find a rock!",safe:"Safe!",toast:["Hot hot!","Toasty!","Ouch, hot!","Warm toes!"],
   demotip:"Tap a square to hop there",turn:"Turn the phone sideways for a bigger floor",you:"You",lastround:"Last round!"},
  he:{title:"הרצפה היא לבה",sub:"קפצו על קוביית סימן שאלה. סלע שומר עליכם. זכוכית נמסה!",play:"שחקו",demo:"צפו בהדגמה",
@@ -136,7 +136,7 @@ const UI={
   rnd:"סבב",best:"שיא",sec2:"נחיתות בטוחות",over:["כל הכבוד!","רגליים חמות!","קופצי לבה!","אלופי הלבה!"],again:"עוד פעם",newbest:"שיא חדש!",bestis:"השיא: ",
   ready:"מתכוננים…",feet:"תראו לי את כפות הרגליים! עמדו על הרצפה.",onfloor:"היכנסו לרצפת הלבה!",
   setup:"גררו את 4 האבנים לפינות שטח המשחק על הרצפה.",setok:"מוכנים!",setreset:"איפוס",
-  nocam:"אין כאן מצלמה — מציגים הדגמה במקום.",aria:"אזור המשחק",
+  nocam:"אין כאן מצלמה — מציגים הדגמה במקום.",errAllow:"המצלמה חסומה. אשרו גישה למצלמה לאתר הזה בהגדרות הדפדפן, ואז הקישו שוב על שחקו.",errNone:"לא נמצאה מצלמה במכשיר.",errModel:"זיהוי התנועה לא נטען. בדקו את החיבור לאינטרנט והקישו שוב על שחקו.",errOther:"המצלמה לא נפתחה. סגרו אפליקציות אחרות שמשתמשות במצלמה והקישו שוב על שחקו.",errInApp:"טיפ: פתחו את הקישור ב־Chrome או ב־Safari, לא בתוך אפליקציה אחרת.",aria:"אזור המשחק",
   q:"קפצו על קוביית סימן שאלה!",reveal:"סלע או זכוכית?",melt:"הזכוכית נמסה — מצאו סלע!",safe:"בטוח!",toast:["חם חם!","מתחמם!","אוי, חם!","בהונות חמות!"],
   demotip:"הקישו על משבצת כדי לקפוץ אליה",turn:"סובבו את הטלפון לרוחב כדי לקבל רצפה גדולה יותר",you:"אני",lastround:"סבב אחרון!"}
 };
@@ -344,15 +344,21 @@ function fakeTracker(){
 }
 async function startCam(){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('nocam');
-  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1280},height:{ideal:720}},audio:false});
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1280},height:{ideal:720}},audio:false});}
+  catch(e){if(e&&e.name==='NotAllowedError')throw e;stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});}
   video.srcObject=stream;await video.play();
   if(!tracker&&/[?&]fake/.test(location.search))tracker=fakeTracker();   // test hook: two pretend children
   if(!tracker){
-    const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
-    const files=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
-    const opts=d=>({baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',delegate:d},
-      runningMode:'VIDEO',numPoses:4,minPoseDetectionConfidence:.45,minPosePresenceConfidence:.45,minTrackingConfidence:.45,outputSegmentationMasks:true});
-    try{tracker=await vision.PoseLandmarker.createFromOptions(files,opts('GPU'));}catch(e){tracker=await vision.PoseLandmarker.createFromOptions(files,opts('CPU'));}
+    let vision,files;
+    try{vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
+      files=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');}
+    catch(e){const x=new Error('model');x.cause=e;throw x;}
+    const opts=(d,m)=>({baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',delegate:d},
+      runningMode:'VIDEO',numPoses:4,minPoseDetectionConfidence:.45,minPosePresenceConfidence:.45,minTrackingConfidence:.45,outputSegmentationMasks:m});
+    let lastErr=null;
+    for(const [d,m] of [['GPU',true],['CPU',true],['GPU',false],['CPU',false]]){
+      try{tracker=await vision.PoseLandmarker.createFromOptions(files,opts(d,m));break;}catch(e){lastErr=e;console.warn('tracker',d,m,e);}}
+    if(!tracker){const e=new Error('model');e.cause=lastErr;throw e;}
   }
   camOK=true;
 }
@@ -479,14 +485,14 @@ async function play(wantDemo){
   if(!wantDemo){
     msg(UI[lang].ready);
     try{if(!camOK)await startCam();mode='camera';}
-    catch(e){mode='demo';msg('');toast(UI[lang].nocam,5000);}
+    catch(e){console.warn(e);stopCam();msg('');$('start').hidden=false;state='menu';showCamError(e);return;}
   } else {mode='demo';stopCam();}
   msg('');
   if(mode==='camera'&&!corners){openSetup();return;}
   begin();
 }
 function begin(){
-  musicStart();
+  $('toast').classList.remove('on');musicStart();
   score=0;roundNo=0;$('score').textContent='0';loadBest();$('hud').classList.add('on');$('stopx').classList.add('on');
   for(const c of cells){c.type='lava';c.sink=0;}
   if(mode==='demo'){makeBots();$('demotip').classList.add('on');state='count';countT=tNow;}
@@ -496,6 +502,12 @@ $('play').onclick=()=>play(false);$('demo').onclick=()=>play(true);$('again').on
 $('stopx').onclick=()=>endGame(true);
 $('refloor').onclick=async()=>{audio();$('start').hidden=true;try{if(!camOK)await startCam();mode='camera';openSetup(true);}catch(e){$('start').hidden=false;toast(UI[lang].nocam);}};
 
+function showCamError(e){
+  const u=UI[lang],n=e&&e.name||'',inApp=/FBAN|FBAV|Instagram|WhatsApp|Line\/|; wv\)|GSA\//i.test(navigator.userAgent);
+  let t=e&&e.message==='model'?u.errModel:n==='NotAllowedError'?u.errAllow:(n==='NotFoundError'||n==='OverconstrainedError'||(e&&e.message==='nocam'))?u.errNone:u.errOther;
+  if(inApp)t+=' '+u.errInApp;
+  toast(t+' ('+(n||e&&e.message||'?')+')',0);
+}
 function endGame(quit){
   state='over';musicStop();$('hud').classList.remove('on');$('stopx').classList.remove('on');$('demotip').classList.remove('on');msg('');$('count').style.display='none';
   for(const c of cells){c.type='lava';c.sink=0;}
