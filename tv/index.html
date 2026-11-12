@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bamboo Physio · Big Screen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Grandstander:wght@700;900&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#2b2118}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#BFE6FF;font-family:Fredoka,system-ui,sans-serif;color:var(--ink)}
+#wait{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2vh;text-align:center;padding:4vw}
+.brand{display:flex;align-items:center;gap:10px;font:700 3.2vh Fredoka,sans-serif}
+.brand svg{width:4.5vh;height:4.5vh}
+h1{font:900 6vh Grandstander,sans-serif;margin:0;color:#FFD84D;-webkit-text-stroke:.35vh var(--ink);paint-order:stroke fill;text-shadow:0 .6vh 0 var(--ink)}
+.code{display:flex;gap:2vh;direction:ltr}
+.code span{display:flex;align-items:center;justify-content:center;width:15vh;height:19vh;background:#fff;border:.7vh solid var(--ink);border-radius:4vh;box-shadow:0 1vh 0 var(--ink);font:900 14vh Grandstander,sans-serif}
+.how{font:600 3.4vh Fredoka,sans-serif;max-width:80vw;line-height:1.3}
+.how b{background:#fff;border:.4vh solid var(--ink);border-radius:2vh;padding:0 1.2vh;white-space:nowrap}
+.small{font-size:2.2vh;opacity:.75}
+#v{position:fixed;inset:0;width:100%;height:100%;object-fit:contain;background:#1d1626;display:none}
+#bar{position:fixed;right:2vh;bottom:2vh;display:flex;gap:1.5vh;z-index:3}
+#bar button{border:.5vh solid var(--ink);border-radius:999px;background:#fff;font:700 2.6vh Fredoka,sans-serif;padding:1vh 2.4vh;box-shadow:0 .6vh 0 var(--ink);cursor:pointer;color:var(--ink)}
+#bar button.hot{background:#FFD84D}
+body.live #bar{opacity:.0;transition:opacity .4s}
+body.live:hover #bar,body.live.touch #bar{opacity:1}
+#err{color:#C2412D;font-weight:700;font-size:2.6vh;min-height:3vh}
+</style>
+</head>
+<body>
+<div id="wait">
+  <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 33 C 10 20, 20 9, 34 6 C 33 20, 24 31, 8 33 Z" fill="#7DCB6B" stroke="#2b2118" stroke-width="3.5" stroke-linejoin="round"/><path d="M11 30 C 17 23, 23 16, 29 11" fill="none" stroke="#2b2118" stroke-width="2.5" stroke-linecap="round"/></svg>Bamboo Physio</div>
+  <h1 id="t-title">Big Screen</h1>
+  <div class="code" id="code"><span>·</span><span>·</span><span>·</span><span>·</span></div>
+  <p class="how" id="t-how"></p>
+  <p id="err"></p>
+  <p class="how small" id="t-wifi"></p>
+</div>
+<video id="v" playsinline autoplay muted></video>
+<div id="bar"><button id="snd"></button><button id="full"></button><button id="lang">עב</button></div>
+
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+const T={
+ en:{title:'Big Screen',how:'On the phone, open the game, tap <b>📺</b> and type these numbers.',wifi:'The phone and this screen need to be on the same Wi-Fi. Nothing is recorded.',
+  snd:'🔊 Sound here',sndOn:'🔊 Sound is here',full:'⛶ Full screen',lang:'עב',err:'Can’t start right now. Check the internet and reload the page.'},
+ he:{title:'מסך גדול',how:'בטלפון, פתחו את המשחק, הקישו על <b>📺</b> והקלידו את הספרות האלה.',wifi:'הטלפון והמסך צריכים להיות באותה רשת Wi-Fi. שום דבר לא מוקלט.',
+  snd:'🔊 קול כאן',sndOn:'🔊 הקול כאן',full:'⛶ מסך מלא',lang:'EN',err:'לא ניתן להתחיל כרגע. בדקו את האינטרנט וטענו מחדש.'}};
+const $=id=>document.getElementById(id),ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+let lang=ls.get('bamboo-lang')||'en';if(!T[lang])lang='en';
+let code=ls.get('bp-tv-mycode')||'',peer=null,conns=[],soundHere=false;
+function paint(){const u=T[lang];document.documentElement.lang=lang;$('wait').dir=lang==='he'?'rtl':'ltr';
+  $('t-title').textContent=u.title;$('t-how').innerHTML=u.how;$('t-wifi').textContent=u.wifi;
+  $('snd').textContent=soundHere?u.sndOn:u.snd;$('snd').classList.toggle('hot',soundHere);$('full').textContent=u.full;$('lang').textContent=u.lang;
+  [...$('code').children].forEach((s,i)=>s.textContent=code[i]||'·');}
+$('lang').onclick=()=>{lang=lang==='he'?'en':'he';ls.set('bamboo-lang',lang);paint();};
+$('full').onclick=()=>{const d=document.documentElement;(d.requestFullscreen||d.webkitRequestFullscreen||(()=>{})).call(d);};
+$('snd').onclick=()=>{soundHere=!soundHere;$('v').muted=!soundHere;$('v').play().catch(()=>{});conns.forEach(c=>{try{c.send({sound:soundHere?'on':'off'})}catch(e){}});paint();};
+document.addEventListener('pointermove',()=>{document.body.classList.add('touch');clearTimeout(window._t);window._t=setTimeout(()=>document.body.classList.remove('touch'),2500);});
+function newCode(){code=String(1000+Math.floor(Math.random()*9000));ls.set('bp-tv-mycode',code);}
+function start(){
+  if(!/^\d{4}$/.test(code))newCode();paint();
+  peer=new Peer('bamboophysio-tv-'+code,window.BP_PEER);
+  peer.on('error',e=>{if(e.type==='unavailable-id'){peer.destroy();newCode();start();}
+    else if(e.type==='network'||e.type==='server-error'||e.type==='socket-error'){$('err').textContent=T[lang].err;setTimeout(()=>{try{peer.destroy()}catch(x){}start();},5000);}});
+  peer.on('open',()=>{$('err').textContent='';});
+  peer.on('disconnected',()=>{try{peer.reconnect()}catch(e){}});
+  peer.on('connection',c=>{conns.push(c);c.on('open',()=>{if(soundHere)c.send({sound:'on'});});c.on('close',()=>{conns=conns.filter(x=>x!==c);});});
+  peer.on('call',call=>{call.answer();
+    call.on('stream',s=>{const v=$('v');v.srcObject=s;v.muted=!soundHere;v.style.display='block';v.play().catch(()=>{v.muted=true;v.play();});document.body.classList.add('live');$('wait').style.display='none';});
+    call.on('close',()=>{$('v').style.display='none';$('v').srcObject=null;document.body.classList.remove('live');$('wait').style.display='flex';});});
+}
+if('wakeLock' in navigator){const wl=()=>navigator.wakeLock.request('screen').catch(()=>{});wl();document.addEventListener('visibilitychange',()=>{if(!document.hidden)wl();});}
+start();
+</script>
+</body>
+</html>

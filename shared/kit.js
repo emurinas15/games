@@ -231,8 +231,22 @@ function pondAmb(a,B){
     timers[2]=setTimeout(life,1500+Math.random()*2500);};timers[2]=setTimeout(life,800);
   return ()=>{alive=false;timers.forEach(clearTimeout);try{src.stop(a.currentTime+.05)}catch(e){}};
 }
+/* lava: a warm low rumble with slow bloopy bubbles and the odd soft pop */
+function lavaAmb(a,B){
+  const len=a.sampleRate*4,buf=a.createBuffer(1,len,a.sampleRate),d=buf.getChannelData(0);
+  let l=0;for(let i=0;i<len;i++){l=(l+.015*(Math.random()*2-1))/1.015;d[i]=l*5;}
+  const src=a.createBufferSource();src.buffer=buf;src.loop=true;
+  const lp=a.createBiquadFilter();lp.type='lowpass';lp.frequency.value=160;const g=a.createGain();g.gain.value=.5;src.connect(lp);lp.connect(g);g.connect(B);src.start();
+  const timers=[];let alive=true;
+  const swell=()=>{if(!alive)return;g.gain.setTargetAtTime(.3+Math.random()*.4,a.currentTime,.8);timers[0]=setTimeout(swell,900+Math.random()*1400);};swell();
+  const blub=t=>{const f=110+Math.random()*90,o=a.createOscillator(),e=a.createGain();o.type='sine';o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(f*2.6,t+.14);
+    e.gain.setValueAtTime(.0001,t);e.gain.exponentialRampToValueAtTime(.16,t+.02);e.gain.exponentialRampToValueAtTime(.0001,t+.2);o.connect(e);e.connect(B);o.start(t);o.stop(t+.22);};
+  const life=()=>{if(!alive)return;const t=a.currentTime+.05,n=1+Math.floor(Math.random()*2);for(let k=0;k<n;k++)blub(t+k*.12);timers[1]=setTimeout(life,500+Math.random()*1300);};life();
+  return ()=>{alive=false;timers.forEach(clearTimeout);try{src.stop(a.currentTime+.05)}catch(e){}};
+}
 function ambStart() {
   const a = S.AC, B = S.BUS.amb;
+  if (S.amb === 'lava') { S.ambNode = { stop: lavaAmb(a, B) }; return; }
   if (S.amb !== 'night') { S.ambNode = { stop: pondAmb(a, B) }; return; }
   const len = a.sampleRate * 3, buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
   let l = 0; for (let i = 0; i < len; i++) { l = (l + .02 * (Math.random() * 2 - 1)) / 1.02; d[i] = l * 3.5; }
