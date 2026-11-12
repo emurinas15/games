@@ -15,6 +15,8 @@ html,body{background:#4A3E78}
 .jar canvas.off{opacity:.25;filter:grayscale(1)}
 .where{position:fixed;left:50%;top:calc(var(--safe-t) + 122px);transform:translateX(-50%);background:#fff;border:3px solid var(--ink);border-radius:20px;padding:4px 16px;font:700 20px Fredoka,sans-serif;box-shadow:0 3px 0 var(--ink);z-index:4;display:none}
 .where.on{display:block}
+#move-seg{flex-wrap:wrap;justify-content:center;border-radius:22px}
+#move-seg button{padding:6px 9px;font-size:13px}
 </style>
 </head>
 <body>
@@ -47,6 +49,8 @@ html,body{background:#4A3E78}
     <summary id="t-grown">For grown-ups</summary>
     <div class="g-body">
       <p id="t-g1"></p>
+      <div class="g-row"><span id="t-move">Movement</span>
+        <div class="seg" id="move-seg"><button data-v="mixed"></button><button data-v="center"></button><button data-v="flex"></button><button data-v="ext"></button><button data-v="rot"></button></div></div>
       <div class="g-row"><span id="t-far">Spots</span>
         <div class="seg" id="far-seg"><button data-v="near"></button><button data-v="far"></button></div></div>
       <div class="g-row"><span id="t-hold">Hold for</span>
@@ -61,6 +65,7 @@ html,body{background:#4A3E78}
         <div class="seg" id="amb-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
       <div class="g-row"><span id="t-sfx">Sound effects</span>
         <div class="seg" id="sfx-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <p id="t-g6"></p>
       <p id="t-g2"></p>
       <p id="t-g5"></p>
       <p id="t-g3"></p>
@@ -86,9 +91,10 @@ const UI={
  en:{title:"Glow Spots",sub:"Bring the firefly home to the flower!",play:"Play",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
   g1:"A firefly lands on the child's face: nose, cheek, forehead or chin. The child moves the head to bring it to the flower in the middle and holds it there until the flower opens. Turning the head brings the cheek spots in; nodding up and down brings the forehead and chin spots in. Six fireflies make a round, and the score is the time it took.",
-  far:"Spots",near:"Near",farv:"Far",hold:"Hold for",still:"Body still check",guide:"Sound hints",close:"Move back a little so I can see your shoulders",
+  move:"Movement",mixed:"Mixed",center:"Center",flex:"Head down",ext:"Head up",rot:"Turning",far:"Spots",near:"Near",farv:"Far",hold:"Hold for",still:"Body still check",guide:"Sound hints",close:"Move back a little so I can see your shoulders",
   g5:"★ Sound hints: soft beeps get faster as the firefly gets closer to the flower, and notes climb while the child holds. The game can be played without watching the screen, for example when the child is very close or looking up.",
   music:"Music",amb:"Night sounds",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
+  g6:"★ Movement: Mixed uses all the spots. Center keeps the firefly on the nose: bring the head back to the middle and hold it there. Head down puts it on the forehead (neck flexion), Head up on the chin (neck extension), Turning on the cheeks (rotation). The first firefly is always on the nose, to set the middle.",
   g2:"★ The body still check pauses the flower if the child moves the whole body instead of the head. Ask the child to keep the shoulders still.",
   g3:"★ Stand the phone upright at eye level, about an arm's length away. The first firefly is always on the nose: that sets the middle.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
@@ -99,9 +105,10 @@ const UI={
  he:{title:"נקודות אור",sub:"תחזירו את הגחלילית הביתה לפרח!",play:"שחקו",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
   g1:"גחלילית נוחתת על הפנים של הילד: על האף, הלחי, המצח או הסנטר. הילד מזיז את הראש כדי להביא אותה לפרח שבאמצע ומחזיק שם עד שהפרח נפתח. סיבוב הראש מביא את הלחיים, והנהון למעלה ולמטה מביא את המצח והסנטר. בכל סבב יש שש גחליליות, והניקוד הוא הזמן שלקח.",
-  far:"נקודות",near:"קרוב",farv:"רחוק",hold:"להחזיק",still:"בדיקת גוף יציב",guide:"רמזי צליל",close:"זוזו קצת אחורה כדי שאראה את הכתפיים",
+  move:"תנועה",mixed:"מעורב",center:"מרכז",flex:"ראש למטה",ext:"ראש למעלה",rot:"סיבוב",far:"נקודות",near:"קרוב",farv:"רחוק",hold:"להחזיק",still:"בדיקת גוף יציב",guide:"רמזי צליל",close:"זוזו קצת אחורה כדי שאראה את הכתפיים",
   g5:"★ רמזי צליל: צפצופים רכים מואצים ככל שהגחלילית מתקרבת לפרח, והצלילים עולים בזמן ההחזקה. אפשר לשחק בלי להסתכל על המסך, למשל כשהילד קרוב מאוד או מסתכל למעלה.",
   music:"מוזיקה",amb:"צלילי לילה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
+  g6:"★ תנועה: ״מעורב״ משתמש בכל הנקודות. ״מרכז״ שם את הגחלילית על האף: מחזירים את הראש לאמצע ומחזיקים שם. ״ראש למטה״ שם אותה על המצח (כפיפת צוואר), ״ראש למעלה״ על הסנטר (יישור לאחור), ״סיבוב״ על הלחיים. הגחלילית הראשונה תמיד על האף, כדי לקבוע את האמצע.",
   g2:"★ בדיקת הגוף היציב עוצרת את הפרח אם הילד מזיז את כל הגוף במקום רק את הראש. בקשו מהילד להשאיר את הכתפיים במקום.",
   g3:"★ העמידו את הטלפון ישר בגובה העיניים, במרחק של בערך יד ישרה. הגחלילית הראשונה תמיד על האף, וכך נקבע האמצע.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
@@ -124,8 +131,9 @@ let far=LS.get('gs-far','near'); if(!SPOTS[far])far='near';
 let holdSec=+LS.get('gs-hold','5'); if(![3,5,8].includes(holdSec))holdSec=5;
 let stillOn=LS.get('gs-still','1')==='1';
 let guideOn=LS.get('gs-guide','1')==='1';
-let best=+LS.get('gs-best-'+far+holdSec,'0')||0;
-const loadBest=()=>{best=+LS.get('gs-best-'+far+holdSec,'0')||0;$('best').textContent=best?Math.round(best):'–';};
+let move=LS.get('gs-move','mixed');if(!['mixed','center','flex','ext','rot'].includes(move))move='mixed';
+let best=+LS.get('gs-best-'+move+far+holdSec,'0')||0;
+const loadBest=()=>{best=+LS.get('gs-best-'+move+far+holdSec,'0')||0;$('best').textContent=best?Math.round(best):'–';};
 
 S.track='lullaby'; S.amb='night';
 const syncSound=bindSound(()=>UI[lang]);
@@ -135,12 +143,13 @@ function segs(){
   document.querySelectorAll('#far-seg button').forEach(b=>b.textContent=b.dataset.v==='far'?u.farv:u.near);
   document.querySelectorAll('#hold-seg button').forEach(b=>b.textContent=b.dataset.v+(lang==='he'?' שנ׳':' s'));
   document.querySelectorAll('#still-seg button,#guide-seg button').forEach(b=>b.textContent=u[b.dataset.v==='1'?'on':'off']);
+  document.querySelectorAll('#move-seg button').forEach(b=>b.textContent=u[b.dataset.v]);mark('move-seg',move);
   mark('far-seg',far);mark('hold-seg',holdSec);mark('still-seg',+stillOn);mark('guide-seg',+guideOn);
 }
 function setLang(l){
   lang=l;LS.set('bamboo-lang',l);const u=UI[l];
   document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
-  for(const k of ['title','sub','play','privacy','grown','g1','far','hold','still','guide','music','amb','sfx','g2','g3','g5','legal','sec','best','sec2','over','again'])
+  for(const k of ['title','sub','play','privacy','grown','g1','move','far','hold','still','guide','music','amb','sfx','g6','g2','g3','g5','legal','sec','best','sec2','over','again'])
     {const e=$('t-'+k);if(e)e.textContent=u[k];}
   $('t-privacy2').textContent=u.privacy;
   $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
@@ -152,6 +161,7 @@ $('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
 document.querySelectorAll('#far-seg button').forEach(b=>b.onclick=()=>{far=b.dataset.v;LS.set('gs-far',far);loadBest();segs();});
 document.querySelectorAll('#hold-seg button').forEach(b=>b.onclick=()=>{holdSec=+b.dataset.v;LS.set('gs-hold',holdSec);loadBest();segs();});
 document.querySelectorAll('#still-seg button').forEach(b=>b.onclick=()=>{stillOn=b.dataset.v==='1';LS.set('gs-still',b.dataset.v);segs();});
+document.querySelectorAll('#move-seg button').forEach(b=>b.onclick=()=>{move=b.dataset.v;LS.set('gs-move',move);loadBest();segs();});
 document.querySelectorAll('#guide-seg button').forEach(b=>b.onclick=()=>{guideOn=b.dataset.v==='1';LS.set('gs-guide',b.dataset.v);segs();});
 
 /* ================= CANVAS + ART ================= */
@@ -235,9 +245,14 @@ let state='menu',tNow=0,score=0,countT=0,lastNew=false;
 let order=[],idx=0,prog=0,celebT=0,home=null,calib=null,fly=null,sparks=[],stillBad=false,offs=null,guideT=0,guideStep=0,tooClose=false;
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function newRound(){
-  const rest=shuffle(['cheekA','cheekB','forehead','chin']);
-  order=['nose',...rest,shuffle(['cheekA','cheekB','forehead','chin'])[0]];
-  if(order[5]===order[4])order[5]=order[1];
+  // the therapist picks the movement; the first firefly is always the nose (sets the middle)
+  if(move==='center')order=Array(ROUND).fill('nose');
+  else if(move==='flex')order=['nose',...Array(ROUND-1).fill('forehead')];
+  else if(move==='ext')order=['nose',...Array(ROUND-1).fill('chin')];
+  else if(move==='rot'){const a=Math.random()<.5;order=['nose',...Array.from({length:ROUND-1},(_,i)=>(i%2===0)===a?'cheekA':'cheekB')];}
+  else{const rest=shuffle(['cheekA','cheekB','forehead','chin']);
+    order=['nose',...rest,shuffle(['cheekA','cheekB','forehead','chin'])[0]];
+    if(order[5]===order[4])order[5]=order[1];}
   idx=0;prog=0;home=null;calib=null;fly=null;sparks=[];offs=null;guideStep=0;
 }
 function cur(){return order[idx];}
@@ -262,7 +277,7 @@ const CLIMB=[72,74,76,79,81,84,86,88];
 function guideNote(i){const m=CLIMB[Math.min(7,i)];if(!playSample(S.AC,'kalimba',m,S.AC.currentTime+.01,.16,S.BUS.sfx))tone({f0:440*Math.pow(2,(m-69)/12),dur:.25,type:'triangle',vol:.12});}
 function endGame(){
   state='over';musicStop();tooClose=false;$('toast').classList.remove('on');$('hud').classList.remove('on');showWhere();msg('');
-  lastNew=!best||score<best;if(lastNew){best=score;LS.set('gs-best-'+far+holdSec,best.toFixed(1));}
+  lastNew=!best||score<best;if(lastNew){best=score;LS.set('gs-best-'+move+far+holdSec,best.toFixed(1));}
   fillEnd(lastNew);$('end').hidden=false;SFX.chime();
 }
 function fillEnd(nb){const u=UI[lang];$('final').textContent=Math.round(score);$('newbest').hidden=!nb;$('newbest').textContent=u.newbest;

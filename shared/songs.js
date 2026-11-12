@@ -37,13 +37,13 @@ const minor = m => { const pc = ((m % 12) + 12) % 12; return (pc === 4 || pc ===
 
 /* styles: tempo + how each step is played. Events: [instrument, midi, volume, length(s), reverb] */
 export const STYLES = {
-  /* Marble Plate: elegant baroque — harpsichord melody, Alberti broken chords, cello continuo */
+  /* Marble Plate: elegant baroque — harpsichord melody over a mellow cello */
   baroque: { bpm: 92, play(s) {
     const { mel, ch, root, i } = at(s), ev = [];
     if (mel != null) ev.push(['harpsichord', mel, .3, .7, .3]);
-    const tri = ch, pat = [0, 2, 1, 2][i % 4];
-    ev.push(['harpsichord', tri[pat] - 12, .11, .4, .2]);
-    if (i === 0 || i === 4) ev.push(['cello', root, .26, 1.2, .2]);
+    // mellow cello accompaniment: long low root, then a soft chord tone halfway through the bar
+    if (i === 0) ev.push(['cello', root, .2, 2.4, .45]);
+    if (i === 4) ev.push(['cello', ch[1] - 12 < root ? ch[1] : ch[1] - 12, .13, 1.8, .45]);
     return ev; } },
   /* Glow Spots: nighttime lullaby — slow celesta, harp arpeggios, soft bass */
   lullaby: { bpm: 64, play(s) {
