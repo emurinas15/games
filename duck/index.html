@@ -361,8 +361,9 @@ function ell(x,y,rx,ry,rot=0){const p=new Path2D();p.ellipse(x,y,rx,ry,rot,0,Mat
 
 /* ---- Duckling (origin = between the feet, size = height in px) ---- */
 function drawDuck(c,size,o={}){
-  const {dir=1,phase=0,wobble=0,tumble=0,t=0,happy=0,sit=0}=o;const D=DUCKS[o.kind||kind];const dark=D===DUCKS.black;
+  const {dir=1,phase=0,wobble=0,tumble=0,t=0,happy=0,sit=0,look=0}=o;const D=DUCKS[o.kind||kind];const dark=D===DUCKS.black;
   const u=size/100, lw=Math.max(2,5.5*u);
+  const lx=look*1.6*u,ly=-look*2.4*u;   // pupils look up toward the butterfly
   c.save();
   if(tumble)c.rotate(tumble);
   if(wobble)c.rotate(Math.sin(t*22)*0.12*wobble);
@@ -400,8 +401,8 @@ function drawDuck(c,size,o={}){
   if(happy){c.lineWidth=lw*.8;if(dark){c.strokeStyle='#fff';}c.beginPath();c.arc(19*u,-64*u,4.5*u,Math.PI*1.1,Math.PI*1.9);c.stroke();}
   else{
     if(dark){c.fillStyle='#fff';c.fill(ell(20*u,-66*u,6.2*u*er,7*u*er));}
-    c.fillStyle=INK;c.fill(ell(20*u,-66*u,3.8*u*er,4.8*u*er));
-    c.fillStyle='#fff';c.fill(ell(21.4*u,-68*u,1.6*u*er,1.6*u*er));c.fill(ell(18.8*u,-64.3*u,.8*u*er,.8*u*er));
+    c.fillStyle=INK;c.fill(ell(20*u+lx,-66*u+ly,3.8*u*er,4.8*u*er));
+    c.fillStyle='#fff';c.fill(ell(21.4*u+lx,-68*u+ly,1.6*u*er,1.6*u*er));c.fill(ell(18.8*u+lx,-64.3*u+ly,.8*u*er,.8*u*er));
   }
   // cheek
   c.fillStyle='rgba(255,140,165,.85)';c.fill(ell(12*u,-56*u,5*u,3.2*u));
@@ -526,6 +527,7 @@ const keys={};addEventListener('keydown',e=>{keys[e.key]=1});addEventListener('k
 /* ================= GAME ================= */
 const K=3;                          // slide damping
 const TILT_G={small:12,medium:7.2,big:4.6};
+const HELP={small:4*Math.PI/180,medium:7*Math.PI/180,big:11*Math.PI/180};  // tilt toward the middle that holds the duck at the edge
 let state='menu';                   // menu | ready | count | play | fall | over
 const duck={x:0,vs:0,vw:0,phase:0,dir:1,wob:0,fallT:0,fx:0,fy:0,fvx:0,fvy:0,spin:0,dropT:0};
 const fly={x:.6,tx:.6,next:0,y:0};
@@ -598,15 +600,21 @@ function updateFly(dt,lim){
   const D=DUCKS[kind],side=Math.sign(duck.goal)||1;
   if(tNow>duck.legEnd)newLeg(-side);
   else if(tNow>duck.legEnd-D.leg[0]*.6&&Math.random()<dt*D.flip)newLeg(-side);   // surprise turn
-  fly.tx=Math.max(-lim,Math.min(lim,duck.x+Math.sign(duck.goal)*.65));
+  fly.tx=Math.max(-lim,Math.min(lim,duck.x+Math.sign(duck.goal)*.85));
   fly.x+=(fly.tx-fly.x)*Math.min(1,dt*2.2);
 }
 function updateDuck(dt,roll,running){
   const G=TILT_G[tiltSize]*DUCKS[kind].slip,r=Math.max(-.9,Math.min(.9,roll));
   if(!duck.sit&&Math.abs(r)>SIT_ON&&duck.dropT<=0){duck.sit=true;if(state==='play')SFX.quack(0,1.35);}
   else if(duck.sit&&Math.abs(r)<SIT_OFF)duck.sit=false;
-  const target=duck.sit?0:Math.sign(duck.goal-duck.x)*speed()*duck.pace;
-  duck.vw+=(target-duck.vw)*Math.min(1,dt*(duck.sit?8:4));
+  // the duck only walks toward where the butterfly already is, so the butterfly always moves first
+  const diff=fly.x-duck.x;
+  let target=duck.sit?0:Math.sign(diff)*Math.min(1,Math.max(0,(Math.abs(diff)-.1)/.2))*speed()*duck.pace;
+  // at the edge, a head tilt toward the middle stops it walking off: no rattle, no fall
+  const side=Math.sign(duck.x)||1,helping=r*side<-HELP[tiltSize],atEdge=Math.abs(duck.x)>.68;
+  if(atEdge&&helping&&Math.sign(target)===side)target=0;
+  duck.helping=helping;
+  duck.vw+=(target-duck.vw)*Math.min(1,dt*(duck.sit||target*duck.vw<=0?10:4));   // stops quickly when the butterfly turns
   if(running){
     if(duck.sit)duck.vs+=G*Math.sin(r)*.9*dt;          // on its bottom: no grip, keeps speeding up
     else duck.vs+=(G*Math.sin(r)-K*duck.vs)*dt;        // on its feet: slides gently with the tilt
@@ -614,9 +622,9 @@ function updateDuck(dt,roll,running){
   }
   const v=duck.vw+duck.vs;
   if(duck.sit){if(Math.abs(duck.vs)>.05)duck.dir=-Math.sign(duck.vs);}   // slides backwards, bottom first
-  else if(Math.abs(v)>.03)duck.dir=Math.sign(duck.vw||v);
+  else if(Math.abs(diff)>.04)duck.dir=Math.sign(diff);   // always faces the butterfly
   duck.phase+=dt*(Math.abs(duck.vw)>.03?14*duck.pace:2);
-  duck.wob+=((Math.abs(duck.x)>.74&&!duck.sit?1:0)-duck.wob)*Math.min(1,dt*6);
+  duck.wob+=((Math.abs(duck.x)>.74&&!duck.sit&&!duck.helping?1:0)-duck.wob)*Math.min(1,dt*6);   // rattles only if the tilt isn't helping
 }
 
 let last=performance.now();let kidNeck=H*.6;
@@ -691,13 +699,13 @@ function render(now,dt){
     if(state!=='fall'&&!(state==='ready'||state==='count')){
       let yoff=0;if(duck.dropT>0)yoff=-Math.pow(duck.dropT/.55,2)*H*.5;
       ctx.save();ctx.translate(duck.x*s.half,yoff);if(duck.sit&&Math.abs(duck.vs)>.1){const back=Math.sign(duck.vs);for(let i=0;i<4;i++){ctx.fillStyle=`rgba(255,255,255,${.55-i*.12})`;ctx.fill(ell(-back*(dsz*.32+i*dsz*.16),-dsz*.06,dsz*(.09+i*.02),dsz*(.05+i*.01)));}}
-      drawDuck(ctx,dsz,{dir:duck.dir,phase:duck.phase,wobble:duck.sit?1:duck.wob,sit:duck.sit?1:0,t:tNow,happy:state==='menu'&&Math.abs(duck.x)<.2&&Math.sin(tNow*.7)>.6?1:0});ctx.restore();
+      drawDuck(ctx,dsz,{dir:duck.dir,phase:duck.phase,wobble:duck.sit?1:duck.wob,sit:duck.sit?1:0,look:duck.sit?0:1,t:tNow,happy:state==='menu'&&Math.abs(duck.x)<.2&&Math.sin(tNow*.7)>.6?1:0});ctx.restore();
     }
     if(state==='count'){ctx.save();ctx.translate(0,-s.half*1.7+Math.sin(tNow*6)*6);drawDuck(ctx,dsz,{dir:1,phase:tNow*3,t:tNow,wobble:.4});ctx.restore();}
     ctx.restore();
     // butterfly in world space above the pad
     if(state==='menu'||state==='play'){
-      const bx=s.x+Math.cos(s.roll)*fly.x*s.half,by=s.y+Math.sin(s.roll)*fly.x*s.half-s.half*1.55+Math.sin(tNow*2.3)*s.half*.12;
+      const bx=s.x+Math.cos(s.roll)*fly.x*s.half,by=s.y+Math.sin(s.roll)*fly.x*s.half-s.half*1.12+Math.sin(tNow*2.3)*s.half*.08;
       drawButterfly(bx,by,s.half*.3,tNow);
     }
   }
