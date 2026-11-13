@@ -81,6 +81,14 @@ export const STYLES = {
     if (i === 4) ev.push(['acoustic_bass', root + 12 > 55 ? root : root + 12, .18, .35, .08]);
     if (k === 0) ev.push(['timpani', root - 12, .22, 1.6, .3]);
     return ev; } },
+  /* Freeze & Copy: bouncy dance party — xylophone melody, nylon-guitar off-beat chops, hopping acoustic bass, a timpani 'freeze' thump each 2 bars */
+  dance: { bpm: 124, play(s) {
+    const { mel, ch, root, i } = at(s), ev = [], k = ((s % STEPS) + STEPS) % STEPS % 32;
+    if (mel != null) ev.push(['xylophone', mel, .26, .4, .2]);
+    if (i % 2 === 1) for (const n of ch) ev.push(['acoustic_guitar_nylon', n, .06, .22, .15]);
+    if (i % 2 === 0) ev.push(['acoustic_bass', i % 4 === 0 ? root : root + 12 > 55 ? root + 7 : root + 12, .22, .3, .05]);
+    if (k % 16 === 0) ev.push(['timpani', root - 12, .16, 1, .3]);
+    return ev; } },
   /* ---- Spider Swat music options (12 Nov evening) — same melody, spider twists ---- */
   /* A · Sneaky tiptoe: staccato bassoon melody, tiptoeing pizzicato, a little leg-skitter every 2 bars */
   spiderTiptoe: { bpm: 100, play(s) {

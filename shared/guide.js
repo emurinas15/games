@@ -5,7 +5,8 @@
 
    Two shapes:
      'face'  head + shoulders, head in the middle of the screen (Duck, Marbles, Glow Spots)
-     'body'  head in the middle, shoulders, arms and trunk visible (Spider Swat, Copy the Sprout)
+     'body'  head in the middle, shoulders, arms and trunk visible (Spider Swat, Copy the Sprout, Freeze & Copy seated)
+     'full'  standing, head to toe (Freeze & Copy)
 
    Margins are deliberately wide: this is "about right", not a measurement.
    Every number that sets the target is in TARGET below so it is easy to tune later.
@@ -22,6 +23,7 @@ import { tone, SFX } from './kit.js';
 
 export const TARGET = {
   face: { x: .5, y: .5, size: r => Math.min(r.h * .2, r.w * .42), sizeMin: .6, sizeMax: 1.65, dx: .17, dy: .14 },
+  full: { x: .5, y: .17, size: r => Math.min(r.h * .15, r.w * .3), sizeMin: .6, sizeMax: 1.7, dx: .2, dy: .1 },   // standing, head to toe
   body: { x: .5, y: .45, size: r => Math.min(r.w * .22, r.h * .2), sizeMin: .58, sizeMax: 1.75, dx: .18, dy: .15 }
 };
 const HOLD = 1.5;        // seconds to hold the pose
@@ -116,6 +118,19 @@ export function makeGuide(kind, snd = {}) {
     }
     // s = shoulder width (joint to joint); (x,y) = nose
     const hr = s * .3, shy = y + s * .55, hw = s * .62, low = shy + s * 1.45;
+    if (kind === 'full') {
+      const hipY = shy + s * 1.35, footY = hipY + s * 2.35;
+      blob(x, y - hr * .2, hr, hr * 1.22);
+      bust(s * .13, y + hr * .7, hw, shy, hipY, hw * .75);
+      c.lineCap = 'round'; c.lineJoin = 'round';
+      for (const d of [-1, 1]) {
+        c.lineWidth = s * .22; c.beginPath(); c.moveTo(x + d * hw * .93, shy + s * .2); c.quadraticCurveTo(x + d * hw * 1.2, shy + s * .75, x + d * hw * 1.15, hipY + s * .05); c.stroke();
+        blob(x + d * hw * 1.15, hipY + s * .12, s * .12, s * .14);                                      // hand
+        c.lineWidth = s * .3; c.beginPath(); c.moveTo(x + d * s * .24, hipY - s * .05); c.lineTo(x + d * s * .27, footY - s * .1); c.stroke();   // leg
+        blob(x + d * s * .33, footY, s * .2, s * .1);                                                 // foot
+      }
+      return { top: y - hr * 1.5, bot: footY + s * .12 };
+    }
     blob(x, y - hr * .2, hr, hr * 1.22);                                        // head
     bust(s * .13, y + hr * .7, hw, shy, low, hw * .78);                         // neck, shoulders, trunk to the hips
     c.lineCap = 'round'; c.lineJoin = 'round';
@@ -183,7 +198,7 @@ export function makeGuide(kind, snd = {}) {
       ctx.save();
       const fs = Math.max(17, Math.min(26, r.w * .05));
       ctx.font = `700 ${fs}px Fredoka, sans-serif`; ctx.direction = g.lang === 'he' ? 'rtl' : 'ltr'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      const tw = ctx.measureText(txt).width, bw = tw + fs * 1.6, bh = fs * 2, bx = r.x + r.w / 2 - bw / 2, by = r.y + Math.max(12, r.h * .06);
+      const tw = ctx.measureText(txt).width, bw = tw + fs * 1.6, bh = fs * 2, bx = r.x + r.w / 2 - bw / 2, by = T.y < .3 ? r.y + r.h * .9 - bh : r.y + Math.max(12, r.h * .06);   // head near the top (standing) -> hint at the bottom
       ctx.fillStyle = '#2b2118'; ctx.beginPath(); ctx.roundRect(bx, by + 4, bw, bh, bh / 2); ctx.fill();
       ctx.fillStyle = g.inside || pop ? '#E6F7DE' : '#fff'; ctx.strokeStyle = '#2b2118'; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, bh / 2); ctx.fill(); ctx.stroke();

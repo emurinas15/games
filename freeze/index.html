@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Freeze & Copy · Bamboo Physio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Grandstander:wght@700;900&family=Fredoka:wght@500;600;700&family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/kit.css">
+<style>
+.stopx{position:fixed;left:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:7;width:44px;height:44px;border-radius:50%;background:#fff;border:3px solid var(--ink);font:900 20px Fredoka,sans-serif;box-shadow:0 3px 0 var(--ink);display:none;cursor:pointer}
+.stopx.on{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<video id="v" playsinline muted></video>
+
+<div class="top">
+  <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 33 C 10 20, 20 9, 34 6 C 33 20, 24 31, 8 33 Z" fill="#7DCB6B" stroke="#2b2118" stroke-width="3.5" stroke-linejoin="round"/><path d="M11 30 C 17 23, 23 16, 29 11" fill="none" stroke="#2b2118" stroke-width="2.5" stroke-linecap="round"/></svg><span>Bamboo Physio</span></div>
+  <div class="tr"><button class="snd cast" id="cast">📺</button><button class="snd" id="snd" aria-pressed="false">🔊</button>
+  <div class="lang"><button id="lang-en" aria-pressed="true">EN</button><button id="lang-he" aria-pressed="false">עב</button></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+<button class="stopx" id="stopx" aria-label="Stop">✕</button>
+
+<div class="card" id="start">
+  <h1 id="t-title">Freeze & Copy</h1>
+  <p class="sub" id="t-sub"></p>
+  <button class="btn" id="play"><span id="t-play">Play</span></button>
+  <p class="note" id="t-privacy"></p>
+  <details id="grown">
+    <summary id="t-grown">For grown-ups</summary>
+    <div class="g-body">
+      <p id="t-g1"></p>
+      <div class="g-row"><span id="t-body">Body</span>
+        <div class="seg" id="body-seg"><button data-v="full"></button><button data-v="seated"></button></div></div>
+      <div class="g-row"><span id="t-who">Players</span>
+        <div class="seg" id="who-seg"><button data-v="turns"></button><button data-v="duo"></button></div></div>
+      <div class="g-row"><span id="t-strict">Copy</span>
+        <div class="seg" id="strict-seg"><button data-v="easy"></button><button data-v="medium"></button><button data-v="hard"></button></div></div>
+      <div class="g-row"><span id="t-music">Music</span>
+        <div class="seg" id="music-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-sfx">Sound effects</span>
+        <div class="seg" id="sfx-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <p id="t-g2"></p>
+      <p id="t-g3"></p>
+      <p id="t-g4"></p>
+      <p class="mini" id="t-legal"></p>
+    </div>
+  </details>
+</div>
+
+<div class="card" id="end" hidden>
+  <div class="center"><span class="newbest" id="newbest" hidden></span></div>
+  <h1 id="t-over"></h1>
+  <div class="big-score"><span id="final">0</span><small id="t-sec2"></small></div>
+  <p class="best-line" id="best-line"></p>
+  <button class="btn" id="again"><span id="t-again">Play again</span></button>
+  <p class="note" id="t-privacy2"></p>
+</div>
+
+<script type="module">
+import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom} from '../shared/kit.js';
+import {makeGuide} from '../shared/guide.js';
+import {setupCast} from '../shared/cast.js';
+
+/* Freeze & Copy — Edgar's idea (13 Nov 2026).
+   One player dances for 3 s, then freezes; the camera keeps a cut-out photo of that pose.
+   The next player copies it; a meter fills while the copy holds. The copier then dances and freezes
+   the next pose (a chain). 60 s, up to 20 poses. Poses already used (or plain standing) are turned away.
+   Modes: standing (head to toe) or seated (upper body, camera closer); take turns (one in the frame)
+   or side by side (two in the frame, for a big screen).
+   Privacy: the frozen photo exists only in memory for the current pose and is dropped right after. */
+
+const UI={
+ en:{title:"Freeze & Copy",sub:"Dance, freeze, and make the next player copy your pose!",play:"Play",
+  privacy:"The camera is used only to play. Nothing is recorded or sent. The frozen photo is gone as soon as the next pose comes.",grown:"For grown-ups",
+  g1:"A copying game for two or more players. One player dances for 3 seconds and freezes in a pose; the camera keeps a photo of it. The next player copies that pose — a meter fills while the copy holds. Then the copier dances and freezes a new pose for the next one, like a chain. One minute, up to 20 poses. A pose that was already used, or just standing still, is turned away so every pose is new.",
+  body:"Body",full:"Standing",seated:"Seated",who:"Players",turns:"Take turns",duo:"Side by side",strict:"Copy",easy:"Easy",medium:"Medium",hard:"Hard",
+  music:"Music",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
+  g2:"★ Standing: phone upright, about 2.5–3 m away, so each player is seen head to toe. Seated: upper body only (arms and trunk); the phone can be closer, about 1–1.5 m.",
+  g3:"★ Take turns: one player in the picture at a time — the poser steps out, the copier steps in. Side by side: both players in the picture together; best on a big screen (📺 or the phone's screen mirroring) with the phone farther back and sideways.",
+  g4:"★ Copy sets how close the copy must be. Start with Medium.",
+  legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
+  left:"s",copies:"poses",best:"best",sec2:"poses copied",over:["Well done!","Great copying!","Super poses!","Pose masters!"],win:"All 20 poses!",again:"Play again",newbest:"New record!",bestis:"Best: ",
+  ready:"Getting ready…",two:"Two players, side by side!",dance:"Dance!",freeze:"Freeze!",hold:"Hold it…",
+  used:"That pose was already used — make a new one!",plain:"Make a funny pose!",copyme:"Copy me!",
+  stepout:"Next player — step in!",copy:"Copy the pose!",copyR:"Copy the pose →",copyL:"← Copy the pose",great:["Great copy!","Perfect!","Yes!","Nailed it!"],
+  newone:"Let's make a new pose!",yourturn:"Your turn to dance!",nobody:"Step in front of the camera!",
+  nocam:"No camera here — this game needs a camera.",aria:"Game area"},
+ he:{title:"קופאים ומעתיקים",sub:"רוקדים, קופאים — והשחקן הבא מעתיק את התנוחה!",play:"שחקו",
+  privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח. התמונה הקפואה נמחקת ברגע שמגיעה התנוחה הבאה.",grown:"למבוגרים",
+  g1:"משחק העתקה לשני שחקנים או יותר. שחקן אחד רוקד 3 שניות וקופא בתנוחה; המצלמה שומרת תמונה שלה. השחקן הבא מעתיק את התנוחה — מד מתמלא כל עוד ההעתקה מחזיקה. אחר כך המעתיק רוקד וקופא בתנוחה חדשה לשחקן הבא, כמו שרשרת. דקה אחת, עד 20 תנוחות. תנוחה שכבר הייתה, או סתם עמידה, לא מתקבלת — כך שכל תנוחה חדשה.",
+  body:"גוף",full:"עמידה",seated:"ישיבה",who:"שחקנים",turns:"בתורות",duo:"זה לצד זה",strict:"העתקה",easy:"קל",medium:"בינוני",hard:"קשה",
+  music:"מוזיקה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
+  g2:"★ עמידה: טלפון עומד, במרחק של בערך 2.5–3 מ׳, כך שכל שחקן נראה מכף רגל ועד ראש. ישיבה: רק פלג הגוף העליון (ידיים וגו); אפשר לקרב את הטלפון, בערך מטר עד מטר וחצי.",
+  g3:"★ בתורות: שחקן אחד בתמונה בכל פעם — המציג יוצא, המעתיק נכנס. זה לצד זה: שני השחקנים בתמונה יחד; הכי טוב על מסך גדול (📺 או שיקוף המסך של הטלפון), כשהטלפון רחוק יותר ולרוחב.",
+  g4:"★ ״העתקה״ קובע כמה מדויקת צריכה להיות ההעתקה. מתחילים ב״בינוני״.",
+  legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
+  left:"שנ׳",copies:"תנוחות",best:"שיא",sec2:"תנוחות הועתקו",over:["כל הכבוד!","העתקות מעולות!","תנוחות על!","אלופי התנוחות!"],win:"כל 20 התנוחות!",again:"עוד פעם",newbest:"שיא חדש!",bestis:"השיא: ",
+  ready:"מתכוננים…",two:"שני שחקנים, זה לצד זה!",dance:"רוקדים!",freeze:"קופאים!",hold:"מחזיקים…",
+  used:"התנוחה הזאת כבר הייתה — עשו חדשה!",plain:"עשו תנוחה מצחיקה!",copyme:"העתיקו אותי!",
+  stepout:"השחקן הבא — להיכנס!",copy:"העתיקו את התנוחה!",copyR:"העתיקו את התנוחה ←",copyL:"→ העתיקו את התנוחה",great:["העתקה מעולה!","מושלם!","יש!","בול!"],
+  newone:"בואו נעשה תנוחה חדשה!",yourturn:"התור שלכם לרקוד!",nobody:"היכנסו מול המצלמה!",
+  nocam:"אין כאן מצלמה — המשחק הזה צריך מצלמה.",aria:"אזור המשחק"}
+};
+
+const ROUND=60,MAX=20,DANCE=3,GIVEUP=15,HOLD=1.0;
+const TOL={easy:42,medium:32,hard:23};          // degrees per limb
+let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
+let bodyMode=LS.get('fc-body','full'); if(!['full','seated'].includes(bodyMode))bodyMode='full';
+let who=LS.get('fc-who','turns'); if(!['turns','duo'].includes(who))who='turns';
+let strict=LS.get('fc-strict','medium'); if(!TOL[strict])strict='medium';
+let best=0; const bestKey=()=>'fc-best-'+bodyMode+who+strict; const loadBest=()=>{best=+LS.get(bestKey(),'0')||0;};
+S.track='dance'; S.amb='none'; S.ambOn=false;
+const syncSound=bindSound(()=>UI[lang]);
+let casting=false;
+setupCast({canvas:$('c'),button:$('cast'),lang:()=>lang,sound:()=>(audio(),S),onChange:v=>{casting=v;}});
+
+function segs(){
+  const u=UI[lang],mark=(id,v)=>document.querySelectorAll('#'+id+' button').forEach(b=>{b.setAttribute('aria-pressed',b.dataset.v===String(v));});
+  for(const id of ['body-seg','who-seg','strict-seg'])document.querySelectorAll('#'+id+' button').forEach(b=>b.textContent=u[b.dataset.v]);
+  mark('body-seg',bodyMode);mark('who-seg',who);mark('strict-seg',strict);
+}
+function setLang(l){
+  lang=l;LS.set('bamboo-lang',l);const u=UI[l];
+  document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
+  for(const k of ['title','sub','play','privacy','grown','g1','body','who','strict','music','sfx','g2','g3','g4','legal','sec2','again'])
+    {const e=$('t-'+k);if(e)e.textContent=u[k];}
+  $('t-privacy2').textContent=u.privacy;
+  $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
+  $('c').setAttribute('aria-label',u.aria);
+  segs();syncSound();if(!$('end').hidden)fillEnd(lastNew);
+}
+$('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
+const segBind=(id,fn)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{fn(b.dataset.v);loadBest();segs();});
+segBind('body-seg',v=>{bodyMode=v;LS.set('fc-body',v);});
+segBind('who-seg',v=>{who=v;LS.set('fc-who',v);});
+segBind('strict-seg',v=>{strict=v;LS.set('fc-strict',v);});
+
+/* ================= CANVAS ================= */
+const cv=$('c'),ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;}
+addEventListener('resize',resize);resize();
+function toast(t,ms=4000){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.tm);if(ms)toast.tm=setTimeout(()=>e.classList.remove('on'),ms);}
+
+/* ================= SOUND ================= */
+const FX={
+  shutter(){noise({dur:.05,freq:3000,vol:.3,type:'highpass'});noise({dur:.08,freq:1200,vol:.2,type:'bandpass',at:.07});},
+  great(){[784,988,1175,1568].forEach((f,i)=>tone({f0:f,dur:.25,type:'triangle',vol:.2,at:i*.07}));},
+  nope(){tone({f0:420,f1:300,dur:.25,type:'triangle',vol:.16});},
+  fill(p){tone({f0:500+p*600,dur:.06,type:'sine',vol:.07});},
+  whoosh(){noise({dur:.35,freq:1400,vol:.12,type:'bandpass'});}
+};
+
+/* ================= CAMERA + POSE TRACKING (on device) ================= */
+const video=$('v');
+let tracker=null,camOK=false,lastVT=-1,people=[];   // people: [{lm:[{x,y,v}] in screen px, nose, sw, idx}]
+let wantShot=null;   // set to a person index -> the next tracking frame keeps a cut-out photo
+const vmap=()=>{const vw=video.videoWidth||640,vh=video.videoHeight||480,s=Math.max(W/vw,H/vh);return {vw,vh,s,ox:(W-vw*s)/2,oy:(H-vh*s)/2};};
+async function startCam(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('nocam');
+  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:false});
+  video.srcObject=stream;await video.play();
+  const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
+  const files=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+  const opts=(d,m,k)=>({baseOptions:{modelAssetPath:`https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_${k}/float16/1/pose_landmarker_${k}.task`,delegate:d},
+    runningMode:'VIDEO',numPoses:2,minPoseDetectionConfidence:.45,minPosePresenceConfidence:.45,minTrackingConfidence:.45,outputSegmentationMasks:m});
+  let err=null;
+  for(const [d,m,k] of [['GPU',true,'full'],['GPU',true,'lite'],['CPU',true,'lite'],['CPU',false,'lite']]){
+    try{tracker=await vision.PoseLandmarker.createFromOptions(files,opts(d,m,k));break;}catch(e){err=e;}}
+  if(!tracker)throw err||new Error('model');
+  camOK=true;
+}
+function track(now){
+  if(!tracker||video.readyState<2||video.currentTime===lastVT)return;lastVT=video.currentTime;
+  let res;try{res=tracker.detectForVideo(video,now);}catch(e){return;}
+  const m=vmap(),L=res.landmarks||[],M=res.segmentationMasks||[];
+  const ps=L.map((lm,idx)=>{const pts=lm.map(p=>({x:m.ox+(1-p.x)*m.vw*m.s,y:m.oy+p.y*m.vh*m.s,v:p.visibility??1}));
+    return {lm:pts,raw:lm,idx,nose:pts[0],sw:Math.hypot(pts[11].x-pts[12].x,pts[11].y-pts[12].y)};}).filter(p=>p.lm[11].v>.4&&p.lm[12].v>.4);
+  ps.sort((a,b)=>a.nose.x-b.nose.x);
+  // in turns mode keep only the biggest (closest) person
+  people=who==='turns'&&ps.length>1?[ps.reduce((a,b)=>b.sw>a.sw?b:a)]:ps;
+  if(wantShot!==null){const p=people[wantShot];wantShot=null;if(p)snap(p,M[p.idx]);}
+}
+
+/* cut-out photo of one person: video frame + segmentation mask, cropped around the body, mirrored */
+let photo=null;   // {cv, w, h} — lives only for the current pose
+function snap(p,mask){
+  const vw=video.videoWidth,vh=video.videoHeight;if(!vw)return;
+  const vis=p.raw.filter(q=>(q.visibility??1)>.3);
+  let x0=Math.min(...vis.map(q=>q.x)),x1=Math.max(...vis.map(q=>q.x)),y0=Math.min(...vis.map(q=>q.y)),y1=Math.max(...vis.map(q=>q.y));
+  const pw=(x1-x0),ph=(y1-y0);x0-=pw*.18+.04;x1+=pw*.18+.04;y0-=ph*.12+.08;y1+=ph*.06+.03;
+  x0=Math.max(0,x0);y0=Math.max(0,y0);x1=Math.min(1,x1);y1=Math.min(1,y1);
+  const sx=Math.round(x0*vw),sy=Math.round(y0*vh),sw=Math.max(8,Math.round((x1-x0)*vw)),sh=Math.max(8,Math.round((y1-y0)*vh));
+  const full=document.createElement('canvas');full.width=vw;full.height=vh;const fc=full.getContext('2d',{willReadFrequently:true});
+  fc.drawImage(video,0,0,vw,vh);
+  if(mask){try{const arr=mask.getAsFloat32Array(),mw=mask.width,mh=mask.height;const img=fc.getImageData(0,0,vw,vh),d=img.data;
+    for(let y=0;y<vh;y++){const my=Math.min(mh-1,Math.floor(y*mh/vh));for(let x=0;x<vw;x++){const mv=arr[my*mw+Math.min(mw-1,Math.floor(x*mw/vw))];
+      d[(y*vw+x)*4+3]=mv>.6?255:mv<.25?0:Math.round((mv-.25)/.35*255);}}
+    fc.putImageData(img,0,0);}catch(e){}}
+  const out=document.createElement('canvas');out.width=sw;out.height=sh;const oc=out.getContext('2d');
+  oc.translate(sw,0);oc.scale(-1,1);oc.drawImage(full,sx,sy,sw,sh,0,0,sw,sh);
+  photo={cv:out,w:sw,h:sh,cut:!!mask};
+}
+
+/* ================= POSES ================= */
+// segments by screen side (mirrored picture): left arm = the arm whose shoulder is further left on screen
+function sides(lm){const sL=lm[11].x<lm[12].x,hL=lm[23].x<lm[24].x;
+  return {aL:sL?[11,13,15]:[12,14,16],aR:sL?[12,14,16]:[11,13,15],lL:hL?[23,25,27]:[24,26,28],lR:hL?[24,26,28]:[23,25,27]};}
+function poseOf(p){
+  const lm=p.lm,s=sides(lm),seg=[],ang=(a,b)=>(lm[a].v>.5&&lm[b].v>.5)?Math.atan2(lm[b].y-lm[a].y,lm[b].x-lm[a].x)*180/Math.PI:null;
+  const add=(name,a,b,kind)=>seg.push({name,a:ang(a,b),kind});
+  add('uaL',s.aL[0],s.aL[1],'arm');add('faL',s.aL[1],s.aL[2],'arm');add('uaR',s.aR[0],s.aR[1],'arm');add('faR',s.aR[1],s.aR[2],'arm');
+  const sh={x:(lm[11].x+lm[12].x)/2,y:(lm[11].y+lm[12].y)/2},hp={x:(lm[23].x+lm[24].x)/2,y:(lm[23].y+lm[24].y)/2};
+  seg.push({name:'trunk',a:lm[23].v>.5&&lm[24].v>.5?Math.atan2(sh.y-hp.y,sh.x-hp.x)*180/Math.PI:null,kind:'trunk'});
+  if(bodyMode==='full'){add('thL',s.lL[0],s.lL[1],'leg');add('shL',s.lL[1],s.lL[2],'leg');add('thR',s.lR[0],s.lR[1],'leg');add('shR',s.lR[1],s.lR[2],'leg');}
+  return seg;
+}
+const dAng=(a,b)=>Math.abs(((a-b+540)%360)-180);
+// compare two poses -> {ok, okByName, mean, max}
+function compare(A,B,tol){
+  let n=0,good=0,sum=0,mx=0,armsOk=true;const by={};
+  const Bm={};for(const x of B)Bm[x.name]=x.a;
+  for(let i=0;i<A.length;i++){const a=A[i].a,b=Bm[A[i].name];if(a==null||b==null)continue;
+    const t=tol*(A[i].kind==='trunk'?.75:A[i].kind==='leg'?1.15:1)*(A[i].name.startsWith('fa')?1.15:1);
+    const d=dAng(a,b);n++;sum+=d;mx=Math.max(mx,d);const ok=d<t;by[A[i].name]=ok;if(ok)good++;else if(A[i].kind==='arm')armsOk=false;}
+  return {ok:n>=4&&armsOk&&good>=Math.ceil(n*.75),by,mean:n?sum/n:999,max:mx,n};
+}
+// plain standing / sitting with arms down: upper arms and forearms pointing down, legs straight down
+const NEUTRAL=()=>[['uaL',90,'arm'],['faL',90,'arm'],['uaR',90,'arm'],['faR',90,'arm'],['trunk',-90,'trunk'],['thL',90,'leg'],['shL',90,'leg'],['thR',90,'leg'],['shR',90,'leg']]
+  .filter(x=>bodyMode==='full'||x[2]!=='leg').map(([name,a,kind])=>({name,a,kind}));
+const sameAs=(A,B)=>{const c=compare(A,B,26);return c.ok&&c.mean<20;};   // close enough to count as "the same pose"
+
+/* ================= GAME ================= */
+let state='menu',phase='',phaseT=0,tNow=0,timeLeft=ROUND,score=0,lastNew=false,countT=0;
+let poser=0;          // duo: 0 = left player, 1 = right player
+let target=null,used=[],tries=0,meter=0,copyT=0,awayT=0,bigMsg='',bigMsgT=0,pops=[],flash=0,fillTick=0,lastMatch=null;
+let guide=null;
+function say(t,dur=1.6){bigMsg=t;bigMsgT=tNow+dur;}
+function setPhase(p){phase=p;phaseT=0;}
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+async function play(){
+  audio();SFX.go();
+  $('start').hidden=true;$('end').hidden=true;
+  if(!camOK){say(UI[lang].ready,99);state='loading';
+    try{await startCam();}catch(e){console.warn(e);state='menu';bigMsg='';$('start').hidden=false;toast(UI[lang].nocam,6000);return;}}
+  bigMsg='';score=0;timeLeft=ROUND;used=[];target=null;photo=null;meter=0;poser=0;pops=[];loadBest();
+  $('stopx').classList.add('on');musicStart();
+  guide=who==='duo'?null:makeGuide(bodyMode==='full'?'full':'body');if(guide)guide.reset();
+  state='setup';
+}
+$('play').onclick=play;$('again').onclick=play;
+$('stopx').onclick=()=>endGame(true);
+
+function endGame(quit){
+  state='over';musicStop();$('stopx').classList.remove('on');if(guide)guide.hide();photo=null;target=null;
+  if(quit){state='menu';$('start').hidden=false;return;}
+  lastNew=score>best;if(lastNew){best=score;LS.set(bestKey(),String(score));}
+  fillEnd(lastNew);$('end').hidden=false;SFX.chime();
+}
+function fillEnd(nb){const u=UI[lang];$('final').textContent=score;$('newbest').hidden=!nb;$('newbest').textContent=u.newbest;
+  $('t-over').textContent=score>=MAX?u.win:u.over[Math.min(3,Math.floor(score/5))];$('best-line').textContent=u.bestis+best;}
+
+const posers=()=>who==='duo'?people[poser]:people[0];
+const copier=()=>who==='duo'?people[1-poser]:people[0];
+
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(.05,(now-last)/1000);last=now;tNow+=dt;
+  if(camOK)track(now);
+  const u=UI[lang];
+  if(state==='setup'){
+    if(guide){const p=people[0];if(guide.update(dt,p?{x:p.nose.x,y:p.nose.y,size:p.sw}:null,{x:0,y:0,w:W,h:H})==='done'){state='count';countT=tNow;}}
+    else{ if(people.length>=2){awayT+=dt;if(awayT>1){state='count';countT=tNow;awayT=0;}}else awayT=0; }
+  }
+  else if(state==='count'){ if(tNow-countT>=3){state='play';setPhase('dance');FX.whoosh();} }
+  else if(state==='play'){
+    phaseT+=dt;timeLeft-=dt;
+    if(timeLeft<=0){timeLeft=0;endGame(false);}
+    else if(phase==='dance'){                     // 3 s free dance, then "Freeze!"
+      if(phaseT>=DANCE){setPhase('freeze');say(u.freeze,1);SFX.boing();}
+    }
+    else if(phase==='freeze'){                    // a short moment to settle, then the photo
+      if(phaseT>=.6){const p=posers();
+        if(!p){say(u.nobody,1.2);setPhase('freeze');phaseT=.2;}
+        else{const P=poseOf(p);
+          const plain=sameAs(NEUTRAL(),P),rep=used.some(U=>sameAs(U,P));
+          if((plain||rep)&&tries<2){tries++;FX.nope();say(rep?u.used:u.plain,1.6);setPhase('freeze');phaseT=-1.2;}
+          else{tries=0;target=P;used.push(P);photo=null;wantShot=who==='duo'?poser:0;FX.shutter();flash=1;meter=0;copyT=0;awayT=0;
+            setPhase(who==='duo'?'copy':'swap');}}}
+    }
+    else if(phase==='swap'){                      // take turns: the poser steps out, the copier steps in
+      const p=people[0];
+      if(!p||!compare(target,poseOf(p),TOL[strict]).ok)awayT+=dt;else awayT=Math.max(0,awayT-dt);
+      if(awayT>.6||phaseT>6){setPhase('copy');meter=0;}
+    }
+    else if(phase==='copy'){
+      const c=copier();lastMatch=null;
+      if(c){const r=compare(target,poseOf(c),TOL[strict]);lastMatch={r,c};
+        if(r.ok){meter=Math.min(1,meter+dt/HOLD);fillTick+=dt;if(fillTick>.2){fillTick=0;FX.fill(meter);}}
+        else meter=Math.max(0,meter-dt*.35);}
+      else meter=Math.max(0,meter-dt*.35);
+      if(meter>=1){score++;FX.great();say(pick(u.great),1.3);for(let i=0;i<14;i++)pops.push({x:W/2,y:H*.4,vx:(Math.random()-.5)*W*.8,vy:-H*(.3+Math.random()*.5),life:1.2});
+        if(score>=MAX){endGame(false);}
+        else{setPhase('dance');photo=null;target=null;if(who==='duo')poser=1-poser;}}
+      else if(phaseT>GIVEUP){say(u.newone,1.5);FX.nope();setPhase('dance');photo=null;target=null;if(who==='duo')poser=1-poser;}
+    }
+  }
+  render(dt);
+  requestAnimationFrame(frame);
+}
+
+/* ================= DRAWING ================= */
+function drawMirrored(){const m=vmap();ctx.save();ctx.translate(W,0);ctx.scale(-1,1);ctx.drawImage(video,W-m.ox-m.vw*m.s,m.oy,m.vw*m.s,m.vh*m.s);ctx.restore();}
+function bubble(txt,x,y,fs,fill='#fff'){
+  ctx.save();ctx.font=`700 ${fs}px Fredoka,sans-serif`;ctx.direction=lang==='he'?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';
+  const w=ctx.measureText(txt).width+fs*1.4,h=fs*1.9;
+  ctx.fillStyle=INK;ctx.beginPath();ctx.roundRect(x-w/2,y-h/2+4,w,h,h/2);ctx.fill();
+  ctx.fillStyle=fill;ctx.strokeStyle=INK;ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,h/2);ctx.fill();ctx.stroke();
+  ctx.fillStyle=INK;ctx.fillText(txt,x,y+1);ctx.restore();
+}
+function bigText(txt,x,y,fs,col='#FFD84D',sc=1){
+  ctx.save();ctx.translate(x,y);ctx.scale(sc,sc);ctx.font=`900 ${fs}px Grandstander,Fredoka,sans-serif`;ctx.direction=lang==='he'?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.lineJoin='round';ctx.lineWidth=fs*.14;ctx.strokeStyle=INK;ctx.fillStyle=INK;ctx.fillText(txt,0,fs*.08);ctx.strokeText(txt,0,0);ctx.fillStyle=col;ctx.fillText(txt,0,0);ctx.restore();
+}
+// the frozen photo, as a tilted sticker card
+function photoRect(){
+  if(who==='duo'){const h=Math.min(H*.36,W*.32);return {x:W/2,y:H*.04+56+h/2,h};}
+  const land=W>H*1.1,h=land?H*.62:H*.34;return {x:land?W-h*.42-16:W-h*.4-12,y:land?H*.5:56+16+h/2,h};
+}
+function drawPhoto(){
+  if(!photo&&!target)return;
+  const R=photoRect(),ar=photo?photo.w/photo.h:.6,h=R.h,w=Math.min(h*ar,W*.45),ph=w/ar;
+  const pad=10,lab=Math.max(18,h*.09);
+  ctx.save();ctx.translate(R.x,R.y);ctx.rotate(-.04);
+  const cw=w+pad*2,ch=ph+pad*2+lab*1.4;
+  ctx.fillStyle=INK;ctx.beginPath();ctx.roundRect(-cw/2,-ch/2+5,cw,ch,18);ctx.fill();
+  ctx.fillStyle='#FFF6E3';ctx.strokeStyle=INK;ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(-cw/2,-ch/2,cw,ch,18);ctx.fill();ctx.stroke();
+  ctx.save();ctx.beginPath();ctx.roundRect(-w/2,-ch/2+pad,w,ph,12);ctx.clip();
+  ctx.fillStyle='#CFEAFF';ctx.fillRect(-w/2,-ch/2+pad,w,ph);
+  if(photo)ctx.drawImage(photo.cv,-w/2,-ch/2+pad,w,ph);
+  ctx.restore();
+  ctx.font=`700 ${lab}px Fredoka,sans-serif`;ctx.direction=lang==='he'?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=INK;
+  ctx.fillText(UI[lang].copyme,0,ch/2-lab*.75);
+  ctx.restore();
+}
+// the copy meter: a soft jar that fills with a wavy green, a star on top
+function drawMeter(){
+  const h=Math.min(H*.42,300),w=Math.max(34,h*.17),x=18+w/2,y=H*.55;
+  ctx.save();ctx.translate(x,y);
+  const jar=new Path2D();jar.roundRect(-w/2,-h/2,w,h,w/2);
+  ctx.fillStyle=INK;ctx.fill(new Path2D(jar));ctx.translate(0,-4);
+  ctx.fillStyle='rgba(255,255,255,.85)';ctx.fill(jar);
+  ctx.save();ctx.clip(jar);const top=h/2-h*meter;ctx.fillStyle=meter>=1?'#FFD84D':'#7DCB6B';ctx.beginPath();ctx.moveTo(-w/2,h/2);
+  for(let i=0;i<=10;i++){const xx=-w/2+w*i/10;ctx.lineTo(xx,top+Math.sin(i*1.3+tNow*7)*3);}ctx.lineTo(w/2,h/2);ctx.closePath();ctx.fill();ctx.restore();
+  ctx.lineWidth=4;ctx.strokeStyle=INK;ctx.stroke(jar);
+  ctx.translate(0,-h/2-w*.55);ctx.rotate(Math.sin(tNow*2)*.1);sticker(ctx,starPath(w*.55),meter>=1?'#FFD84D':'#FFF1B8',3);
+  ctx.restore();
+}
+// soft dots on the copier's hands, elbows, knees and feet: green when that limb matches
+function drawCopyDots(){
+  if(!lastMatch)return;const {r,c}=lastMatch,lm=c.lm,s=sides(lm),R=Math.max(9,c.sw*.09);
+  const dots=[[s.aL[1],'uaL'],[s.aL[2],'faL'],[s.aR[1],'uaR'],[s.aR[2],'faR']];
+  if(bodyMode==='full')dots.push([s.lL[1],'thL'],[s.lL[2],'shL'],[s.lR[1],'thR'],[s.lR[2],'shR']);
+  for(const [i,n] of dots){const p=lm[i];if(p.v<.5||r.by[n]===undefined)continue;sticker(ctx,ell(p.x,p.y,R,R),r.by[n]?'#7DCB6B':'rgba(255,255,255,.9)',3);}
+}
+function render(dt){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  const u=UI[lang],live=camOK&&video.readyState>=2&&state!=='menu'&&state!=='over';
+  if(live){drawMirrored();ctx.fillStyle='rgba(255,248,236,.08)';ctx.fillRect(0,0,W,H);}
+  else drawRoom(ctx,W,H);
+  if(state==='menu'||state==='over'){drawDemo();return;}
+  if(state==='setup'){
+    if(guide)guide.draw(ctx,{x:0,y:0,w:W,h:H},lang);
+    else bubble(u.two,W/2,H*.16,Math.max(18,Math.min(26,W*.045)));
+  }
+  else if(state==='count'){const n=3-Math.floor(tNow-countT),k=(tNow-countT)%1;if(n>0)bigText(String(n),W/2,H*.42,Math.min(150,H*.22),'#fff',1+.25*Math.max(0,1-k*4));}
+  else if(state==='play'){
+    const fs=Math.max(18,Math.min(26,W*.045));
+    if(phase==='copy'||phase==='swap'){drawPhoto();drawMeter();if(phase==='copy')drawCopyDots();}
+    if(phase==='dance'){const n=Math.ceil(DANCE-phaseT),k=phaseT%1;
+      bigText(u.dance,W/2,H*.2,Math.min(76,W*.13),'#FF9FB0',1+.06*Math.sin(tNow*12));
+      if(n>0)bigText(String(n),W/2,H*.2+Math.min(90,W*.15),Math.min(70,W*.12),'#fff',1+.25*Math.max(0,1-k*4));
+      if(phaseT<1.4&&score>0)bubble(who==='duo'?(poser?'→ ':'')+u.yourturn+(poser?'':' ←'):u.yourturn,W/2,H*.82,fs);}
+    if(phase==='swap')bubble(u.stepout,W/2,H*.85,fs);
+    if(phase==='copy'){const t=who==='duo'?(poser===0?u.copyR:u.copyL):u.copy;bubble(t,W/2,H*.88,fs);}
+    // HUD: time and poses, drawn into the picture so it also shows on the big screen
+    const hf=Math.max(18,Math.min(28,W*.05));
+    bubble(Math.ceil(timeLeft)+' '+u.left,W*.5-hf*3.4,64+hf,hf);bubble(score+' / '+MAX,W*.5+hf*3.4,64+hf,hf,'#E6F7DE');
+  }
+  if(flash>0){ctx.fillStyle=`rgba(255,255,255,${flash*.8})`;ctx.fillRect(0,0,W,H);flash=Math.max(0,flash-dt*3);}
+  if(bigMsg&&tNow<bigMsgT){const k=1-Math.max(0,bigMsgT-tNow-1.2)*4;bigText(bigMsg,W/2,H*.4,Math.min(64,W*.1),'#FFD84D',Math.max(.6,Math.min(1,k)));}
+  pops=pops.filter(p=>(p.life-=dt)>0);
+  for(const p of pops){p.vy+=H*1.2*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.life*5);ctx.globalAlpha=Math.min(1,p.life*2);sticker(ctx,starPath(12),'#FFD84D',2.5);ctx.restore();}
+}
+// menu: two little sticker beans — one strikes a pose, the other copies it a moment later
+function drawDemo(){
+  const poses=[[-150,-150,-30,-30],[-60,-120,-60,-120],[-170,-90,-10,-90],[-120,-120,-120,-120],[-40,-40,-140,-140]];
+  const i=Math.floor(tNow/2.4)%poses.length,k=(tNow%2.4)/2.4;
+  const bean=(cx,cy,s,col,pz)=>{const [l1,l2,r1,r2]=pz,arm=(sx,a1,a2)=>{ctx.lineCap='round';ctx.lineWidth=s*.13;ctx.strokeStyle=INK;
+      const e={x:sx+Math.cos(a1*Math.PI/180)*s*.35,y:cy-s*.15+Math.sin(a1*Math.PI/180)*s*.35},h={x:e.x+Math.cos(a2*Math.PI/180)*s*.32,y:e.y+Math.sin(a2*Math.PI/180)*s*.32};
+      ctx.beginPath();ctx.moveTo(sx,cy-s*.15);ctx.lineTo(e.x,e.y);ctx.lineTo(h.x,h.y);ctx.stroke();ctx.lineWidth=s*.08;ctx.strokeStyle=col;ctx.stroke();sticker(ctx,ell(h.x,h.y,s*.07,s*.07),col,3);};
+    arm(cx-s*.28,l1,l2);arm(cx+s*.28,180-r1,180-r2);
+    sticker(ctx,ell(cx,cy,s*.34,s*.48),col,4);sticker(ctx,ell(cx-s*.11,cy-s*.18,s*.05,s*.07),'#fff',2.5);sticker(ctx,ell(cx+s*.11,cy-s*.18,s*.05,s*.07),'#fff',2.5);
+    ctx.fillStyle=INK;ctx.fill(ell(cx-s*.1,cy-s*.17,s*.025,s*.035));ctx.fill(ell(cx+s*.12,cy-s*.17,s*.025,s*.035));
+    ctx.fillStyle='rgba(255,140,160,.6)';ctx.fill(ell(cx-s*.2,cy-s*.06,s*.05,s*.03));ctx.fill(ell(cx+s*.2,cy-s*.06,s*.05,s*.03));};
+  const s=Math.min(W*.3,H*.28),y=H*.78;
+  const lerp=(a,b,t)=>a.map((x,j)=>x+(b[j]-x)*t),prev=poses[(i+poses.length-1)%poses.length],cur=poses[i],e=t=>t<0?0:t>1?1:1-Math.pow(1-t,3);
+  bean(W/2-s*.62,y,s,'#7FC8F8',lerp(prev,cur,e(k*4)));
+  bean(W/2+s*.62,y,s,'#FF9FB0',lerp(prev,cur,e(k*4-1.6)));
+}
+
+setLang(lang);loadBest();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
