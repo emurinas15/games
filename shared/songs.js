@@ -133,7 +133,37 @@ export const STYLES = {
     }
     ev.push(['acoustic_guitar_nylon', ch[[0, 1, 2, 1, 0, 2, 1, 2][i]], .07, .9, .3]);
     if (i === 0 || i === 4) ev.push(['acoustic_bass', root, .2, 1.1, .1]);
-    return ev; } }
+    return ev; } },
+  /* Floor Is Lava (13 Nov, Edgar): a little rock and roll with light distortion — shuffle beat,
+     overdriven-guitar melody, boogie guitar dyads (5th/6th), walking electric bass, kick/snare/hat */
+  lavaRock: { bpm: 138, play(s) {
+    const { mel, ch, root, i } = at(s), ev = [], k = ((s % STEPS) + STEPS) % STEPS % 32, sw = i % 2 ? .07 : 0;
+    const maj = ch[1] - ch[0] === 4, six = root + (maj ? 9 : 8), third = root + (maj ? 4 : 3);
+    if (mel != null) ev.push(['overdriven_guitar', mel - 12, .3, .34, .18, sw]);
+    for (const n of [root, i % 4 < 2 ? root + 7 : six]) ev.push(['overdriven_guitar', n, .085, .17, .05, sw]);   // boogie chug
+    if (i % 2 === 0) ev.push(['electric_bass_pick', [root, third, root + 7, six][i / 2], .26, .3, .03]);
+    if (i === 0 || i === 4 || i === 7) ev.push(['~kick', 0, i === 7 ? .5 : .9, 0, 0, sw]);
+    if (i === 2 || i === 6) ev.push(['~snare', 0, .55, 0, 0]);
+    ev.push(['~hat', 0, i % 2 ? .35 : .55, 0, 0, sw]);
+    if (k === 0) ev.push(['~crash', 0, .5, 0, 0]);
+    return ev.map(e => (e[2] *= e[0] === '~kick' ? .5 : .65, e)); } },   // sits at the same level as the old island track
+  /* Copy the Sprout (13 Nov): goofy a cappella in Edgar's own voice — 'bom' bass, 'doo'/'dah' scat melody with a
+     chromatic scoop, mouth-drum 'k' and 'ts', a soft 'aah' choir under the B sections */
+  acappella: { bpm: 116, play(s) {
+    const { mel, ch, root, i, sec } = at(s), ev = [], sw = i % 2 ? .06 : 0;
+    if (mel != null) {
+      let v = mel - 24; while (v > 62) v -= 12;
+      const syl = i % 4 === 0 ? 'voice_dah' : 'voice_doo';
+      if (i % 8 === 0) { ev.push([syl, v - 1, .14, .07, .15]); ev.push([syl, v, .34, .32, .2, .07]); }   // goofy scoop up
+      else ev.push([syl, v, .3, .26, .2, sw]);
+    }
+    if (i === 0) ev.push(['voice_bom', root, .34, .3, .1]);
+    if (i === 4) ev.push(['voice_bom', root + 7 > 53 ? root - 5 : root + 7, .28, .3, .1]);
+    if (i === 7) ev.push(['voice_bom', root, .16, .14, .1, sw]);
+    if (i === 2 || i === 6) ev.push(['voice_k', 60, .34, .2, .05]);
+    if (i % 2 === 1) ev.push(['voice_ts', 60, .16, .15, .05, sw]);
+    if (sec[0] === 'B' && i === 0) for (const n of ch) ev.push(['choir_aahs', n, .045, 1.9, .5]);
+    return ev.map(e => (e[2] *= 1.5, e)); } }
 };
 export const STEPS = PLAN.length * 32;   // 256 eighth-notes = 32 bars
 function at(s) {

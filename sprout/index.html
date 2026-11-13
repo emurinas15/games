@@ -100,7 +100,7 @@ summary::after{content:" ▾"}details[open] summary::after{content:" ▴"}
 import {S,audio as kitAudio,musicStart,musicStop,bindSound} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
 const guide=makeGuide('body');
-S.track='natural';S.amb='pond';
+S.track='acappella';S.amb='pond';
 const SOUND_TXT={en:{music:"Music",amb:"Garden sounds",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off"},
   he:{music:"מוזיקה",amb:"צלילי גינה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול"}};
 const soundLang=()=>document.documentElement.lang==='he'?'he':'en';

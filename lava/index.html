@@ -160,7 +160,7 @@ let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
 let startLv=+LS.get('lv-start','1'); if(![1,3,5].includes(startLv))startLv=1;
 let facing=LS.get('lv-cam','user'); if(!['user','environment'].includes(facing))facing='user';
 let best=0; const loadBest=()=>{best=+LS.get('lv-bestlv','0')||0;$('best').textContent=best;};
-S.track='island'; S.amb='lava';
+S.track='lavaRock'; S.amb='lava';
 const syncSound=bindSound(()=>UI[lang]);
 let casting=false;
 const cast=setupCast({canvas:$('c'),button:$('cast'),lang:()=>lang,sound:()=>(audio(),S),onChange:v=>{casting=v;document.body.classList.toggle('casting',v);}});

@@ -170,6 +170,19 @@ export const SPIDER_FX = {
     const src = a.createBufferSource(); src.buffer = b; const f = a.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 3000;
     const g = a.createGain(); g.gain.value = .35 * v; src.connect(f); f.connect(g); g.connect(bus); src.start(t); }
 };
+/* small synth rock kit (Floor Is Lava rock and roll) */
+function noiseBuf(a, dur, shape) { const n = Math.floor(a.sampleRate * dur), b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, shape); const s = a.createBufferSource(); s.buffer = b; return s; }
+const DRUM_FX = {
+  '~kick'(t, v, bus) { const a = S.AC, o = a.createOscillator(), g = a.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(48, t + .12);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.55 * v, t + .004); g.gain.exponentialRampToValueAtTime(.0001, t + .32);
+    o.connect(g); g.connect(bus); o.start(t); o.stop(t + .35); },
+  '~hat'(t, v, bus) { const a = S.AC, s = noiseBuf(a, .05, 4), f = a.createBiquadFilter(), g = a.createGain();
+    f.type = 'highpass'; f.frequency.value = 7000; g.gain.value = .6 * v; s.connect(f); f.connect(g); g.connect(bus); s.start(t); },
+  '~crash'(t, v, bus) { const a = S.AC, s = noiseBuf(a, 1.4, 2.5), f = a.createBiquadFilter(), g = a.createGain();
+    f.type = 'highpass'; f.frequency.value = 5000; g.gain.value = .3 * v; s.connect(f); f.connect(g); g.connect(bus); s.start(t); }
+};
 /* one note of a styled arrangement (see songs.js): real sample, or a synth stand-in */
 function playEvent([inst, m, v, len, wet, delay], t) {
   if (delay) t += delay;
@@ -178,6 +191,7 @@ function playEvent([inst, m, v, len, wet, delay], t) {
     const src = a.createBufferSource(); src.buffer = b; const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = .7;
     const g = a.createGain(); g.gain.value = v * 2; src.connect(f); f.connect(g); g.connect(S.BUS.music); src.start(t); return; }
   if (SPIDER_FX[inst]) { SPIDER_FX[inst](t, v, S.BUS.music); return; }
+  if (DRUM_FX[inst]) { DRUM_FX[inst](t, v, S.BUS.music); return; }
   const g = playSample(S.AC, inst, m, t, v / .7, S.BUS.music, len);
   if (g) { if (wet) { const w = S.AC.createGain(); w.gain.value = wet; g.connect(w); w.connect(S.BUS.rev); } return; }
   if (m < 55) bass(m, t, v, Math.min(1, len)); else kalimba(m, t, v);
