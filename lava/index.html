@@ -13,7 +13,7 @@
 .pill.mid canvas{width:30px;height:30px}
 .lvl{position:fixed;left:50%;top:22%;transform:translate(-50%,-50%) scale(.6);font:900 44px Grandstander,sans-serif;max-width:94vw;color:#FFD84D;-webkit-text-stroke:3px var(--ink);paint-order:stroke fill;text-shadow:0 4px 0 var(--ink);opacity:0;transition:opacity .25s,transform .25s;z-index:6;pointer-events:none;white-space:nowrap}
 .lvl.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
-.msg{top:calc(var(--safe-t) + 150px)}
+.msg{top:calc(var(--safe-t) + 212px)}   /* below the level banner (they overlapped) */
 .lvl{top:calc(var(--safe-t) + 150px)}
 .count{top:48%;font-size:110px}
 .btn2{display:block;width:100%;margin-top:10px;border:3px solid var(--ink);border-radius:999px;background:#fff;color:var(--ink);font:700 18px Fredoka,sans-serif;padding:8px 0;box-shadow:0 4px 0 var(--ink);cursor:pointer}
@@ -124,9 +124,9 @@ import {setupCast} from '../shared/cast.js';
 
 /* ================= TEXT ================= */
 const UI={
- en:{title:"Floor Is Lava",sub:"Jump onto a ? block. Rock keeps you safe. Glass melts!",play:"Play",demo:"Watch a demo",
+ en:{title:"Floor Is Lava",sub:"Jump onto a ? block. Rock keeps you safe. Ice melts!",play:"Play",demo:"Watch a demo",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
-  g1:"A stepping game for one or more children. Through the camera the floor turns into lava, split into 5 × 5 squares. Each round, ? blocks pop up and everyone steps onto one. Then the blocks turn into rock or glass. Rock is safe; glass melts, so whoever stands on glass hurries to a rock. Standing on lava (or on glass when it melts) is a strike: the child glows red for a moment. 3 strikes and the child is out — shown grey and faded. The others go on through 10 levels: fewer rocks, less time to choose, faster melting. When the last child is out, the game ends.",
+  g1:"A stepping game for one or more children. Through the camera the floor turns into lava, split into 5 × 5 squares. Each round, ? blocks pop up and everyone steps onto one. Then the blocks turn into rock or ice. Rock is safe; ice melts, so whoever stands on ice hurries to a rock. Standing on lava (or on ice when it melts) is a strike: the child glows red for a moment. 3 strikes and the child is out — shown grey and faded. The others go on through 10 levels: fewer rocks and faster-melting ice: thick ice (levels 1–3), cracked ice (4–6), slushy ice (7–10). When the last child is out, the game ends.",
   startlv:"Start at level",howto:"How to set up",level:"Level",lastlv:"Last level!",outlbl:"Out!",win:"Lava champions!",gtitle:"Set up the play area",gok:"Got it",gl1:"Phone sideways",gl2:"Kids seen head to toe",gs1:"Stand the phone sideways under the TV (or on a shelf), tilted a little down toward the floor.",gs2:"Clear a floor area of about 3.25 × 3.25 m and mark its 4 corners with tape, cushions or shoes.",gs3:"Check that the phone sees every child head to toe anywhere in the area.",ss1:"Look for your 4 corner marks on the screen.",ss2:"Drag each stone onto a mark (drag the middle to move them all).",ss3:"Tap Ready! Stones already in place? Just tap Ready.",cam:"Camera",user:"Front",environment:"Back",
   music:"Music",amb:"Lava sounds",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",refloor:"Set up the floor again",
   g2:"★ Clear a floor area of about 3.25 × 3.25 m (each square ≈ 65 cm). Stand the phone sideways on a shelf or chair 1.5–2.5 m behind the area, so it sees the whole floor area and everyone's feet.",
@@ -137,11 +137,11 @@ const UI={
   ready:"Getting ready…",feet:"Show me your feet! Stand on the floor.",onfloor:"Step onto the lava floor!",
   setup:"Drag the 4 stones onto the corners of the play area on the floor. Drag the middle to move it all.",setok:"Ready!",setreset:"Reset",
   nocam:"No camera here — showing the demo instead.",errAllow:"The camera is blocked. Allow the camera for this site in the browser settings, then tap Play again.",errNone:"No camera was found on this device.",errModel:"The movement tracking didn’t load. Check the internet connection and tap Play again.",errOther:"The camera didn’t start. Close other apps that use the camera and tap Play again.",errInApp:"Tip: open the link in Chrome or Safari, not inside another app.",aria:"Game area",
-  q:"Jump on a block!",reveal:"Rock or glass?",melt:"Glass melts — find a rock!",safe:"Safe!",toast:["Hot hot!","Toasty!","Ouch, hot!","Warm toes!"],
+  q:"Jump on a block!",reveal:"Rock or ice?",melt:"The ice is melting — find a rock!",tiers:["Thick ice","Watch out — cracked ice!","Careful — slushy ice!"],safe:"Safe!",toast:["Hot hot!","Toasty!","Ouch, hot!","Warm toes!"],
   demotip:"Tap a square to hop there",turn:"Turn the phone sideways for a bigger floor",you:"You",lastround:"Last round!"},
- he:{title:"הרצפה היא לבה",sub:"קפצו על קוביית סימן שאלה. סלע שומר עליכם. זכוכית נמסה!",play:"שחקו",demo:"צפו בהדגמה",
+ he:{title:"הרצפה היא לבה",sub:"קפצו על קוביית סימן שאלה. סלע שומר עליכם. קרח נמס!",play:"שחקו",demo:"צפו בהדגמה",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
-  g1:"משחק צעדים לילד אחד או לכמה ילדים. דרך המצלמה הרצפה הופכת ללבה, מחולקת ל־5 × 5 משבצות. בכל סבב קופצות קוביות סימן שאלה וכולם עולים על אחת. אחר כך הקוביות הופכות לסלע או לזכוכית. סלע בטוח; זכוכית נמסה, אז מי שעומד על זכוכית ממהר לסלע. מי שעומד על לבה (או על זכוכית כשהיא נמסה) מקבל פסילה ומאדים לרגע. אחרי 3 פסילות הילד בחוץ — מוצג באפור ודהוי. האחרים ממשיכים דרך 10 שלבים: פחות סלעים, פחות זמן לבחור, המסה מהירה יותר. כשהילד האחרון בחוץ, המשחק נגמר.",
+  g1:"משחק צעדים לילד אחד או לכמה ילדים. דרך המצלמה הרצפה הופכת ללבה, מחולקת ל־5 × 5 משבצות. בכל סבב קופצות קוביות סימן שאלה וכולם עולים על אחת. אחר כך הקוביות הופכות לסלע או לקרח. סלע בטוח; קרח נמס, אז מי שעומד על קרח ממהר לסלע. מי שעומד על לבה (או על קרח כשהוא נמס) מקבל פסילה ומאדים לרגע. אחרי 3 פסילות הילד בחוץ — מוצג באפור ודהוי. האחרים ממשיכים דרך 10 שלבים: פחות סלעים וקרח שנמס מהר יותר: קרח עבה (שלבים 1–3), קרח סדוק (4–6), קרח מתמוסס (7–10). כשהילד האחרון בחוץ, המשחק נגמר.",
   startlv:"להתחיל בשלב",howto:"איך מסדרים",level:"שלב",lastlv:"שלב אחרון!",outlbl:"בחוץ!",win:"אלופי הלבה!",gtitle:"מסדרים את שטח המשחק",gok:"הבנתי",gl1:"טלפון לרוחב",gl2:"רואים ילדים מכף רגל ועד ראש",gs1:"העמידו את הטלפון לרוחב מתחת לטלוויזיה (או על מדף), מוטה קצת למטה אל הרצפה.",gs2:"פנו שטח רצפה של בערך 3.25 × 3.25 מ׳ וסמנו את 4 הפינות שלו בסלוטייפ, כריות או נעליים.",gs3:"ודאו שהטלפון רואה כל ילד מכף רגל ועד ראש בכל מקום בשטח.",ss1:"מצאו על המסך את 4 סימני הפינות.",ss2:"גררו כל אבן אל סימן (גררו את האמצע כדי להזיז הכול).",ss3:"הקישו על מוכנים! האבנים כבר במקום? פשוט הקישו מוכנים.",cam:"מצלמה",user:"קדמית",environment:"אחורית",
   music:"מוזיקה",amb:"צלילי לבה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",refloor:"הגדרת הרצפה מחדש",
   g2:"★ פנו שטח רצפה של בערך 3.25 × 3.25 מ׳ (כל משבצת ≈ 65 ס״מ). העמידו את הטלפון לרוחב על מדף או כיסא, 1.5–2.5 מ׳ מאחורי השטח, כך שיראה את כל השטח ואת כפות הרגליים של כולם.",
@@ -152,7 +152,7 @@ const UI={
   ready:"מתכוננים…",feet:"תראו לי את כפות הרגליים! עמדו על הרצפה.",onfloor:"היכנסו לרצפת הלבה!",
   setup:"גררו את 4 האבנים לפינות שטח המשחק על הרצפה. גררו את האמצע כדי להזיז הכול.",setok:"מוכנים!",setreset:"איפוס",
   nocam:"אין כאן מצלמה — מציגים הדגמה במקום.",errAllow:"המצלמה חסומה. אשרו גישה למצלמה לאתר הזה בהגדרות הדפדפן, ואז הקישו שוב על שחקו.",errNone:"לא נמצאה מצלמה במכשיר.",errModel:"זיהוי התנועה לא נטען. בדקו את החיבור לאינטרנט והקישו שוב על שחקו.",errOther:"המצלמה לא נפתחה. סגרו אפליקציות אחרות שמשתמשות במצלמה והקישו שוב על שחקו.",errInApp:"טיפ: פתחו את הקישור ב־Chrome או ב־Safari, לא בתוך אפליקציה אחרת.",aria:"אזור המשחק",
-  q:"קפצו על קובייה!",reveal:"סלע או זכוכית?",melt:"הזכוכית נמסה — מצאו סלע!",safe:"בטוח!",toast:["חם חם!","מתחמם!","אוי, חם!","בהונות חמות!"],
+  q:"קפצו על קובייה!",reveal:"סלע או קרח?",melt:"הקרח נמס — מצאו סלע!",tiers:["קרח עבה","זהירות — קרח סדוק!","זהירות — קרח מתמוסס!"],safe:"בטוח!",toast:["חם חם!","מתחמם!","אוי, חם!","בהונות חמות!"],
   demotip:"הקישו על משבצת כדי לקפוץ אליה",turn:"סובבו את הטלפון לרוחב כדי לקבל רצפה גדולה יותר",you:"אני",lastround:"סבב אחרון!"}
 };
 
@@ -195,7 +195,12 @@ addEventListener('resize',resize);resize();
 const FX={
   pop(i=0){tone({f0:420+i*30,f1:900+i*40,dur:.09,type:'sine',vol:.16});},
   rock(){noise({dur:.09,freq:500,vol:.4,type:'lowpass'});tone({f0:150,f1:90,dur:.16,type:'triangle',vol:.3});},
-  glass(){SFX.tink(1.1);tone({f0:2900,dur:.12,type:'sine',vol:.05,at:.04});},
+  glass(){const t=tierOf(levelNo);   // ice lands: thick = solid clunk, cracked = clink + crackle, slushy = nervous high crackle
+    if(t===0){tone({f0:900,f1:620,dur:.14,type:'triangle',vol:.14});tone({f0:1800,dur:.08,type:'sine',vol:.05,at:.03});}
+    else if(t===1){SFX.tink(1);FX.crack(1);}
+    else{SFX.tink(1.25);FX.crack(2);}},
+  crack(t=1){const n=t===2?6:3;for(let i=0;i<n;i++)noise({dur:.03+Math.random()*.03,freq:t===2?5200:3400,vol:t===2?.16:.13,type:'highpass',at:i*(t===2?.045:.07)+Math.random()*.02});
+    if(t===0)tone({f0:700,f1:500,dur:.2,type:'triangle',vol:.12});},
   sizzle(){noise({dur:1.6,freq:4200,vol:.09,type:'highpass'});},
   melt(){noise({dur:.5,freq:900,vol:.18,type:'bandpass'});tone({f0:700,f1:200,dur:.45,type:'sine',vol:.08});},
   toast(){noise({dur:.5,freq:3500,vol:.14,type:'highpass'});tone({f0:300,f1:900,dur:.35,type:'sine',vol:.16,at:.08});tone({f0:900,f1:500,dur:.25,type:'sine',vol:.12,at:.45});},
@@ -274,16 +279,27 @@ function drawTile(c){
     ctx.save();ctx.clip(r.top);ctx.fillStyle='rgba(255,255,255,.35)';ctx.fill(ell(r.x-r.px*.12,r.y-r.px*.08,r.px*.12,r.px*.05,-.3));
     ctx.fillStyle='rgba(90,70,55,.35)';ctx.fill(ell(r.x+r.px*.14,r.y+r.px*.06,r.px*.07,r.px*.035));ctx.fill(ell(r.x-r.px*.05,r.y+r.px*.1,r.px*.045,r.px*.025));ctx.restore();
   }
-  else if(c.type==='glass'){
-    const flip=Math.min(1,age/.35),m=Math.max(0,Math.min(1,(age-.35)/MELT));
-    const k=back(flip)*(1-.85*ease(m)),wob=.02+m*.09;if(k<=0.03)return;
-    const top=mix('#D8F7FF','#FFB45C',m),side=mix('#8FD3EA','#E2602B',m);
-    ctx.save();ctx.globalAlpha=.92-.25*m;const r=slab(c,.42*k,.1*k*(1-m),top,side,lw,wob,-.01);ctx.restore();
-    ctx.save();ctx.clip(r.top);ctx.strokeStyle=`rgba(255,255,255,${.85*(1-m)})`;ctx.lineWidth=Math.max(2,r.px*.035);ctx.lineCap='round';
-    ctx.beginPath();ctx.moveTo(r.x-r.px*.22,r.y+r.px*.02);ctx.lineTo(r.x-r.px*.08,r.y-r.px*.1);ctx.moveTo(r.x-r.px*.1,r.y+r.px*.06);ctx.lineTo(r.x+r.px*.0,r.y-r.px*.02);ctx.stroke();
-    if(m>.15){ctx.strokeStyle=`rgba(43,33,24,${.5*Math.min(1,m*2)})`;ctx.lineWidth=Math.max(1.5,r.px*.015);ctx.beginPath();ctx.moveTo(r.x,r.y);ctx.lineTo(r.x+r.px*.15,r.y-r.px*.06);ctx.lineTo(r.x+r.px*.22,r.y+r.px*.02);ctx.moveTo(r.x,r.y);ctx.lineTo(r.x-r.px*.08,r.y+r.px*.1);ctx.stroke();}
+  else if(c.type==='glass'){   // ice (kept the name 'glass' in the code). Tier sets thickness, cracks and slush
+    const T=tierOf(levelNo),flip=Math.min(1,age/.35),m=Math.max(0,Math.min(1,(age-.35)/MELT));
+    const k=back(flip)*(1-.85*m*m),wob=[.015,.03,.06][T]+m*.09;if(k<=0.03)return;
+    const thick=[.2,.12,.06][T]*(1-m);
+    const top=mix(['#EAF8FF','#DDF1FA','#CFE6EE'][T],'#FFB45C',m*m),side=mix(['#8CC9EA','#9DCBE0','#A9C9D3'][T],'#E2602B',m*m);
+    ctx.save();ctx.globalAlpha=[.95,.9,.82][T]-.25*m;const r=slab(c,.42*k,thick*k,top,side,lw,wob,-.01);ctx.restore();
+    const px=r.px,line=(pts,w,col)=>{ctx.strokeStyle=col;ctx.lineWidth=w;ctx.beginPath();pts.forEach(([x,y],i)=>i?ctx.lineTo(r.x+x*px,r.y+y*px):ctx.moveTo(r.x+x*px,r.y+y*px));ctx.stroke();};
+    ctx.save();ctx.clip(r.top);ctx.lineCap='round';ctx.lineJoin='round';
+    // shine
+    const sh=`rgba(255,255,255,${.9*(1-m)})`;line([[-.24,.03],[-.1,-.1]],Math.max(2,px*.035),sh);line([[-.12,.08],[-.02,-.01]],Math.max(2,px*.03),sh);
+    // orange glow creeping in from the edges as it melts
+    if(m>0){ctx.fillStyle=`rgba(255,140,50,${.45*m})`;ctx.fill(r.top);ctx.fillStyle=mix(top,'#FFFFFF',.3);ctx.globalAlpha=1-m;ctx.fill(ell(r.x,r.y,px*.3*(1-m*.8),px*.18*(1-m*.8)));ctx.globalAlpha=1;}
+    // cracks: none on thick ice (they appear only while it melts), visible from the start on cracked ice, a spider web on slushy ice
+    const crk=`rgba(40,80,110,${T===0?.55*Math.min(1,m*2):.6})`,cw=Math.max(1.4,px*.016);
+    if(T>=1||m>.3){line([[0,0],[.14,-.06],[.22,.01]],cw,crk);line([[0,0],[-.09,.1]],cw,crk);line([[0,0],[.05,.11],[.12,.14]],cw,crk);}
+    if(T===2){line([[0,0],[-.16,-.03],[-.26,-.08]],cw,crk);line([[0,0],[.02,-.12]],cw,crk);
+      ctx.strokeStyle=crk;ctx.lineWidth=cw*.8;ctx.beginPath();ctx.ellipse(r.x,r.y,px*.1,px*.06,0,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.ellipse(r.x,r.y,px*.19,px*.11,0,0,Math.PI*2);ctx.stroke();}
     ctx.restore();
-    if(m>0&&m<1&&Math.random()<dtNow*1.6)steam.push({x:r.x+(Math.random()-.5)*r.px*.5,y:r.y,vy:-r.px*(.5+Math.random()*.4),r:r.px*(.05+Math.random()*.03),life:.8,max:.8,soft:1});
+    // slushy ice: little water puddles at the rim
+    if(T===2&&k>.3){ctx.save();ctx.globalAlpha=.55*(1-m);ctx.fillStyle='#BFE9FF';for(const [dx,dy,rr] of [[-.3,.12,.06],[.27,.1,.05],[.05,.2,.045]])ctx.fill(ell(r.x+dx*px,r.y+dy*px,rr*px,rr*.5*px));ctx.restore();}
+    if(m>0&&m<1&&Math.random()<dtNow*(1.6+T))steam.push({x:r.x+(Math.random()-.5)*px*.5,y:r.y,vy:-px*(.5+Math.random()*.4),r:px*(.05+Math.random()*.03),life:.8,max:.8,soft:1});
   }
 }
 
@@ -487,6 +503,8 @@ const LEVELS=[
  {q:12,rocks:5,ask:1.0,melt:1.8},{q:12,rocks:5,ask:.9,melt:1.6},{q:11,rocks:4,ask:.8,melt:1.5},{q:10,rocks:4,ask:.6,melt:1.3},{q:10,rocks:3,ask:.5,melt:1.2}];
 const COUNT=3,QTOTAL=3,QASK=.75,STEP=(QTOTAL-QASK)/COUNT;   // 13 Nov (Edgar): '?' then 3-2-1, all within 3 s (0.75 s each)
 const LIVES=3,FLIP=.35,RESULT=2.2,RESET=1;
+let tierMsg='';
+const tierOf=n=>n<=3?0:n<=6?1:2;   // ice: 0 thick (1-3), 1 cracked (4-6), 2 slushy (7-10)
 let ASK=2,QUIZ=5,MELT=2.6,levelNo=0,reached=0;
 let dtNow=.016,quizN=-1,numPopT=0,state='menu',mode='demo',phase='',phaseT=0,score=0,lastNew=false,tNow=0,countT=0;
 const alive=()=>players.filter(p=>!p.out&&!p.spect);
@@ -499,6 +517,7 @@ function startRound(){
   order.forEach((c,i)=>{c.type='q';c.t0=tNow+i*.04;setTimeout(()=>FX.pop(i%6),i*40);});
   for(const p of players){p.status='';p.planned=p.planned2=false;}
   banner(levelNo===10?UI[lang].lastlv:UI[lang].level+' '+levelNo);
+  const tr=tierOf(levelNo);tierMsg=(levelNo===startLv||tr!==tierOf(levelNo-1))?UI[lang].tiers[tr]:'';if(tierMsg)setTimeout(()=>FX.crack(tr),400);
   quizN=-1;setPhase('quiz');FX.whoosh();
 }
 function reveal(){
@@ -519,7 +538,7 @@ function finishRound(){
 function resetFloor(){setPhase('reset');}
 
 function banner(txt){const el=$('lvl');el.textContent=txt;let f=44;el.style.fontSize=f+'px';while(el.scrollWidth>W*.92&&f>18){f-=2;el.style.fontSize=f+'px';}
-  el.classList.add('on');setTimeout(()=>el.classList.remove('on'),1300);}
+  el.classList.add('on');clearTimeout(banner.t);banner.t=setTimeout(()=>el.classList.remove('on'),1300);}
 let msgNow='';function msg(t){const m=$('msg');if(t){m.textContent=t;m.classList.add('on')}else m.classList.remove('on');msgNow=t;}
 function toast(t,ms=4000){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.tm);if(ms)toast.tm=setTimeout(()=>e.classList.remove('on'),ms);}
 
@@ -651,7 +670,7 @@ function frame(now){
   else if(state==='play'){
     if(mode==='demo')botThink();
     const el=$('count');
-    if(phase==='quiz'){const n=phaseT<ASK?0:Math.ceil((QUIZ-phaseT)/STEP);if(quizN!==n){if(quizN===-1)msg(UI[lang].q);if(n>0){SFX.tick();numPopT=tNow;}quizN=n;}
+    if(phase==='quiz'){const n=phaseT<ASK?0:Math.ceil((QUIZ-phaseT)/STEP);if(quizN!==n){if(quizN===-1)msg(tierMsg||UI[lang].q);if(n>0){SFX.tick();numPopT=tNow;}quizN=n;}
       if(phaseT>=QUIZ){quizN=-1;reveal();}}
     else if(phase==='melt'){if(phaseT>=FLIP+MELT)finishRound();}
     else if(phase==='result'){if(phaseT>=RESULT){for(const c of cells)if(c.type==='rock')c.sinkT=tNow;resetFloor();}}
