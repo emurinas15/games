@@ -485,14 +485,14 @@ function drawBean(p){
 const LEVELS=[
  {q:15,rocks:9,ask:2.0,melt:2.6},{q:15,rocks:8,ask:1.8,melt:2.4},{q:14,rocks:7,ask:1.6,melt:2.2},{q:14,rocks:6,ask:1.4,melt:2.0},{q:13,rocks:6,ask:1.2,melt:1.9},
  {q:12,rocks:5,ask:1.0,melt:1.8},{q:12,rocks:5,ask:.9,melt:1.6},{q:11,rocks:4,ask:.8,melt:1.5},{q:10,rocks:4,ask:.6,melt:1.3},{q:10,rocks:3,ask:.5,melt:1.2}];
-const COUNT=3;
+const COUNT=3,QTOTAL=3,QASK=.75,STEP=(QTOTAL-QASK)/COUNT;   // 13 Nov (Edgar): '?' then 3-2-1, all within 3 s (0.75 s each)
 const LIVES=3,FLIP=.35,RESULT=2.2,RESET=1;
 let ASK=2,QUIZ=5,MELT=2.6,levelNo=0,reached=0;
 let dtNow=.016,quizN=-1,numPopT=0,state='menu',mode='demo',phase='',phaseT=0,score=0,lastNew=false,tNow=0,countT=0;
 const alive=()=>players.filter(p=>!p.out&&!p.spect);
 function setPhase(p){phase=p;phaseT=0;}
 function startRound(){
-  levelNo++;const L=LEVELS[levelNo-1];ASK=L.ask;QUIZ=L.ask+COUNT;MELT=L.melt;
+  levelNo++;const L=LEVELS[levelNo-1];ASK=QASK;QUIZ=QTOTAL;MELT=L.melt;
   $('round').textContent=levelNo+'/10';
   for(const c of cells){c.type='lava';c.sink=0;}
   const order=cells.slice().sort(()=>Math.random()-.5).slice(0,L.q);
@@ -651,7 +651,7 @@ function frame(now){
   else if(state==='play'){
     if(mode==='demo')botThink();
     const el=$('count');
-    if(phase==='quiz'){const n=phaseT<ASK?0:Math.ceil(QUIZ-phaseT);if(quizN!==n){if(quizN===-1)msg(UI[lang].q);if(n>0){SFX.tick();numPopT=tNow;}quizN=n;}
+    if(phase==='quiz'){const n=phaseT<ASK?0:Math.ceil((QUIZ-phaseT)/STEP);if(quizN!==n){if(quizN===-1)msg(UI[lang].q);if(n>0){SFX.tick();numPopT=tNow;}quizN=n;}
       if(phaseT>=QUIZ){quizN=-1;reveal();}}
     else if(phase==='melt'){if(phaseT>=FLIP+MELT)finishRound();}
     else if(phase==='result'){if(phaseT>=RESULT){for(const c of cells)if(c.type==='rock')c.sinkT=tNow;resetFloor();}}
