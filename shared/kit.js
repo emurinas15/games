@@ -202,8 +202,24 @@ const DRUM_FX = {
     DRUM_FX['~hat'](t + .075, .12 * v, bus); }
 };
 /* one note of a styled arrangement (see songs.js): real sample, or a synth stand-in */
-function playEvent([inst, m, v, len, wet, delay], t) {
+/* guitar amp for the rock track: drive (tanh waveshaper) -> cabinet filters -> music bus (stereo kept) */
+const AMP_INST = { distortion_guitar: 1, overdriven_guitar: 1 };
+function amp(key) { const B = S.BUS, a = S.AC; B.amps = B.amps || {}; if (B.amps[key]) return B.amps[key];
+  const sh = a.createWaveShaper(), n = 2048, c = new Float32Array(n), k = 9;
+  for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; c[i] = Math.tanh(k * x) / Math.tanh(k); }
+  sh.curve = c; sh.oversample = '4x';
+  const hp = a.createBiquadFilter(), lp = a.createBiquadFilter(), mid = a.createBiquadFilter(), post = a.createGain();
+  hp.type = 'highpass'; hp.frequency.value = 90; lp.type = 'lowpass'; lp.frequency.value = 4800; lp.Q.value = .8;
+  mid.type = 'peaking'; mid.frequency.value = 1400; mid.gain.value = 3; mid.Q.value = .9; post.gain.value = AMP_POST[key];
+  sh.connect(hp); hp.connect(mid); mid.connect(lp); lp.connect(post); post.connect(B.music);
+  const w = a.createGain(); w.gain.value = .12; post.connect(w); w.connect(B.rev);
+  return (B.amps[key] = sh); }
+const AMP_POST = { distortion_guitar: .07, overdriven_guitar: .1 };
+function playEvent([inst, m, v, len, wet, delay, pan], t) {
   if (delay) t += delay;
+  if (AMP_INST[inst]) { const a = S.AC; let dest = amp(inst);
+    if (pan && a.createStereoPanner) { const p = a.createStereoPanner(); p.pan.value = pan; p.connect(dest); dest = p; }
+    if (playSample(a, inst, m, t, v / .7, dest, len)) return; }
   if (inst === '~snare') { const a = S.AC, n = a.sampleRate * .12, b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0);
     for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n) ** 3;
     const src = a.createBufferSource(); src.buffer = b; const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = .7;

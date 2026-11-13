@@ -134,16 +134,19 @@ export const STYLES = {
     ev.push(['acoustic_guitar_nylon', ch[[0, 1, 2, 1, 0, 2, 1, 2][i]], .07, .9, .3]);
     if (i === 0 || i === 4) ev.push(['acoustic_bass', root, .2, 1.1, .1]);
     return ev; } },
-  /* Floor Is Lava (13 Nov, Edgar): 80s classic rock, studio (not live) — punchy but friendly, action-packed.
-     Straight driving eighths: palm-muted power chords (root+5th+octave) on distortion guitar, open chord stab on each
-     bar, overdriven lead melody, pumping electric bass, tight kick/snare (80s roomy snare), hats, tom fill + crash per section */
+  /* Floor Is Lava (13 Nov, v3): 80s hard rock / heavy metal guitars (Edgar: "more distortion — Poison, Guns N' Roses,
+     Metallica"). Both guitars go through kit.js's drive amp. Rhythm: power chords (root+5th+octave) on distortion guitar,
+     double-tracked hard left/right, palm-muted eighths with galloping 16ths, an open ringing chord each bar.
+     Lead: overdriven guitar melody, centred. Pumping bass, punchy kick/snare, tom fill + crash per section. Major key. */
   lavaRock: { bpm: 132, play(s) {
-    const { mel, root, i } = at(s), ev = [], k = ((s % STEPS) + STEPS) % STEPS % 32;
-    const r = root < 45 ? root + 12 : root, fill = k >= 28;
-    if (mel != null) ev.push(['overdriven_guitar', mel - 12, .32, .36, .22]);
-    if (i === 0) for (const n of [r, r + 7, r + 12]) ev.push(['distortion_guitar', n, .16, .7, .25]);         // open stab
-    else for (const n of [r, r + 7]) ev.push(['distortion_guitar', n, .13, .12, .06]);                        // palm-muted chug
-    ev.push(['electric_bass_pick', root, i % 2 ? .18 : .24, .2, .02]);
+    const { mel, root, i } = at(s), ev = [], k = ((s % STEPS) + STEPS) % STEPS % 32, x = 60 / 132 / 4;
+    const r = root < 45 ? root + 12 : root, fill = k >= 28, pc = [r, r + 7, r + 12];
+    const gtr = (d, v, len) => { for (const n of pc) { ev.push(['distortion_guitar', n, v, len, .05, d, -.75]); ev.push(['distortion_guitar', n, v, len, .05, d + .014, .75]); } };
+    if (mel != null) ev.push(['overdriven_guitar', mel - 12, .5, .42, .2, 0, 0]);
+    if (i === 0) gtr(0, .5, .8);                          // open ringing chord
+    else if (i === 3 || i === 7) { gtr(0, .4, .09); gtr(x, .34, .09); }   // gallop
+    else if (i !== 1) gtr(0, .4, .1);                     // palm-muted chug
+    ev.push(['electric_bass_pick', root, i % 2 ? .2 : .26, .2, .02]);
     if (!fill) {
       if (i === 0 || i === 3 || i === 4) ev.push(['~kick', 0, i === 3 ? .6 : 1, 0, 0]);
       if (i === 2 || i === 6) ev.push(['~snare80', 0, 1.5, 0, 0]);
@@ -153,7 +156,7 @@ export const STYLES = {
       if (k === 31) ev.push(['~snare80', 0, 1.2, 0, 0]);
     }
     if (k === 0) ev.push(['~crash', 0, .8, 0, 0]);
-    return ev.map(e => (e[2] *= e[0] === '~kick' ? .42 : .5, e)); } },   // level-matched to the old island track
+    return ev.map(e => (e[0].includes('guitar') || (e[2] *= e[0] === '~kick' ? .42 : .5), e)); } },
   /* Copy the Sprout (13 Nov, v2): a cappella in Edgar's own voice at the centre — 'doo'/'dah' scat melody with a
      chromatic scoop, 'bom' bass, a soft 'aah' choir harmony and a recorder third below in the B sections, gentle
      fingerpicked nylon guitar; mouth drums only a whisper; a bubble pop now and then */
