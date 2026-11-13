@@ -52,8 +52,6 @@
       <p id="t-g1"></p>
       <div class="g-row"><span id="t-music">Music</span>
         <div class="seg" id="music-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
-      <div class="g-row"><span id="t-amb">Pond sounds</span>
-        <div class="seg" id="amb-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
       <div class="g-row"><span id="t-sfx">Sound effects</span>
         <div class="seg" id="sfx-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
       <p id="t-g4"></p>
@@ -75,6 +73,8 @@
 
 <script type="module">
 import {INK,$,LS,S,audio,tone,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom,drawKid,startFaceTracker,faceFrame,drawMirroredVideo} from '../shared/kit.js';
+import {makeGuide} from '../shared/guide.js';
+const guide=makeGuide('face');
 
 /* ================= TEXT ================= */
 const UI={
@@ -119,13 +119,13 @@ function cfg(){return {n:count,rad:.095/WIDTH[size],G:6.5,curve:.9,damp:2.0,dead
 const STEADY={g:1,d:1};
 let best=0; const loadBest=()=>{best=+LS.get('mp-best-'+size+'-'+count,'0')||0;}; loadBest();
 
-S.track='baroque'; S.amb='pond'; S.bpm=()=>BPM[size]; S.bpmFixed=true;
+S.track='baroque'; S.amb='none'; S.ambOn=false;   // 13 Nov: no pond/water sounds in this game S.bpm=()=>BPM[size]; S.bpmFixed=true;
 const syncSound=bindSound(()=>UI[lang]);
 
 function setLang(l){
   lang=l;LS.set('bamboo-lang',l);const u=UI[l];
   document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
-  for(const k of ['title','sub','play','privacy','grown','g1','size','count','music','amb','sfx','g2','g3','g4','legal','sec','best','sec2','over','again'])
+  for(const k of ['title','sub','play','privacy','grown','g1','size','count','music','sfx','g2','g3','g4','legal','sec','best','sec2','over','again'])
     {const e=$('t-'+k);if(e)e.textContent=u[k];}
   $('t-privacy2').textContent=u.privacy;
   document.querySelectorAll('#size-seg button').forEach(b=>{b.textContent=u[b.dataset.v];b.setAttribute('aria-pressed',b.dataset.v===size)});
@@ -201,7 +201,7 @@ function drawBee(c,x,y,s,t,flip=1){
 /* ================= TRACKING ================= */
 const video=$('v');
 let mode='demo',tracker=null,camOK=false,camTried=false,lastVT=-1;
-const head={ok:false,x:0,y:0,w:0,roll:0,lastSeen:0};
+const head={ok:false,x:0,y:0,w:0,cx:0,cy:0,roll:0,lastSeen:0};
 function track(now){
   if(!tracker||video.readyState<2||video.currentTime===lastVT)return;lastVT=video.currentTime;
   const P=faceFrame(tracker,video,now,W,H);if(!P){head.ok=false;return;}
@@ -209,7 +209,7 @@ function track(now){
   const roll=Math.atan2(b.y-a.y,b.x-a.x);
   const L=P(234),R=P(454),w=Math.hypot(R.x-L.x,R.y-L.y),top=P(10);
   const tx=top.x+Math.sin(roll)*w*.12,ty=top.y-Math.cos(roll)*w*.12,k=head.ok?.45:1;
-  head.x+=(tx-head.x)*k;head.y+=(ty-head.y)*k;head.w+=(w-head.w)*k;head.roll+=(roll-head.roll)*(head.ok?.4:1);
+  head.x+=(tx-head.x)*k;head.y+=(ty-head.y)*k;head.cx+=((L.x+R.x)/2-head.cx)*k;head.cy+=((L.y+R.y)/2-head.cy)*k;head.w+=(w-head.w)*k;head.roll+=(roll-head.roll)*(head.ok?.4:1);
   head.ok=true;head.lastSeen=now;
 }
 let fingerRoll=0,fingerTarget=0,dragging=false;
@@ -234,6 +234,7 @@ function buildLives(){
   for(let i=0;i<D.n;i++){const c=document.createElement('canvas');c.width=60;c.height=60;const x=c.getContext('2d');drawMarble(x,30,30,24,COLORS[i%7]);
     if(!marbles.find(m=>m.id===i))c.className='lost';box.appendChild(c);}
 }
+function clack(){tone({f0:2600,dur:.05,type:'sine',vol:.14});tone({f0:1900,dur:.06,type:'sine',vol:.1,at:.11});tone({f0:2200,dur:.04,type:'sine',vol:.06,at:.19});}
 function msg(t){const m=$('msg');if(t){m.textContent=t;m.classList.add('on')}else m.classList.remove('on');msgNow=t;}
 let msgNow='';
 
@@ -247,7 +248,8 @@ async function play(){
     try{tracker=await startFaceTracker(video);camOK=true;mode='camera';}
     catch(e){mode='finger';msg('');const t=$('toast');t.textContent=UI[lang].nocam;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),5000);}
   } else mode=camOK?'camera':'finger';
-  if(mode==='finger'){state='count';countT=tNow;} else {state='ready';msg(UI[lang].face);}
+  guide.reset();
+  if(mode==='finger'){state='count';countT=tNow;} else {state='ready';msg('');}
 }
 $('play').onclick=play;$('again').onclick=play;
 
@@ -326,7 +328,8 @@ function frame(now){
     for(const m of marbles)if(Math.abs(m.x)>.95){m.x=Math.sign(m.x)*.95;m.v*=-.3;}
   }
   else if(state==='ready'){
-    if(mode==='camera'&&head.ok){if(s.y-s.half*1.3<0)msg(UI[lang].back);else{state='count';countT=tNow;msg('');}}
+    // setup: fit the see-through avatar and hold, then the countdown starts
+    if(mode==='camera'&&guide.update(dt,head.ok?{x:head.cx,y:head.cy,size:head.w}:null,{x:0,y:0,w:W,h:H})==='done'){state='count';countT=tNow;msg('');}
   }
   else if(state==='count'){
     const n=3-Math.floor(tNow-countT),el=$('count');
@@ -355,7 +358,8 @@ function render(s,dt){
   if(cam&&video.readyState>=2){drawMirroredVideo(ctx,video,W,H);ctx.fillStyle='rgba(255,248,236,.08)';ctx.fillRect(0,0,W,H);}
   else drawRoom(ctx,W,H);
   if(!cam){const hw=Math.min(W*.46,H*.3);drawKid(ctx,W,H,W/2,kidNeck,hw,s.roll,tNow);}
-  const show=state!=='over'&&!(cam&&!head.ok);
+  const show=state!=='over'&&!(cam&&!head.ok)&&!(cam&&state==='ready');
+  if(cam&&state==='ready')guide.draw(ctx,{x:0,y:0,w:W,h:H},lang);
   if(show){
     const h=s.half,sh=dishShape(dish,h),D=cfg(),r=D.rad*h;
     ctx.save();ctx.translate(s.x,s.y);ctx.rotate(s.roll+Math.sin(tNow*28)*.05*wob);
@@ -369,8 +373,8 @@ function render(s,dt){
   // falling marbles
   fallers=fallers.filter(f=>tNow-f.t<2.2);
   for(const f of fallers){
-    if(!f.landed){f.vy+=H*2.2*dt;f.x+=f.vx*dt;f.y+=f.vy*dt;f.spin+=dt*10;if(f.y>H*.93){f.landed=true;f.y=H*.93;SFX.plunk();}}
-    if(f.landed){const k=(tNow-f.t);ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(f.x,H*.95,f.r*(1+k*2),f.r*.3*(1+k*2),0,0,7);ctx.stroke();}
+    if(!f.landed){f.vy+=H*2.2*dt;f.x+=f.vx*dt;f.y+=f.vy*dt;f.spin+=dt*10;if(f.y>H*.93){f.landed=true;f.y=H*.93;f.vx*=.5;clack();}}
+    if(f.landed){f.x+=f.vx*dt;f.spin+=f.vx*dt/f.r;ctx.globalAlpha=Math.max(0,Math.min(1,(2.2-(tNow-f.t))*2));drawMarble(ctx,f.x,f.y,f.r,f.col,f.spin);ctx.globalAlpha=1;}
     else drawMarble(ctx,f.x,f.y,f.r,f.col,f.spin);
   }
   if(bee.on)drawBee(ctx,bee.x,bee.y,s.half*.28,tNow,bee.phase==='out'?-bee.side:bee.side*-1);

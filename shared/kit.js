@@ -246,6 +246,7 @@ function lavaAmb(a,B){
 }
 function ambStart() {
   const a = S.AC, B = S.BUS.amb;
+  if (S.amb === 'none') return;
   if (S.amb === 'lava') { S.ambNode = { stop: lavaAmb(a, B) }; return; }
   if (S.amb !== 'night') { S.ambNode = { stop: pondAmb(a, B) }; return; }
   const len = a.sampleRate * 3, buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);

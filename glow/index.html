@@ -85,6 +85,8 @@ html,body{background:#4A3E78}
 
 <script type="module">
 import {INK,$,LS,S,audio,tone,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom,drawKid,startFaceTracker,faceFrame,drawMirroredVideo,coverMap,playSample,loadSamples} from '../shared/kit.js';
+import {makeGuide} from '../shared/guide.js';
+const guide=makeGuide('face');
 
 /* ================= TEXT ================= */
 const UI={
@@ -269,7 +271,8 @@ async function play(){
     try{tracker=await startFaceTracker(video);camOK=true;mode='camera';}
     catch(e){mode='finger';msg('');const t=$('toast');t.textContent=UI[lang].nocam;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),5000);}
   } else mode=camOK?'camera':'finger';
-  if(mode==='finger'){state='count';countT=tNow;} else {state='ready';msg(UI[lang].face);}
+  guide.reset();
+  if(mode==='finger'){state='count';countT=tNow;} else {state='ready';msg('');}
 }
 $('play').onclick=play;$('again').onclick=play;
 
@@ -307,7 +310,7 @@ function frame(now){
   head.ox+=(head.tx-head.ox)*Math.min(1,dt*8);head.oy+=(head.ty-head.oy)*Math.min(1,dt*8);
   render(dt);
 
-  if(state==='ready'){if(mode==='camera'&&face.ok){state='count';countT=tNow;msg('');}}
+  if(state==='ready'){if(mode==='camera'&&guide.update(dt,face.ok?{x:face.c.x,y:face.c.y,size:face.w}:null,{x:0,y:0,w:W,h:H})==='done'){state='count';countT=tNow;msg('');}}
   else if(state==='count'){
     const n=3-Math.floor(tNow-countT),el=$('count');
     if(n>0){if(el.textContent!==String(n)){el.textContent=n;el.style.display='block';SFX.tick();}}
@@ -354,6 +357,7 @@ function render(dt){
   const cam=mode==='camera'&&camOK&&state!=='menu';
   if(cam&&video.readyState>=2){drawMirroredVideo(ctx,video,W,H);ctx.fillStyle='rgba(50,36,110,.28)';ctx.fillRect(0,0,W,H);}
   else drawRoom(ctx,W,H,true);
+  if(cam&&state==='ready'){guide.draw(ctx,{x:0,y:0,w:W,h:H},lang);return;}
   if(!cam){
     const hw=Math.min(W*.46,H*.3),neck=(state==='menu'?H*.62:H*.78)+head.oy*.6;
     const yaw=Math.max(-1,Math.min(1,head.ox/(W*.25))),pitch=Math.max(-1,Math.min(1,head.oy/(H*.12)));

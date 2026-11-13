@@ -25,6 +25,7 @@ video{display:none}
 .bubble.on{display:block}
 .count{position:fixed;z-index:4;right:12px;background:#fff;border:3px solid var(--ink);border-radius:20px;padding:4px 12px;font:900 20px Grandstander,sans-serif;box-shadow:0 3px 0 var(--ink);display:none}
 .count.on{display:block}
+.cd{position:fixed;left:50%;transform:translate(-50%,-50%);font:900 120px Grandstander,sans-serif;color:#fff;-webkit-text-stroke:5px var(--ink);paint-order:stroke fill;z-index:6;pointer-events:none;display:none;text-shadow:0 6px 0 var(--ink)}
 .msg{position:fixed;left:50%;transform:translate(-50%,-50%);background:#fff;border:3px solid var(--ink);border-radius:24px;padding:10px 18px;font:700 20px Fredoka,sans-serif;text-align:center;box-shadow:0 4px 0 var(--ink);z-index:6;opacity:0;transition:opacity .2s;pointer-events:none;max-width:86vw}
 .msg.on{opacity:1}
 .toast{position:fixed;left:50%;bottom:calc(var(--safe-b) + 16px);transform:translateX(-50%);width:min(420px,calc(100vw - 24px));background:#fff;border:3px solid var(--ink);border-radius:20px;padding:8px 14px;font:600 15px Fredoka,sans-serif;text-align:center;box-shadow:0 3px 0 var(--ink);z-index:6;display:none}
@@ -63,6 +64,7 @@ summary::after{content:" ▾"}details[open] summary::after{content:" ▴"}
 </div>
 <div class="bubble" id="bubble"></div>
 <div class="count" id="count"></div>
+<div class="cd" id="cd"></div>
 <div class="msg" id="msg"></div>
 <div class="toast" id="toast"></div>
 
@@ -96,6 +98,8 @@ summary::after{content:" ▾"}details[open] summary::after{content:" ▴"}
 
 <script type="module">
 import {S,audio as kitAudio,musicStart,musicStop,bindSound} from '../shared/kit.js';
+import {makeGuide} from '../shared/guide.js';
+const guide=makeGuide('body');
 S.track='natural';S.amb='pond';
 const SOUND_TXT={en:{music:"Music",amb:"Garden sounds",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off"},
   he:{music:"מוזיקה",amb:"צלילי גינה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול"}};
@@ -297,7 +301,7 @@ function drawGarden(x,y,w,h){
 
 /* ============ TRACKING ============ */
 const video=$('v');let tracker=null,camOK=false,camTried=false,mode='none';
-const kid={ok:false,L:[0,0],R:[0,0],okL:false,okR:false,hands:null,upright:true,lastSeen:0,far:false};
+const kid={g:null,ok:false,L:[0,0],R:[0,0],okL:false,okR:false,hands:null,upright:true,lastSeen:0,far:false};
 async function startCamera(){
   camTried=true;
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('nocam');
@@ -317,12 +321,13 @@ function track(now){
   if(!tracker||video.readyState<2)return;if(video.currentTime===lastVT)return;lastVT=video.currentTime;
   let res;try{res=tracker.detectForVideo(video,now);}catch(e){return;}
   const lm=res&&res.landmarks&&res.landmarks[0];
-  if(!lm){kid.ok=false;return;}
+  if(!lm){kid.ok=false;kid.g=null;return;}
   const m=coverMap();const P=i=>({x:m.ox+(1-lm[i].x)*m.vw*m.s,y:m.oy+lm[i].y*m.vh*m.s,v:lm[i].visibility??1});
   let a={s:P(11),e:P(13),w:P(15)},b={s:P(12),e:P(14),w:P(16)};
   if(a.s.x>b.s.x)[a,b]=[b,a];       // a = screen-left arm
   const vis=[a.s,a.e,a.w,b.s,b.e,b.w].every(p=>p.v>.45);
   const nose=P(0);
+  kid.g=a.s.v>.45&&b.s.v>.45?{x:nose.x,y:nose.y,size:Math.hypot(b.s.x-a.s.x,b.s.y-a.s.y)}:null;
   if(!vis){kid.ok=false;kid.far=a.s.v>.45&&b.s.v>.45;return;}   // shoulders seen but not the hands -> too close
   const ang=(arm,side)=>[outAngle(side,arm.e.x-arm.s.x,arm.e.y-arm.s.y),outAngle(side,arm.w.x-arm.e.x,arm.w.y-arm.e.y)];
   const nL=ang(a,-1),nR=ang(b,1),k=kid.ok?.5:1;
@@ -366,8 +371,10 @@ async function play(){
   done=0;queue=pickRound();
   if(!camTried){msg(UI[lang].ready);try{await startCamera();mode='camera';}catch(e){mode='finger';const t=$('toast');t.textContent=UI[lang].nocam;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),6000);}msg('');}
   else mode=camOK?'camera':'finger';
-  nextPose();
+  cur=null;showBubble();guide.reset();
+  if(mode==='camera'){state='setup';updCount();} else startCd();
 }
+let cdT=0;function startCd(){state='cd';cdT=tNow;updCount();}
 $('play').onclick=play;$('again').onclick=play;
 function endGame(){musicStop();state='over';cur=null;showBubble();updCount();msg('');setSproutTarget('rocket');sp.dance=1;
   $('final').textContent=done;$('end').hidden=false;SFX.end();
@@ -394,6 +401,14 @@ function frame(now){
   if(state==='menu'){
     demoT+=dt;if(demoT>2.2){demoT=0;demoI=(demoI+1)%demoList.length;setSproutTarget(demoList[demoI]);sp.hop=.001;}
     sp.bloom=.5+.5*Math.sin(tNow*1.2);
+  }
+  else if(state==='setup'){   // fit the see-through avatar (head in the middle, trunk and hands visible) and hold
+    if(guide.update(dt,kid.g,camRect)==='done')startCd();
+  }
+  else if(state==='cd'){
+    const n=3-Math.floor(tNow-cdT),el=$('cd');
+    if(n>0){if(el.textContent!==String(n)){el.textContent=n;el.style.display='block';SFX.tick(.6);}}
+    else{el.style.display='none';el.textContent='';nextPose();}
   }
   else if(state==='intro'){ if(tNow-introT>1.1)state='hold'; }
   else if(state==='hold'){
@@ -439,6 +454,7 @@ function render(now,dt){
     else if(video.readyState>=2){const m=coverMap();ctx.save();ctx.translate(camR.x*2+camR.w,0);ctx.scale(-1,1);
       ctx.drawImage(video,camR.x*2+camR.w-(m.ox+m.vw*m.s),m.oy,m.vw*m.s,m.vh*m.s);ctx.restore();}
     ctx.restore();
+    if(state==='setup'&&mode==='camera'){ctx.save();const pc=new Path2D();pc.roundRect(camR.x,camR.y,camR.w,camR.h,26);ctx.clip(pc);guide.draw(ctx,camR,lang);ctx.restore();}
     ctx.lineWidth=4;ctx.strokeStyle=INK;const p2=new Path2D();p2.roundRect(camR.x,camR.y,camR.w,camR.h,26);ctx.stroke(p2);
     if(kid.ok&&kid.hands&&(state==='hold'||state==='celebrate')){const s=Math.max(22,kid.hands.sw*.32);
       const okAll=state==='celebrate';drawHandLeaf(kid.hands.L.x,kid.hands.L.y,okAll||kid.okL,s,tNow);drawHandLeaf(kid.hands.R.x,kid.hands.R.y,okAll||kid.okR,s,tNow);}
@@ -451,6 +467,7 @@ function render(now,dt){
   const b=$('bubble');b.style.left=(spR.x+spR.w/2)+'px';b.style.top=(spR.y+8)+'px';
   {const c=$('count');c.style.top=(spR.y+8)+'px';}
   $('msg').style.top=(camR?camR.y+camR.h*.5:H*.45)+'px';
+  $('cd').style.top=(camR?camR.y+camR.h*.45:H*.4)+'px';
   // falling leaves
   leaves=leaves.filter(l=>(l.life-=dt)>0&&l.y<H+30);
   for(const l of leaves){l.x+=l.vx*dt+Math.sin(tNow*2+l.r)*20*dt;l.y+=l.vy*dt;l.r+=l.vr*dt;ctx.save();ctx.translate(l.x,l.y);ctx.rotate(l.r);stk(leafPath(l.s,l.s*.45),l.c,2);ctx.restore();}

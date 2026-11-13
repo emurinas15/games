@@ -75,6 +75,8 @@
 
 <script type="module">
 import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom,startPoseTracker,poseFrame,drawMirroredVideo} from '../shared/kit.js';
+import {makeGuide} from '../shared/guide.js';
+const guide=makeGuide('body');
 
 /* ================= TEXT ================= */
 const UI={
@@ -213,14 +215,14 @@ const FX={
 /* ================= TRACKING ================= */
 const video=$('v');
 let mode='demo',tracker=null,camOK=false,camTried=false,lastVT=-1;
-const body={ok:false,sw:0,shL:{x:0,y:0},shR:{x:0,y:0},hands:[{x:0,y:0,a:0,ok:false},{x:0,y:0,a:0,ok:false}],lastSeen:0,far:false,close:false};
+const body={ok:false,nose:{x:0,y:0},sw:0,shL:{x:0,y:0},shR:{x:0,y:0},hands:[{x:0,y:0,a:0,ok:false},{x:0,y:0,a:0,ok:false}],lastSeen:0,far:false,close:false};
 function sm(o,p,k){o.x+=(p.x-o.x)*k;o.y+=(p.y-o.y)*k;}
 function track(now){
   if(!tracker||video.readyState<2||video.currentTime===lastVT)return;lastVT=video.currentTime;
   const P=poseFrame(tracker,video,now,W,H);if(!P){body.ok=false;return;}
   const a=P(11),b=P(12);if(a.v<.4||b.v<.4){body.ok=false;return;}
   const k=body.ok?.6:1;
-  const L=a.x<b.x?a:b,R=a.x<b.x?b:a;sm(body.shL,L,k);sm(body.shR,R,k);
+  const L=a.x<b.x?a:b,R=a.x<b.x?b:a;sm(body.shL,L,k);sm(body.shR,R,k);sm(body.nose,P(0),k);
   const sw=Math.hypot(R.x-L.x,R.y-L.y);body.sw+=(sw-body.sw)*k;body.close=sw>W*.62;
   [[15,13],[16,14]].forEach(([wi,ei],j)=>{const w=P(wi),e=P(ei),h=body.hands[j];
     if(w.v<.35){h.ok=false;return;}
@@ -306,7 +308,8 @@ async function play(){
     try{tracker=await startPoseTracker(video);camOK=true;mode='camera';}
     catch(e){mode='finger';msg('');const t=$('toast');t.textContent=UI[lang].nocam;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),5000);}
   } else mode=camOK?'camera':'finger';
-  if(mode==='finger'){state='count';countT=tNow;} else {state='ready';msg(UI[lang].body);}
+  guide.reset();
+  if(mode==='finger'){state='count';countT=tNow;} else {state='ready';msg('');}
 }
 $('play').onclick=play;$('again').onclick=play;
 
@@ -328,7 +331,8 @@ function frame(now){
     for(const sp of spiders)if(sp.state==='hang'&&tNow-sp.hangT>sp.life)sp.state='up';
   }
   else if(state==='ready'){
-    if(mode==='camera'&&body.ok&&body.hands.some(h=>h.ok)){state='count';countT=tNow;msg('');}
+    // setup: fit the see-through avatar (head in the middle, trunk and hands visible) and hold
+    if(mode==='camera'&&guide.update(dt,body.ok?{x:body.nose.x,y:body.nose.y,size:body.sw}:null,{x:0,y:0,w:W,h:H})==='done'){state='count';countT=tNow;msg('');}
   }
   else if(state==='count'){
     const n=3-Math.floor(tNow-countT),el=$('count');
@@ -396,6 +400,7 @@ function render(dt){
   const cam=mode==='camera'&&camOK&&state!=='menu';
   if(cam&&video.readyState>=2){drawMirroredVideo(ctx,video,W,H);ctx.fillStyle='rgba(255,248,236,.1)';ctx.fillRect(0,0,W,H);}
   else drawRoom(ctx,W,H);
+  if(cam&&state==='ready')guide.draw(ctx,{x:0,y:0,w:W,h:H},lang);
   // threads and spiders
   for(const sp of spiders){
     const sw=Math.sin(tNow*1.7+sp.id*9)*.06+sp.swing*.25,len=Math.max(0,sp.y+20);
@@ -419,7 +424,7 @@ function render(dt){
   pops=pops.filter(p=>(p.life-=dt)>0);
   for(const p of pops){p.vy+=500*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;ctx.save();ctx.translate(p.x,p.y);ctx.globalAlpha=Math.min(1,p.life*1.5);sticker(ctx,starPath(9),'#FFD84D',2);ctx.restore();}
   // rackets
-  if(state==='play'||state==='count'||state==='ready'){
+  if(state==='play'||state==='count'||(state==='ready'&&!cam)){
     for(const rk of rackets())drawRacket(ctx,rk.x,rk.y,rk.r,rk.a,rk.big?'#8BD16B':(rk.id.endsWith('0')?'#FF7A66':'#5FB7F0'),rk.big,tNow);
   }
 }

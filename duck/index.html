@@ -142,6 +142,7 @@ details[open] summary::after{content:" ▴"}
 
 <script type="module">
 import {loadSamples,playSample,SONG_NOTES} from '../shared/kit.js';
+import {makeGuide} from '../shared/guide.js';
 /* ================= TEXT (EN / HE) ================= */
 const UI={
  en:{title:"Duck on My Head",sub:"Tilt your head to keep the duckling on!",play:"Play",
@@ -232,6 +233,8 @@ const SFX={
   tick(){tone({f0:660,f1:660,dur:.1,type:'triangle',vol:.2});},
   go(){tone({f0:990,f1:990,dur:.25,type:'triangle',vol:.24});}
 };
+// setup guide: see-through avatar the child fits into before the countdown
+const guide=makeGuide('face',{tick:p=>tone({f0:520+p*500,f1:520+p*500,dur:.08,type:'sine',vol:.08}),done:()=>{SFX.star();SFX.quack(.25);}});
 
 
 /* ================= MUSIC: Pond Stroll (synth, no files) ================= */
@@ -481,7 +484,7 @@ function drawRoom(){
 const video=$('v');
 let mode='demo';           // 'demo' (menu), 'camera', 'finger'
 let tracker=null, camOK=false, camTried=false;
-const head={ok:false,x:0,y:0,w:0,roll:0,lastSeen:0};
+const head={ok:false,x:0,y:0,w:0,cx:0,cy:0,roll:0,lastSeen:0};
 let rawRoll=0;
 
 async function startCamera(){
@@ -512,7 +515,7 @@ function track(now){
   const ux=Math.sin(rawRoll),uy=-Math.cos(rawRoll);
   const tx=top.x+ux*w*.12,ty=top.y+uy*w*.12;
   const k=head.ok?0.45:1;
-  head.x+=(tx-head.x)*k;head.y+=(ty-head.y)*k;head.w+=(w-head.w)*k;head.roll+=(rawRoll-head.roll)*(head.ok?0.4:1);
+  head.x+=(tx-head.x)*k;head.y+=(ty-head.y)*k;head.cx+=((L.x+R.x)/2-head.cx)*k;head.cy+=((L.y+R.y)/2-head.cy)*k;head.w+=(w-head.w)*k;head.roll+=(rawRoll-head.roll)*(head.ok?0.4:1);
   head.ok=true;head.lastSeen=now;
 }
 
@@ -554,7 +557,8 @@ async function play(){
     try{await startCamera();mode='camera';}
     catch(e){mode='finger';msg('');const t=$('toast');t.textContent=UI[lang].nocam;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),5000);}
   } else mode=camOK?'camera':'finger';
-  if(mode==='finger')beginCount(); else {state='ready';msg(UI[lang].face);}
+  guide.reset();
+  if(mode==='finger')beginCount(); else {state='ready';msg('');}
 }
 function beginCount(){state='count';countT=tNow;if(mode==='camera')msg('');}
 $('play').onclick=play;$('again').onclick=play;
@@ -646,7 +650,7 @@ function frame(now){
     if(Math.abs(duck.x)>1){duck.x=0;duck.vs=0;}
   }
   else if(state==='ready'){
-    if(mode==='camera'&&head.ok){const s=surface();if(s.y-s.half*1.9<0)msg(UI[lang].back);else beginCount();}
+    if(mode==='camera'&&guide.update(dt,head.ok?{x:head.cx,y:head.cy,size:head.w}:null,{x:0,y:0,w:W,h:H})==='done')beginCount();
   }
   else if(state==='count'){
     const n=3-Math.floor(tNow-countT);const el=$('count');
@@ -691,7 +695,8 @@ function render(now,dt){
 
   let s=surface();
   if(!cam){const hw=Math.min(W*.46,H*.3);drawKid(W/2,kidNeck,hw,s.roll,tNow);}
-  const showPad=!(cam&&!head.ok&&state!=='over')||state==='menu';
+  if(cam&&state==='ready')guide.draw(ctx,{x:0,y:0,w:W,h:H},lang);
+  const showPad=(!(cam&&!head.ok&&state!=='over')||state==='menu')&&!(cam&&state==='ready');
   if(showPad&&state!=='over'||state==='menu'){
     ctx.save();ctx.translate(s.x,s.y);ctx.rotate(s.roll);
     drawPad(s.half);
