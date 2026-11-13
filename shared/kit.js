@@ -181,7 +181,25 @@ const DRUM_FX = {
   '~hat'(t, v, bus) { const a = S.AC, s = noiseBuf(a, .05, 4), f = a.createBiquadFilter(), g = a.createGain();
     f.type = 'highpass'; f.frequency.value = 7000; g.gain.value = .6 * v; s.connect(f); f.connect(g); g.connect(bus); s.start(t); },
   '~crash'(t, v, bus) { const a = S.AC, s = noiseBuf(a, 1.4, 2.5), f = a.createBiquadFilter(), g = a.createGain();
-    f.type = 'highpass'; f.frequency.value = 5000; g.gain.value = .3 * v; s.connect(f); f.connect(g); g.connect(bus); s.start(t); }
+    f.type = 'highpass'; f.frequency.value = 5000; g.gain.value = .3 * v; s.connect(f); f.connect(g); g.connect(bus); s.start(t); },
+  // 80s studio snare: short tone body + bright noise, with a roomy reverb send
+  '~snare80'(t, v, bus) { const a = S.AC, o = a.createOscillator(), og = a.createGain(), s = noiseBuf(a, .2, 2.5), f = a.createBiquadFilter(), g = a.createGain(), w = a.createGain();
+    o.type = 'triangle'; o.frequency.setValueAtTime(240, t); o.frequency.exponentialRampToValueAtTime(170, t + .08);
+    og.gain.setValueAtTime(.0001, t); og.gain.exponentialRampToValueAtTime(.35 * v, t + .003); og.gain.exponentialRampToValueAtTime(.0001, t + .12);
+    f.type = 'bandpass'; f.frequency.value = 2500; f.Q.value = .6; g.gain.value = .55 * v; w.gain.value = .9;
+    o.connect(og); og.connect(bus); s.connect(f); f.connect(g); g.connect(bus); og.connect(w); g.connect(w); w.connect(S.BUS.rev);
+    o.start(t); o.stop(t + .15); s.start(t); },
+  // rock tom (m = pitch in Hz)
+  '~tom'(t, v, bus, hz = 160) { const a = S.AC, o = a.createOscillator(), g = a.createGain(), w = a.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(hz * 1.5, t); o.frequency.exponentialRampToValueAtTime(hz, t + .05);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.5 * v, t + .004); g.gain.exponentialRampToValueAtTime(.0001, t + .35);
+    w.gain.value = .5; o.connect(g); g.connect(bus); g.connect(w); w.connect(S.BUS.rev); o.start(t); o.stop(t + .4); },
+  // a round little bubble pop (m = pitch multiplier)
+  '~bubble'(t, v, bus, p = 1) { const a = S.AC, o = a.createOscillator(), g = a.createGain(), w = a.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(380 * p, t); o.frequency.exponentialRampToValueAtTime(1300 * p, t + .07);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.3 * v, t + .006); g.gain.exponentialRampToValueAtTime(.0001, t + .09);
+    w.gain.value = .4; o.connect(g); g.connect(bus); g.connect(w); w.connect(S.BUS.rev); o.start(t); o.stop(t + .11);
+    DRUM_FX['~hat'](t + .075, .12 * v, bus); }
 };
 /* one note of a styled arrangement (see songs.js): real sample, or a synth stand-in */
 function playEvent([inst, m, v, len, wet, delay], t) {
@@ -191,7 +209,7 @@ function playEvent([inst, m, v, len, wet, delay], t) {
     const src = a.createBufferSource(); src.buffer = b; const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = .7;
     const g = a.createGain(); g.gain.value = v * 2; src.connect(f); f.connect(g); g.connect(S.BUS.music); src.start(t); return; }
   if (SPIDER_FX[inst]) { SPIDER_FX[inst](t, v, S.BUS.music); return; }
-  if (DRUM_FX[inst]) { DRUM_FX[inst](t, v, S.BUS.music); return; }
+  if (DRUM_FX[inst]) { DRUM_FX[inst](t, v, S.BUS.music, m); return; }
   const g = playSample(S.AC, inst, m, t, v / .7, S.BUS.music, len);
   if (g) { if (wet) { const w = S.AC.createGain(); w.gain.value = wet; g.connect(w); w.connect(S.BUS.rev); } return; }
   if (m < 55) bass(m, t, v, Math.min(1, len)); else kalimba(m, t, v);
