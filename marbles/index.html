@@ -115,7 +115,7 @@ let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
 let size=LS.get('mp-size','medium'); if(!WIDTH[size])size='medium';
 let count=+LS.get('mp-count','3'); if(![3,5,7].includes(count))count=3;
 const dish='plate';
-function cfg(){return {n:count,rad:.095/WIDTH[size],G:6.5,curve:.9,damp:2.0,dead:.055,bee:[8,12],kick:.65,rim:.8,rimK:2.86};}   // 12 Nov: marbles roll 30% faster (G, bee kick and rim scaled together)
+function cfg(){return {n:count,rad:.095/WIDTH[size],G:6.5,curve:.9,damp:2.0,dead:.055,bee:[8,12],kick:.65,rim:.8,rimK:2.0};}   // 12 Nov: marbles roll 30% faster (G, bee kick and rim scaled together). 13 Nov: rim 30% less steep (rimK 2.86 -> 2.0)
 const STEADY={g:1,d:1};
 let best=0; const loadBest=()=>{best=+LS.get('mp-best-'+size+'-'+count,'0')||0;}; loadBest();
 
@@ -365,7 +365,7 @@ function render(s,dt){
     ctx.save();ctx.translate(s.x,s.y);ctx.rotate(s.roll+Math.sin(tNow*28)*.05*wob);
     drawDishBack(ctx,dish,h);
     const order=[...marbles].sort((a,b)=>a.id-b.id);
-    for(const m of order){const cx=Math.max(-1,Math.min(1,m.x));const lift=Math.max(0,Math.abs(cx)-cfg().rim)/(1-cfg().rim)*h*.07;drawMarble(ctx,m.x*h,sh.dip(Math.abs(cx))-r-lift,r,m.col,m.spin);}
+    for(const m of order){const cx=Math.max(-1,Math.min(1,m.x));const lift=Math.max(0,Math.abs(cx)-cfg().rim)/(1-cfg().rim)*h*.049;drawMarble(ctx,m.x*h,sh.dip(Math.abs(cx))-r-lift,r,m.col,m.spin);}
     drawDishFront(ctx,dish,h);
     if(state==='ready'||state==='count'){ctx.globalAlpha=.9;}
     ctx.restore();
