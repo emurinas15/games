@@ -193,67 +193,72 @@ function poseOf(p){
   const lm=p.lm,s=sides(lm),o={},ang=(a,b)=>(lm[a].v>.5&&lm[b].v>.5)?Math.atan2(lm[b].y-lm[a].y,lm[b].x-lm[a].x)*180/Math.PI:null;
   o.uaL=ang(s.aL[0],s.aL[1]);o.faL=ang(s.aL[1],s.aL[2]);o.uaR=ang(s.aR[0],s.aR[1]);o.faR=ang(s.aR[1],s.aR[2]);
   if(bodyMode==='full'){o.thL=ang(s.lL[0],s.lL[1]);o.shL=ang(s.lL[1],s.lL[2]);o.thR=ang(s.lR[0],s.lR[1]);o.shR=ang(s.lR[1],s.lR[2]);}
+  // trunk: middle of the hips -> middle of the shoulders (sideways lean); only when both hips are seen
+  if(lm[23].v>.5&&lm[24].v>.5){const hx=(lm[23].x+lm[24].x)/2,hy=(lm[23].y+lm[24].y)/2,sx=(lm[11].x+lm[12].x)/2,sy=(lm[11].y+lm[12].y)/2;o.tr=Math.atan2(sy-hy,sx-hx)*180/Math.PI;}
   return o;
 }
 const dAng=(a,b)=>Math.abs(((a-b+540)%360)-180);
 // ONE tolerance for every segment; every visible arm segment must match, and at least 75% of all visible segments
 function compare(T,P,tol){
-  const keys=bodyMode==='full'?[...ARMS,...LEGS]:ARMS;let n=0,good=0,armsOk=true;const by={};
-  for(const k of keys){if(T[k]==null||P[k]==null)continue;n++;const ok=dAng(T[k],P[k])<tol;by[k]=ok;if(ok)good++;else if(ARMS.includes(k))armsOk=false;}
+  const keys=bodyMode==='full'?[...ARMS,...LEGS,'tr']:[...ARMS,'tr'];let n=0,good=0,armsOk=true;const by={};
+  for(const k of keys){if(T[k]==null||P[k]==null)continue;n++;const ok=dAng(T[k],P[k])<tol;by[k]=ok;if(ok)good++;else if(ARMS.includes(k)||(k==='tr'&&Math.abs(T.tr+90)>8))armsOk=false;  /* a leaning pose must be leaned */}
   return {ok:n>=3&&armsOk&&good>=Math.ceil(n*.75),by,n};
 }
 
 /* ================= THE ANIMALS ================= */
-/* 14 Nov (Edgar): no dancing; each animal has 3 poses, picked at random (surprise), with clearly different legs.
-   Leg patterns (screen-space, detectable from the front in 2D): together · wide · wide squat · side lunge ·
-   one leg lifted out to the side · tree (foot to the other knee) · crossed. Forward knee lifts are avoided:
-   a front camera can't see them. */
-const LG={N:[90,90,90,90],W:[112,112,68,68],SQ:[150,88,30,92],LL:[142,92,66,66],LR:[114,114,38,88],
-  UL:[148,148,90,90],UR:[90,90,32,32],TL:[160,15,90,90],TR:[90,90,20,165],X:[80,62,100,118],HS:[118,78,62,102]};
-const PZ=(en,he,arms,legs,line)=>({en,he,pose:P(...arms,...LG[legs]),legs,line});
+/* 14 Nov night (Edgar): kids dressed as animals; each animal keeps its signature body part in all 3 poses, and at
+   least one pose has the body leaning sideways (a front camera can't see forward leans or forward knee lifts).
+   Signatures: frog always squats · crab legs always bent and wide · flamingo always on one leg (switches legs) ·
+   bear hands on hips · lion roaring claws · duck arms straight close to the body · elephant hands together,
+   arms stretched out like a trunk · bunny at least one bent paw · spider at least one bent arm with the hand drooping. */
+const LG={N:[90,90,90,90],W:[112,112,68,68],SQ:[150,88,30,92],FQ:[160,80,20,100],HS:[118,78,62,102],CS:[132,98,48,82],CA:[152,86,52,90],
+  LL:[142,92,66,66],LR:[114,114,38,88],UL:[148,148,90,90],UR:[90,90,32,32],TL:[160,15,90,90],TR:[90,90,20,165],X:[80,62,100,118]};
+const P=(uaL,faL,uaR,faR,thL=90,shL=90,thR=90,shR=90,tr=-90)=>({uaL,faL,uaR,faR,thL,shL,thR,shR,tr});
+// tr = trunk angle (hips -> shoulders): -90 upright, -105 leaning to the screen-left, -75 leaning to the screen-right
+const PZ=(en,he,arms,legs,line,tr=-90)=>({en,he,pose:P(...arms,...LG[legs],tr),legs,tr,line});
 const A=(id,en,he,body,light,feet,poses)=>({id,en,he,body,light,feet,poses});
-const P=(uaL,faL,uaR,faR,thL=90,shL=90,thR=90,shR=90)=>({uaL,faL,uaR,faR,thL,shL,thR,shR});
+const ROAR=[170,-120,10,-60],HIPS=[150,40,30,140];
 const ANIMALS=[
-  A('sprout','Sprout','נבט','#7DCB6B','#B6E59E','#6CC56B',[
-    PZ('Sunshine','שמש',[-135,-135,-45,-45],'N',{en:"Sunshine, everybody!",he:"שמש לכולם!"}),
-    PZ('Windy day','יום עם רוח',[-60,-45,-35,-30],'X',{en:"Whoosh, the wind!",he:"וווש, רוח!"}),
-    PZ('Big leaves','עלים גדולים',[180,180,0,0],'W',{en:"Look at my leaves!",he:"תראו את העלים שלי!"})]),
+  A('lion','Lion','אריה','#F5B842','#FFE3A3','#C9822B',[
+    PZ('Roar','שאגה',ROAR,'W',{en:"ROAAAR!",he:"רוווארר!"}),
+    PZ('Pounce','זינוק',ROAR,'SQ',{en:"Ready… pounce!",he:"מוכנים… זינוק!"}),
+    PZ('Prowl','מתגנב',ROAR,'LL',{en:"Sneaky lion…",he:"אריה מתגנב…"},-106)]),
   A('bear','Bear','דוב','#B07A4F','#E8C9A0','#8A5A36',[
-    PZ('Bear-y strong','דוב חזק',[150,40,30,140],'W',{en:"Bear-y strong!",he:"דוב חזק!"}),
-    PZ('Big roar','שאגה גדולה',[170,-120,10,-60],'SQ',{en:"ROAAAR!",he:"רוווארר!"}),
-    PZ('Honey reach','להגיע לדבש',[115,10,-90,-90],'UL',{en:"Honey up there!",he:"הדבש שם למעלה!"})]),
+    PZ('Bear-y strong','דוב חזק',HIPS,'W',{en:"Bear-y strong!",he:"דוב חזק!"}),
+    PZ('Bear stomp','דריכת דוב',HIPS,'UL',{en:"Stomp stomp!",he:"דריכה חזקה!"}),
+    PZ('Sleepy sway','דוב מנומנם',HIPS,'N',{en:"Yaaawn…",he:"אווווה…"},-73)]),
   A('crab','Crab','סרטן','#F06A5A','#FFB3A6','#F06A5A',[
     PZ('Snip snap','קליק קלאק',[180,-90,0,-90],'SQ',{en:"Snip snap!",he:"קליק קלאק!"}),
-    PZ('Sideways','הולך הצידה',[180,180,165,180],'LL',{en:"Sideways only!",he:"רק הצידה!"}),
-    PZ('Claws up','צבתות למעלה',[-120,-60,-60,-120],'W',{en:"Pinch the sky!",he:"צובטים את השמיים!"})]),
+    PZ('Claws up','צבתות למעלה',[-120,-60,-60,-120],'CS',{en:"Pinch the sky!",he:"צובטים את השמיים!"}),
+    PZ('Sideways','הולך הצידה',[180,180,165,180],'CA',{en:"Sideways only!",he:"רק הצידה!"},-106)]),
   A('frog','Frog','צפרדע','#7DCB6B','#D8F2B8','#5DB04E',[
     PZ('Ribbit squat','קוואק סקוואט',[140,80,40,100],'SQ',{en:"Ribbit squat!",he:"קוואק סקוואט!"}),
-    PZ('Big jump','קפיצה גדולה',[-140,-140,-40,-40],'W',{en:"Boing!",he:"בוינג!"}),
-    PZ('Fly catcher','תופס זבובים',[150,40,0,0],'LR',{en:"Got the fly!",he:"תפסתי זבוב!"})]),
+    PZ('Ready to leap','מוכנה לקפוץ',[-140,-140,-40,-40],'FQ',{en:"Ready… boing!",he:"מוכנים… בוינג!"}),
+    PZ('Fly catcher','תופסת זבובים',[150,40,0,0],'HS',{en:"Got the fly!",he:"תפסתי זבוב!"},-73)]),
   A('flamingo','Flamingo','פלמינגו','#FF9FB0','#FFD3DC','#F28AA0',[
     PZ('One leg','רגל אחת',[-165,-150,-15,-30],'TR',{en:"One leg, no wobbles!",he:"רגל אחת, בלי להתנדנד!"}),
-    PZ('Long stretch','מתיחה ארוכה',[-100,-70,-80,-110],'UR',{en:"So tall!",he:"כמה גבוה!"}),
-    PZ('Other leg','הרגל השנייה',[160,130,20,50],'TL',{en:"Now the other leg!",he:"עכשיו הרגל השנייה!"})]),
+    PZ('Switch!','מחליפים!',[160,130,20,50],'TL',{en:"Now the other leg!",he:"עכשיו הרגל השנייה!"}),
+    PZ('Flamingo lean','פלמינגו נוטה',[-100,-70,-80,-110],'UL',{en:"Lean like me!",he:"נוטים כמוני!"},-73)]),
   A('penguin','Penguin','פינגווין','#3E4C6E','#F7F3EA','#FF9A3D',[
     PZ('Flap flap','פלאפ פלאפ',[110,115,70,65],'W',{en:"Flap flap!",he:"פלאפ פלאפ!"}),
-    PZ('Ice skater','מחליק על הקרח',[180,180,0,0],'UR',{en:"Wheee, ice!",he:"ויייי, קרח!"}),
+    PZ('Ice skater','מחליק על הקרח',[180,180,0,0],'UR',{en:"Wheee, ice!",he:"ויייי, קרח!"},-106),
     PZ('Dive','צלילה',[-95,-88,-85,-92],'N',{en:"Splash dive!",he:"צלילה!"})]),
   A('bunny','Bunny','ארנב','#F3EEE4','#FFD3DC','#F3EEE4',[
     PZ('Bunny ears','אוזני ארנב',[-135,-25,-45,-155],'N',{en:"Bunny ears!",he:"אוזני ארנב!"}),
     PZ('Ready to hop','מוכן לקפוץ',[100,-60,80,-120],'HS',{en:"Hop hop!",he:"הופ הופ!"}),
-    PZ('Thump thump','טופף טופף',[150,40,30,140],'UL',{en:"Thump thump!",he:"טופף טופף!"})]),
+    PZ('Carrot reach','להגיע לגזר',[100,-60,-45,-45],'UL',{en:"Carrot up there!",he:"גזר שם למעלה!"},-73)]),
   A('elephant','Elephant','פיל','#A9B4C2','#D6DDE6','#8E99A8',[
-    PZ('Flappy ears','אוזניים מנפנפות',[-170,-60,-10,-120],'W',{en:"Flappy ears!",he:"אוזניים מנפנפות!"}),
-    PZ('Trunk swing','חדק מתנדנד',[70,80,110,100],'SQ',{en:"Swing the trunk!",he:"מנדנדים את החדק!"}),
-    PZ('Trumpet','חצוצרה',[100,95,-70,-150],'UR',{en:"Toot toot!",he:"טוּט טוּט!"})]),
+    PZ('Trunk down','חדק למטה',[70,80,110,100],'W',{en:"Here's my trunk!",he:"הנה החדק שלי!"}),
+    PZ('Trumpet','חצוצרה',[-70,-85,-110,-95],'N',{en:"Toot toot!",he:"טוּט טוּט!"}),
+    PZ('Trunk swing','חדק מתנדנד',[40,40,62,58],'SQ',{en:"Swing the trunk!",he:"מנדנדים את החדק!"},-106)]),
   A('duck','Duck','ברווז','#FFD84D','#FFF1B8','#FF9A3D',[
-    PZ('Quack wings','כנפי קוואק',[150,30,30,150],'HS',{en:"Quack wings!",he:"כנפי קוואק!"}),
-    PZ('Wing flap','נפנוף כנפיים',[-150,-100,-30,-80],'X',{en:"Flap to fly!",he:"מנפנפים ועפים!"}),
-    PZ('Splash','שפריץ',[180,180,0,0],'LL',{en:"Splash!",he:"שפריץ!"})]),
+    PZ('Waddle','מתנדנד',[100,100,80,80],'N',{en:"Quack quack!",he:"קוואק קוואק!"}),
+    PZ('Duck squat','ברווז כורע',[106,106,74,74],'HS',{en:"Quack squat!",he:"קוואק סקוואט!"}),
+    PZ('Tail wiggle','מנענע זנב',[100,100,80,80],'W',{en:"Wiggle wiggle!",he:"וויגל וויגל!"},-107)]),
   A('spider','Spider','עכביש','#6B4E9B','#B9A3E0','#6B4E9B',[
-    PZ('Super star','כוכב',[-150,-150,-30,-30],'W',{en:"Super star spider!",he:"עכביש כוכב!"}),
-    PZ('Web climb','טיפוס ברשת',[-120,-80,60,100],'UL',{en:"Climbing my web!",he:"מטפס ברשת!"}),
-    PZ('Spider sprint','ריצת עכביש',[180,180,165,180],'LR',{en:"Zoom!",he:"זום!"})])
+    PZ('Creepy crawly','זוחל ומזדחל',[-160,100,-20,80],'W',{en:"Creepy crawly!",he:"זחל זחל!"}),
+    PZ('Web climb','טיפוס ברשת',[-120,-80,-20,80],'UL',{en:"Climbing my web!",he:"מטפס ברשת!"}),
+    PZ('Spider sprint','ריצת עכביש',[180,180,-15,85],'LR',{en:"Zoom!",he:"זום!"},-73)])
 ];
 const IDX=Object.fromEntries(ANIMALS.map((a,i)=>[a.id,i]));
 function mixName(a,b,l){const x=a[l],y=b[l];return x.slice(0,Math.max(2,Math.ceil(x.length*.6)))+y.slice(-Math.max(2,Math.ceil(y.length*.6)));}   // Frog+Flamingo -> Fromingo
@@ -267,65 +272,72 @@ function makeTarget(a,b,pa,pb){
   return {a,b,pa,pb,pose,mix:b!==a,line:A1.line};
 }
 
-/* draw a sticker animal statue in the pose. (x,y) = centre of the body, s = size (about the body height) */
+/* draw a kid in an animal costume, frozen in the pose. (x,y) = centre of the body, s = size (about the body height) */
+const SKIN=['#F6D3B0','#E8B48A','#C68B5E','#8D5B3A','#F2C9A0'];
 function drawAnimal(T,x,y,s,t,o={}){
-  const top=ANIMALS[T.a],bot=ANIMALS[T.b],pose=o.pose||T.pose,lw=Math.max(2.5,s*.03);
+  const top=ANIMALS[T.a],bot=ANIMALS[T.b],pose=o.pose||T.pose,lw=Math.max(2.5,s*.03),skin=SKIN[T.a%SKIN.length];
   const legC=bodyMode==='full'?bot:top,armR=(bodyMode!=='full'&&T.mix)?bot:top;
   ctx.save();ctx.translate(x,y+(o.hop||0));
-  const sh={L:{x:-s*.25,y:-s*.2},R:{x:s*.25,y:-s*.2}},hp={L:{x:-s*.15,y:s*.3},R:{x:s*.15,y:s*.3}};
-  const R=a=>a*Math.PI/180,seg=(p,a,len)=>({x:p.x+Math.cos(R(a))*len,y:p.y+Math.sin(R(a))*len});
+  const R=a=>a*Math.PI/180,tilt=R((pose.tr??-90)+90),pv={x:0,y:s*.3};
+  const rot=p=>({x:pv.x+(p.x-pv.x)*Math.cos(tilt)-(p.y-pv.y)*Math.sin(tilt),y:pv.y+(p.x-pv.x)*Math.sin(tilt)+(p.y-pv.y)*Math.cos(tilt)});
+  const sh={L:rot({x:-s*.25,y:-s*.2}),R:rot({x:s*.25,y:-s*.2})},hp={L:rot({x:-s*.15,y:s*.3}),R:rot({x:s*.15,y:s*.3})};
+  const seg=(p,a,len)=>({x:p.x+Math.cos(R(a))*len,y:p.y+Math.sin(R(a))*len});
   const limb=(p,a1,a2,l1,l2,w,col,end,endCol)=>{const e=seg(p,a1,l1),h=seg(e,a2,l2);
     ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=INK;ctx.lineWidth=w+lw*2;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(e.x,e.y);ctx.lineTo(h.x,h.y);ctx.stroke();
     ctx.strokeStyle=col;ctx.lineWidth=w;ctx.stroke();end(h,a2,endCol);};
-  const mitt=(h,a,c)=>sticker(ctx,ell(h.x,h.y,s*.075,s*.075),c,lw);
+  const hand=(h,a,c)=>sticker(ctx,ell(h.x,h.y,s*.07,s*.07),skin,lw);
   const claw=(h,a,c)=>{ctx.save();ctx.translate(h.x,h.y);ctx.rotate(R(a));const p=new Path2D();p.moveTo(-s*.02,0);p.quadraticCurveTo(s*.06,-s*.13,s*.14,-s*.05);p.lineTo(s*.05,-s*.01);p.lineTo(s*.14,s*.04);p.quadraticCurveTo(s*.06,s*.12,-s*.02,0);sticker(ctx,p,c,lw);ctx.restore();};
+  const paw=(h,a,c)=>{sticker(ctx,ell(h.x,h.y+s*.03,s*.065,s*.08),'#fff',lw);};   // bunny: a soft drooping paw glove
   const foot=(h,a,c)=>sticker(ctx,ell(h.x,h.y+s*.02,s*.11,s*.055),c,lw);
-  const legW=legC.id==='flamingo'?s*.05:s*.11,arm=a=>a.id==='crab'?claw:mitt;
-  // legs
+  const legW=legC.id==='flamingo'?s*.06:s*.11,arm=a=>a.id==='crab'?claw:a.id==='bunny'?paw:hand;
+  // legs (costume tights + booties)
   if(bodyMode==='full'){limb(hp.L,pose.thL,pose.shL,s*.34,s*.32,legW,legC.body,foot,legC.feet);limb(hp.R,pose.thR,pose.shR,s*.34,s*.32,legW,legC.body,foot,legC.feet);}
-  else{sticker(ctx,ell(0,s*.42,s*.36,s*.1),bot.feet,lw);}
-  // spider: extra little legs out of the body
+  else sticker(ctx,ell(0,s*.42,s*.36,s*.1),bot.feet,lw);
+  // body (leans with the trunk)
+  ctx.save();ctx.translate(pv.x,pv.y);ctx.rotate(tilt);ctx.translate(-pv.x,-pv.y);
   if(top.id==='spider')for(const d of [-1,1])for(let i=0;i<3;i++){const yy=-s*.05+i*s*.12;ctx.strokeStyle=INK;ctx.lineWidth=s*.035+lw*2;ctx.beginPath();ctx.moveTo(d*s*.22,yy);ctx.quadraticCurveTo(d*s*.42,yy-s*.12,d*s*.48,yy+s*.06);ctx.stroke();ctx.strokeStyle=top.body;ctx.lineWidth=s*.035;ctx.stroke();}
-  // body (bean) + belly
+  if(top.id==='lion'){ctx.strokeStyle=INK;ctx.lineWidth=lw*2.4;ctx.beginPath();ctx.moveTo(s*.2,s*.32);ctx.quadraticCurveTo(s*.45,s*.4,s*.42,s*.15);ctx.stroke();ctx.strokeStyle=top.body;ctx.lineWidth=lw;ctx.stroke();sticker(ctx,ell(s*.42,s*.13,s*.05,s*.06),'#C9692B',lw*.7);}
+  if(top.id==='duck')sticker(ctx,(()=>{const p=new Path2D();p.moveTo(s*.2,s*.3);p.lineTo(s*.36,s*.24);p.lineTo(s*.26,s*.38);p.closePath();return p;})(),top.body,lw*.8);
   sticker(ctx,ell(0,s*.05,s*.29,s*.38),top.body,lw);
   if(top.id!=='spider')sticker(ctx,ell(0,s*.12,s*.18,s*.24),top.light,lw*.7);
-  // arms
+  ctx.restore();
+  // arms (costume sleeves, kid hands)
   limb(sh.L,pose.uaL,pose.faL,s*.3,s*.27,s*.1,top.body,arm(top),top.feet);
   limb(sh.R,pose.uaR,pose.faR,s*.3,s*.27,s*.1,armR.body,arm(armR),armR.feet);
-  // head
-  const hy=-s*.45,hr=s*.22;drawHead(top,0,hy,hr,lw,t,o);
+  // head (kid face in an animal hood), leans with the trunk
+  const hc=rot({x:0,y:-s*.45});ctx.save();ctx.translate(hc.x,hc.y);ctx.rotate(tilt);drawHead(top,0,0,s*.22,lw,t,o,skin);ctx.restore();
   ctx.restore();
 }
-function drawHead(a,x,y,r,lw,t,o){
+function drawHead(a,x,y,r,lw,t,o,skin=SKIN[0]){
   const id=a.id;
-  // things behind the head
-  if(id==='bunny')for(const d of [-1,1]){sticker(ctx,ell(x+d*r*.45,y-r*1.25,r*.28,r*.75,d*.15),a.body,lw);ctx.fillStyle='#FFB3C4';ctx.fill(ell(x+d*r*.45,y-r*1.2,r*.13,r*.55,d*.15));}
-  if(id==='bear')for(const d of [-1,1]){sticker(ctx,ell(x+d*r*.75,y-r*.75,r*.3,r*.3),a.body,lw);ctx.fillStyle=a.light;ctx.fill(ell(x+d*r*.75,y-r*.75,r*.15,r*.15));}
-  if(id==='elephant')for(const d of [-1,1]){const fl=Math.sin(t*6)*.08*(o.dance||0);sticker(ctx,ell(x+d*r*1.05,y+r*.05,r*.62,r*.78,d*(.2+fl)),a.body,lw);ctx.fillStyle='#F7C6D0';ctx.fill(ell(x+d*r*1.05,y+r*.08,r*.38,r*.52,d*.2));}
-  if(id==='crab')for(const d of [-1,1]){ctx.strokeStyle=INK;ctx.lineWidth=lw*2.6;ctx.beginPath();ctx.moveTo(x+d*r*.35,y-r*.6);ctx.lineTo(x+d*r*.45,y-r*1.15);ctx.stroke();ctx.strokeStyle=a.body;ctx.lineWidth=lw*1.2;ctx.stroke();}
-  if(id==='sprout')for(const [d,c] of [[-1,'#7CC86B'],[1,'#8BD16B']]){ctx.save();ctx.translate(x+d*r*.3,y-r*.85);ctx.rotate(d*.6-.0);const p=new Path2D();p.moveTo(0,0);p.quadraticCurveTo(d*r*.4,-r*.5,d*r*.1,-r*.95);p.quadraticCurveTo(-d*r*.25,-r*.45,0,0);sticker(ctx,p,c,lw*.8);ctx.restore();}
-  // head
-  sticker(ctx,ell(x,y,r,r*(id==='penguin'?1.05:.95)),a.body,lw);
-  if(id==='penguin')sticker(ctx,ell(x,y+r*.15,r*.68,r*.62),a.light,lw*.6);
-  if(id==='frog')for(const d of [-1,1])sticker(ctx,ell(x+d*r*.5,y-r*.75,r*.34,r*.32),a.body,lw);
-  // eyes
-  const blink=(Math.sin(t*1.7+a.id.length)>.97)?.15:1,ey=id==='frog'?y-r*.78:y-r*.12,ex=id==='frog'?r*.5:r*.36,er=id==='frog'?r*.2:r*.17;
-  const eyes=id==='spider'?[[-.42,-.25,.11],[-.15,-.32,.13],[.15,-.32,.13],[.42,-.25,.11]]:[[-1,0,1],[1,0,1]];
-  if(id==='spider'){for(const [dx,dy,rr] of eyes){sticker(ctx,ell(x+dx*r,y+dy*r,r*rr*1.25,r*rr*1.25*blink),'#fff',lw*.5);ctx.fillStyle=INK;ctx.fill(ell(x+dx*r,y+dy*r,r*rr*.6,r*rr*.6*blink));}}
-  else for(const d of [-1,1]){const cx=x+d*ex,cy=id==='crab'?y-r*1.2:ey;
-    if(o.happy){ctx.strokeStyle=INK;ctx.lineWidth=lw;ctx.beginPath();ctx.arc(cx,cy+er*.3,er*.75,Math.PI*1.1,Math.PI*1.9);ctx.stroke();continue;}
-    if(id==='frog')sticker(ctx,ell(cx,cy,er*1.3,er*1.3),'#fff',lw*.6);
-    ctx.fillStyle=INK;ctx.fill(ell(cx,cy,er*.75,er*.95*blink));ctx.fillStyle='#fff';ctx.fill(ell(cx+er*.25,cy-er*.3,er*.3,er*.3*blink));}
-  // cheeks
-  ctx.fillStyle='rgba(255,130,150,.6)';for(const d of [-1,1])ctx.fill(ell(x+d*r*.62,y+r*.22,r*.17,r*.1));
-  // snout / beak / trunk / mouth
-  if(id==='duck'||id==='penguin'){sticker(ctx,ell(x,y+r*.28,r*.34,r*.15),'#FF9A3D',lw*.7);}
-  else if(id==='flamingo'){const p=new Path2D();p.moveTo(x-r*.2,y+r*.15);p.quadraticCurveTo(x+r*.35,y+r*.05,x+r*.3,y+r*.55);p.quadraticCurveTo(x+r*.05,y+r*.35,x-r*.2,y+r*.35);p.closePath();sticker(ctx,p,'#FFF1E0',lw*.7);ctx.fillStyle=INK;ctx.fill(ell(x+r*.28,y+r*.47,r*.07,r*.09));}
-  else if(id==='elephant'){const sw=Math.sin(t*4)*r*.2*(o.dance||0);const p=new Path2D();p.moveTo(x-r*.16,y+r*.1);p.quadraticCurveTo(x-r*.2+sw,y+r*.9,x+r*.05+sw,y+r*1.05);p.quadraticCurveTo(x+r*.2+sw,y+r*1.0,x+r*.12+sw,y+r*.92);p.quadraticCurveTo(x+r*.05,y+r*.6,x+r*.16,y+r*.1);p.closePath();sticker(ctx,p,a.body,lw*.8);}
-  else if(id==='bear'){sticker(ctx,ell(x,y+r*.32,r*.32,r*.24),a.light,lw*.6);ctx.fillStyle=INK;ctx.fill(ell(x,y+r*.24,r*.11,r*.08));}
-  if(!['duck','penguin','flamingo','elephant'].includes(id)||o.happy){ctx.strokeStyle=INK;ctx.lineWidth=lw*.8;ctx.beginPath();
-    if(o.happy){const m=new Path2D();m.moveTo(x-r*.22,y+r*.42);m.quadraticCurveTo(x,y+r*.78,x+r*.22,y+r*.42);m.closePath();sticker(ctx,m,'#E2564A',lw*.6);}
-    else{ctx.arc(x,y+(id==='frog'?r*.2:r*.4),r*(id==='frog'?.45:.18),.15*Math.PI,.85*Math.PI);ctx.stroke();}}
+  // hood pieces behind
+  if(id==='lion'){const m=new Path2D();for(let i=0;i<=24;i++){const an=i/24*Math.PI*2,rr=r*(i%2?1.22:1.42);m[i?'lineTo':'moveTo'](x+Math.cos(an)*rr,y+Math.sin(an)*rr);}m.closePath();sticker(ctx,m,'#C9692B',lw);
+    for(const d of [-1,1])sticker(ctx,ell(x+d*r*.62,y-r*.78,r*.2,r*.2),a.body,lw);}
+  if(id==='bunny')for(const d of [-1,1]){sticker(ctx,ell(x+d*r*.42,y-r*1.25,r*.26,r*.72,d*.15),a.body,lw);ctx.fillStyle='#FFB3C4';ctx.fill(ell(x+d*r*.42,y-r*1.2,r*.12,r*.52,d*.15));}
+  if(id==='bear')for(const d of [-1,1]){sticker(ctx,ell(x+d*r*.72,y-r*.72,r*.28,r*.28),a.body,lw);ctx.fillStyle=a.light;ctx.fill(ell(x+d*r*.72,y-r*.72,r*.14,r*.14));}
+  if(id==='elephant')for(const d of [-1,1]){sticker(ctx,ell(x+d*r*1.02,y+r*.05,r*.55,r*.72,d*.2),a.body,lw);ctx.fillStyle='#F7C6D0';ctx.fill(ell(x+d*r*1.02,y+r*.08,r*.33,r*.48,d*.2));}
+  if(id==='crab')for(const d of [-1,1]){ctx.strokeStyle=INK;ctx.lineWidth=lw*2.6;ctx.beginPath();ctx.moveTo(x+d*r*.35,y-r*.7);ctx.lineTo(x+d*r*.48,y-r*1.25);ctx.stroke();ctx.strokeStyle=a.body;ctx.lineWidth=lw*1.2;ctx.stroke();
+    sticker(ctx,ell(x+d*r*.48,y-r*1.3,r*.17,r*.17),'#fff',lw*.7);ctx.fillStyle=INK;ctx.fill(ell(x+d*r*.48,y-r*1.3,r*.08,r*.09));}
+  if(id==='frog')for(const d of [-1,1]){sticker(ctx,ell(x+d*r*.48,y-r*.82,r*.3,r*.28),a.body,lw);sticker(ctx,ell(x+d*r*.48,y-r*.84,r*.18,r*.18),'#fff',lw*.6);ctx.fillStyle=INK;ctx.fill(ell(x+d*r*.48,y-r*.84,r*.09,r*.11));}
+  if(id==='flamingo'){ctx.strokeStyle=INK;ctx.lineWidth=r*.24+lw*2;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x+r*.1,y-r*.8);ctx.quadraticCurveTo(x+r*.55,y-r*1.25,x+r*.15,y-r*1.55);ctx.stroke();ctx.strokeStyle=a.body;ctx.lineWidth=r*.24;ctx.stroke();
+    sticker(ctx,ell(x+r*.12,y-r*1.6,r*.2,r*.17),a.body,lw*.8);const b=new Path2D();b.moveTo(x-r*.05,y-r*1.62);b.quadraticCurveTo(x-r*.35,y-r*1.55,x-r*.3,y-r*1.32);b.lineTo(x-r*.02,y-r*1.52);b.closePath();sticker(ctx,b,'#3b2a20',lw*.6);}
+  // the hood
+  sticker(ctx,ell(x,y,r,r),a.body,lw);
+  // hood front decorations
+  if(id==='duck'||id==='penguin')sticker(ctx,ell(x,y-r*.66,r*.36,r*.13),'#FF9A3D',lw*.7);
+  if(id==='spider')for(const [dx,rr] of [[-.36,.08],[-.13,.1],[.13,.1],[.36,.08]]){sticker(ctx,ell(x+dx*r,y-r*.72,r*rr*1.2,r*rr*1.2),'#fff',lw*.5);ctx.fillStyle=INK;ctx.fill(ell(x+dx*r,y-r*.72,r*rr*.6,r*rr*.6));}
+  // the kid's face
+  const fy=y+r*.12,fr=r*.7;sticker(ctx,ell(x,fy,fr,fr*.95),skin,lw*.8);
+  ctx.fillStyle='#4A3226';const bang=new Path2D();bang.moveTo(x-fr*.85,fy-fr*.35);bang.quadraticCurveTo(x-fr*.3,fy-fr*1.05,x+fr*.1,fy-fr*.62);bang.quadraticCurveTo(x+fr*.5,fy-fr*1.05,x+fr*.85,fy-fr*.35);bang.quadraticCurveTo(x,fy-fr*1.2,x-fr*.85,fy-fr*.35);ctx.fill(bang);
+  if(id==='elephant')sticker(ctx,ell(x,y-r*.72,r*.12,r*.1),a.light,lw*.6);   // little trunk tip on the hood; the arms are the trunk
+  const blink=(Math.sin(t*1.7+id.length)>.97)?.15:1,er=fr*.13;
+  for(const d of [-1,1]){const cx=x+d*fr*.36,cy=fy-fr*.02;
+    if(o.happy){ctx.strokeStyle=INK;ctx.lineWidth=lw*.9;ctx.beginPath();ctx.arc(cx,cy+er*.3,er,Math.PI*1.1,Math.PI*1.9);ctx.stroke();continue;}
+    ctx.fillStyle=INK;ctx.fill(ell(cx,cy,er*.8,er*1.05*blink));ctx.fillStyle='#fff';ctx.fill(ell(cx+er*.28,cy-er*.35,er*.32,er*.32*blink));}
+  ctx.fillStyle='rgba(255,120,140,.55)';for(const d of [-1,1])ctx.fill(ell(x+d*fr*.58,fy+fr*.28,fr*.15,fr*.09));
+  if(o.happy){const m=new Path2D();m.moveTo(x-fr*.25,fy+fr*.3);m.quadraticCurveTo(x,fy+fr*.72,x+fr*.25,fy+fr*.3);m.closePath();sticker(ctx,m,'#E2564A',lw*.6);}
+  else if(id==='lion'){const m=new Path2D();m.ellipse(x,fy+fr*.45,fr*.2,fr*.17,0,0,7);sticker(ctx,m,'#7A2E26',lw*.6);}   // roaring
+  else{ctx.strokeStyle=INK;ctx.lineWidth=lw*.8;ctx.lineCap='round';ctx.beginPath();ctx.arc(x,fy+fr*.28,fr*.2,.15*Math.PI,.85*Math.PI);ctx.stroke();}
 }
 
 /* ================= GAME ================= */
