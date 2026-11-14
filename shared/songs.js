@@ -175,7 +175,24 @@ export const STYLES = {
     if (i === 0) for (const n of ch) ev.push(['choir_aahs', n, sec[0] === 'B' ? .07 : .035, 1.9, .5]);
     if (i === 2 || i === 6) ev.push(['voice_k', 60, .07, .2, .05]);
     if (k === 21 || k === 46 || k === 59) ev.push(['~bubble', k === 46 ? 1.25 : 1, .7, 0, 0, sw]);
-    return ev.map(e => (e[2] *= 1.4, e)); } }
+    return ev.map(e => (e[2] *= 1.4, e)); } },
+  /* Copy the Sprout (14 Nov, v3): gentle folk on steel-string acoustic guitar (Edgar: "acoustic guitar, like folk music").
+     Lead guitar plays the melody an octave down with a little hammer-on at each bar; a second guitar fingerpicks underneath
+     (Travis style: thumb alternates root / fifth, fingers pick chord tones on the off-beats); a soft strum on each bar
+     in the B sections; quiet upright bass on 1; the last chord is strummed and rings. */
+  folk: { bpm: 96, play(s) {
+    const { mel, ch, root, i, sec } = at(s), ev = [], k = ((s % STEPS) + STEPS) % STEPS, sw = i % 2 ? .05 : 0;
+    const G = 'acoustic_guitar_steel', lo = root < 45 ? root + 12 : root, fifth = lo + 7 > 57 ? lo - 5 : lo + 7;
+    if (mel != null) { const v = mel - 12;
+      if (i === 0 && sec !== 'end') { ev.push([G, scaleStep(v, -1), .2, .08, .25]); ev.push([G, v, .42, 1, .3, .07]); }   // hammer-on
+      else ev.push([G, v, .4, 1, .3, sw]); }
+    if (sec === 'end' && k >= STEPS - 8) { if (i === 0) [lo, ...ch, ch[0] + 12].forEach((n, j) => ev.push([G, n, .2, 2.6, .35, j * .03])); }
+    else {
+      if (i % 2 === 0) ev.push([G, i % 4 === 0 ? lo : fifth, .2, .7, .2]);                 // thumb: alternating bass
+      else ev.push([G, ch[[1, 2, 1, 2][(i - 1) / 2]], .13, .6, .25, sw]);                 // fingers: chord tones
+      if (sec[0] === 'B' && i === 0) ch.forEach((n, j) => ev.push([G, n, .09, 1.4, .3, .02 + j * .025]));   // soft strum
+      if (i === 0) ev.push(['acoustic_bass', root, .13, 1.2, .1]); }
+    return ev.map(e => (e[2] *= .85, e)); } }   // level-matched to the a cappella track
 };
 export const STEPS = PLAN.length * 32;   // 256 eighth-notes = 32 bars
 function at(s) {

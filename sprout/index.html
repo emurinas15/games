@@ -100,7 +100,7 @@ summary::after{content:" ▾"}details[open] summary::after{content:" ▴"}
 import {S,audio as kitAudio,musicStart,musicStop,bindSound} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
 const guide=makeGuide('body');
-S.track='acappella';S.amb='pond';
+S.track='folk';S.amb='pond';S.ambVol=.5;   // 14 Nov: folk acoustic guitar; garden sounds at half volume
 const SOUND_TXT={en:{music:"Music",amb:"Garden sounds",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off"},
   he:{music:"מוזיקה",amb:"צלילי גינה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול"}};
 const soundLang=()=>document.documentElement.lang==='he'?'he':'en';
@@ -179,13 +179,16 @@ syncSound=bindSound(()=>SOUND_TXT[soundLang()]);soundLabels();
 /* ============ SOUND ============ */
 let AC=null;
 function audio(){AC=kitAudio();return AC;}   // shared audio: mute button and sound switches apply
-function tone({f0=440,f1=f0,dur=.15,type='sine',vol=.22,at=0}){const a=AC;if(!a)return;const t=a.currentTime+at;const o=a.createOscillator(),g=a.createGain();o.type=type;
+let LOUD=null;   // 14 Nov: louder bloom goes through a limiter so it doesn't crackle
+function loudBus(){if(!LOUD&&AC&&S.BUS.sfx){const c=AC.createDynamicsCompressor();c.threshold.value=-8;c.knee.value=4;c.ratio.value=12;c.attack.value=.003;c.release.value=.15;c.connect(S.BUS.sfx);LOUD=c;}return LOUD||S.BUS.sfx;}
+function duckMusic(sec){const a=AC,m=S.BUS.music;if(!a||!m||!S.musicOn)return;const t=a.currentTime;m.gain.cancelScheduledValues(t);m.gain.setTargetAtTime(.1,t,.03);m.gain.setTargetAtTime(.256,t+sec,.25);}
+function tone({f0=440,f1=f0,dur=.15,type='sine',vol=.22,at=0,loud=false}){const a=AC;if(!a)return;const t=a.currentTime+at;const o=a.createOscillator(),g=a.createGain();o.type=type;
   o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+dur);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
-  o.connect(g);g.connect(S.BUS.sfx);o.start(t);o.stop(t+dur+.02);}
+  o.connect(g);g.connect(loud?loudBus():S.BUS.sfx);o.start(t);o.stop(t+dur+.02);}
 const SFX={
   boing(){tone({f0:200,f1:560,dur:.22});},
-  yay(){[523,659,784,1047].forEach((f,i)=>tone({f0:f,dur:.3,type:'triangle',vol:.45,at:i*.09}));tone({f0:1568,f1:2093,dur:.45,type:'sine',vol:.28,at:.4});},   // bloom: clearly above the music
-  tick(p){tone({f0:500+p*500,dur:.06,type:'triangle',vol:.08});},
+  yay(){duckMusic(1.1);[523,659,784,1047].forEach((f,i)=>tone({f0:f,dur:.3,type:'triangle',vol:.9,at:i*.09,loud:true}));tone({f0:1568,f1:2093,dur:.45,type:'sine',vol:.56,at:.4,loud:true});},   // bloom: twice as loud (14 Nov), music dips under it
+  tick(p){tone({f0:500+p*500,dur:.08,type:'triangle',vol:.16});},   // rising 'growing' tick while the pose is held (14 Nov: louder)
   go(){tone({f0:990,dur:.2,type:'triangle'});},
   end(){[784,988,1175,1568].forEach((f,i)=>tone({f0:f,dur:.35,type:'triangle',vol:.42,at:i*.12}));}
 };
@@ -202,7 +205,12 @@ const D2R=Math.PI/180;
 function armVec(side,deg){return {x:side*Math.cos(deg*D2R),y:-Math.sin(deg*D2R)};}
 
 /* sprout pose state (animated) */
-const sp={L:[-80,-85],R:[-80,-85],tL:[-80,-85],tR:[-80,-85],hop:0,squash:0,bloom:0,dance:0,blink:0};
+const sp={L:[-80,-85],R:[-80,-85],tL:[-80,-85],tR:[-80,-85],hop:0,squash:0,bloom:0,dance:0,blink:0,deco:[]};
+/* 14 Nov (Edgar): the hold timer = two flowers opening on the sprout's leaf hands; every successful copy leaves a
+   flower of a new colour on the sprout (6 copies -> 6 flowers). Petal colours [petal, petal 2, centre]. */
+const PAL=[['#FF9FB0','#FFB3C4','#FFD84D'],['#FFD84D','#FFE680','#F2903A'],['#B99CFF','#CDB8FF','#FFD84D'],
+  ['#FF7A6B','#FF9A8C','#FFE680'],['#7FC8FF','#A5D9FF','#FFD84D'],['#FFFFFF','#F3EEE4','#FFC23D']];
+const DECO_AT=[[0,-99],[-20,-92],[20,-92],[-11,-14],[11,-26],[-11,-30]];   // hair, both sides of the head, along the stalk
 function setSproutTarget(p){const f=a=>a==='rest'?[-45,-150]:a;sp.tL=f(POSES[p].L).slice();sp.tR=f(POSES[p].R).slice();}
 function angLerp(a,b,k){let d=((b-a+540)%360)-180;return a+d*k;}
 
@@ -243,6 +251,8 @@ function drawSprout(cx,by,size,t){
     // leaf hand
     ctx.save();ctx.translate(hx,hy);ctx.rotate(Math.atan2(v2.y,v2.x));stk(leafPath(15*u,6.5*u),'#8BD16B',lw*.8);
     ctx.strokeStyle='rgba(43,33,24,.4)';ctx.lineWidth=lw*.4;ctx.beginPath();ctx.moveTo(2*u,0);ctx.lineTo(12*u,0);ctx.stroke();ctx.restore();
+    // flower held in the leaf hand: opens as the pose is held (colour = the flower this copy will leave)
+    drawFlower(hx+v2.x*14*u,hy+v2.y*14*u,u,sp.bloom,lw,t,PAL[Math.max(0,sp.deco.length-(state==='celebrate'?1:0))%PAL.length],false);
   };
   const over=side=>{const a=side<0?sp.L:sp.R;return a[1]>120;};
   for(const side of [-1,1])if(!over(side))drawArm(side);
@@ -250,8 +260,6 @@ function drawSprout(cx,by,size,t){
   ctx.save();ctx.translate(0,-76*u);if(party&&sp.dance)ctx.rotate(Math.sin(t*8+1.2)*.12);
   // hair leaves
   for(const [rx,rot,c] of [[-6,-2.3,'#7CC86B'],[6,-.85,'#8BD16B']]){ctx.save();ctx.translate(rx*u,-16*u);ctx.rotate(rot);stk(leafPath(18*u,7*u),c,lw*.8);ctx.restore();}
-  // flower bud / bloom
-  drawFlower(0,-22*u,u,sp.bloom,lw,t);
   const head=ell(0,0,22*u,19*u);stk(head,'#9ADB78',lw);
   ctx.fillStyle='rgba(255,255,255,.35)';ctx.fill(ell(-10*u,-9*u,6*u,3.5*u,-.4));
   // face
@@ -264,21 +272,23 @@ function drawSprout(cx,by,size,t){
   if(sp.dance>.3){const m=new Path2D();m.moveTo(-5*u,5*u);m.quadraticCurveTo(0,13*u,5*u,5*u);m.closePath();stk(m,'#E2564A',lw*.7);}
   else{ctx.arc(0,4*u,4.5*u,.15*Math.PI,.85*Math.PI);ctx.stroke();}
   ctx.restore();
+  // decoration flowers, one per successful copy (pop in)
+  sp.deco.forEach((d,i)=>{const [x,y]=DECO_AT[i%DECO_AT.length],k=Math.min(1,(t-d.t0)/.4),pop=k<1?Math.sin(k*Math.PI*.5)*(1+.35*Math.sin(k*Math.PI)):1;
+    ctx.save();ctx.translate(x*u,y*u);ctx.scale(pop*.62,pop*.62);drawFlower(0,0,u,1,lw/.62*.8,t*.3,d.c,false);ctx.restore();});
   for(const side of [-1,1])if(over(side))drawArm(side);
   ctx.restore();
   ctx.restore();
 }
-function drawFlower(x,y,u,b,lw,t){
+function drawFlower(x,y,u,b,lw,t,pal=PAL[0],stem=true){
   ctx.save();ctx.translate(x,y);
-  // stem
-  ctx.strokeStyle=INK;ctx.lineWidth=lw*2.2;ctx.beginPath();ctx.moveTo(0,8*u);ctx.lineTo(0,0);ctx.stroke();
-  ctx.strokeStyle='#6CC56B';ctx.lineWidth=lw*1.1;ctx.beginPath();ctx.moveTo(0,8*u);ctx.lineTo(0,0);ctx.stroke();
+  if(stem){ctx.strokeStyle=INK;ctx.lineWidth=lw*2.2;ctx.beginPath();ctx.moveTo(0,8*u);ctx.lineTo(0,0);ctx.stroke();
+    ctx.strokeStyle='#6CC56B';ctx.lineWidth=lw*1.1;ctx.beginPath();ctx.moveTo(0,8*u);ctx.lineTo(0,0);ctx.stroke();}
   const n=6,open=Math.min(1,b);
-  if(open<.05){stk(ell(0,-3*u,4*u,6*u),'#FF9FB0',lw*.8);ctx.restore();return;}
+  if(open<.05){stk(ell(0,-1*u,4*u,6*u),pal[0],lw*.8);ctx.restore();return;}
   const R=(4+open*9)*u;
   for(let i=0;i<n;i++){const a=i/n*Math.PI*2+t*.3*open;ctx.save();ctx.rotate(a);
-    stk(ell(0,-R*.75,R*.42,R*.62),i%2?'#FF9FB0':'#FFB3C4',lw*.7);ctx.restore();}
-  stk(ell(0,0,R*.38,R*.38),'#FFD84D',lw*.7);
+    stk(ell(0,-R*.75,R*.42,R*.62),i%2?pal[0]:pal[1],lw*.7);ctx.restore();}
+  stk(ell(0,0,R*.38,R*.38),pal[2],lw*.7);
   if(open>.95){ctx.fillStyle='#fff';ctx.fill(ell(-R*.12,-R*.12,R*.1,R*.1));}
   ctx.restore();
 }
@@ -368,7 +378,7 @@ function nextPose(){
 function updCount(){const c=$('count');c.textContent=(done)+' / '+ROUND;c.classList.toggle('on',state!=='menu'&&state!=='over');}
 async function play(){
   audio();SFX.go();musicStart();$('start').hidden=true;$('end').hidden=true;
-  done=0;queue=pickRound();
+  done=0;queue=pickRound();sp.deco=[];
   if(!camTried){msg(UI[lang].ready);try{await startCamera();mode='camera';}catch(e){mode='finger';const t=$('toast');t.textContent=UI[lang].nocam;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),6000);}msg('');}
   else mode=camOK?'camera':'finger';
   cur=null;showBubble();guide.reset();
@@ -426,6 +436,7 @@ function frame(now){
     else prog=Math.max(0,prog-dt/holdSec*.6);
     sp.bloom=prog;
     if(prog>=1){state='celebrate';celebT=tNow;done++;updCount();sp.dance=1;sp.bloom=1;sp.hop=.001;SFX.yay();msg('');
+      sp.deco.push({c:PAL[sp.deco.length%PAL.length],t0:tNow+.15});
       for(let i=0;i<16;i++)spawnLeaf();
       const b=$('bubble');b.textContent=UI[lang].yay;}
   }
