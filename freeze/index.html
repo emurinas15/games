@@ -38,7 +38,7 @@
       <div class="g-row"><span id="t-body">Body</span>
         <div class="seg" id="body-seg"><button data-v="full"></button><button data-v="seated"></button></div></div>
       <div class="g-row"><span id="t-who">Players</span>
-        <div class="seg" id="who-seg"><button data-v="turns"></button><button data-v="duo"></button></div></div>
+        <div class="seg" id="who-seg"><button data-v="solo"></button><button data-v="duo"></button></div></div>
       <div class="g-row"><span id="t-strict">Copy</span>
         <div class="seg" id="strict-seg"><button data-v="easy"></button><button data-v="medium"></button><button data-v="hard"></button></div></div>
       <div class="g-row"><span id="t-music">Music</span>
@@ -67,64 +67,62 @@ import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,stick
 import {makeGuide} from '../shared/guide.js';
 import {setupCast} from '../shared/cast.js';
 
-/* Freeze & Copy — Edgar's idea (13 Nov 2026).
-   One player dances for 3 s, then freezes; the camera keeps a cut-out photo of that pose.
-   The next player copies it; a meter fills while the copy holds. The copier then dances and freezes
-   the next pose (a chain). 60 s, up to 20 poses. Poses already used (or plain standing) are turned away.
-   Modes: standing (head to toe) or seated (upper body, camera closer); take turns (one in the frame)
-   or side by side (two in the frame, for a big screen).
-   Privacy: the frozen photo exists only in memory for the current pose and is dropped right after. */
+/* Freeze & Copy — v2 "animal statues" (14 Nov 2026, Edgar).
+   Raise a hand to spin the animal wheel. The animal it lands on dances, shouts "Freeze!" and turns into a statue
+   in its pose; the players copy the statue. Later spins can be MIX-UPS: the top half of one animal glued to the
+   bottom half of another (seated: left arm of one, right arm of the other), with a silly mixed name.
+   1 player: copy before the time runs out. 2 players: a race — first to hold the copy wins the spin.
+   Legal design notes (see project doc IP-CHECK.md): target poses are only the game's own drawn animals, stored as
+   joint angles (never a player's captured pose, never a photo); one ordinary camera, 2D angles; ONE tolerance for
+   every limb segment (no per-body-part weighting); the statue is shown on its own pedestal, not over the player. */
 
 const UI={
- en:{title:"Freeze & Copy",sub:"Dance, freeze, and make the next player copy your pose!",play:"Play",
-  privacy:"The camera is used only to play. Nothing is recorded or sent. The frozen photo is gone as soon as the next pose comes.",grown:"For grown-ups",
-  g1:"A copying game for two or more players. One player dances for 3 seconds and freezes in a pose; the camera keeps a photo of it. The next player copies that pose — a meter fills while the copy holds. Then the copier dances and freezes a new pose for the next one, like a chain. One minute, up to 20 poses. A pose that was already used, or just standing still, is turned away so every pose is new.",
-  body:"Body",full:"Standing",seated:"Seated",who:"Players",turns:"Take turns",duo:"Side by side",strict:"Copy",easy:"Easy",medium:"Medium",hard:"Hard",
+ en:{title:"Freeze & Copy",sub:"Spin the animal wheel, watch it freeze — and copy the statue!",play:"Play",
+  privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
+  g1:"Raise a hand to spin the wheel. The animal dances, freezes into a funny pose, and you copy it — hold the copy until the jar fills. After a few spins come mix-ups: half one animal, half another. 8 spins a game. One player plays against the clock; two players race to copy first.",
+  body:"Body",full:"Standing",seated:"Seated",who:"Players",solo:"One",duo:"Two",strict:"Copy",easy:"Easy",medium:"Medium",hard:"Hard",
   music:"Music",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
-  g2:"★ Standing: phone upright, about 2.5–3 m away, so each player is seen head to toe. Seated: upper body only (arms and trunk); the phone can be closer, about 1–1.5 m.",
-  g3:"★ Take turns: one player in the picture at a time — the poser steps out, the copier steps in. Side by side: both players in the picture together; best on a big screen (📺 or the phone's screen mirroring) with the phone farther back and sideways.",
-  g4:"★ Copy sets how close the copy must be. Start with Medium.",
+  g2:"★ Standing: phone upright, about 2.5–3 m away, so the whole body is seen. Seated: arms and trunk only; the phone can be closer, about 1–1.5 m.",
+  g3:"★ Two players: stand side by side, both in the picture — best on a big screen (📺) with the phone farther back and sideways.",
+  g4:"★ Copy sets how close the copy must be. Start with Medium. Time to copy gets shorter and holds get longer as the game goes on.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
-  left:"s",copies:"poses",best:"best",sec2:"poses copied",over:["Well done!","Great copying!","Super poses!","Pose masters!"],win:"All 20 poses!",again:"Play again",newbest:"New record!",bestis:"Best: ",
-  ready:"Getting ready…",two:"Two players, side by side!",wheel:"Both raise a hand to stop the wheel!",wheelone:"Now the other hand-raiser…",startsL:"← You start!",startsR:"You start! →",dance:"Dance!",freeze:"Freeze!",hold:"Hold it…",
-  used:"That pose was already used — make a new one!",plain:"Make a funny pose!",copyme:"Copy me!",
-  stepout:"Next player — step in!",swap:"Switch players!",goout:"Step out of the picture",same:"A new player, please!",wear:"Step into the pose!",copy:"Copy the pose!",copyR:"Copy the pose →",copyL:"← Copy the pose",great:["Great copy!","Perfect!","Yes!","Nailed it!"],
-  newone:"Let's make a new pose!",yourturn:"Your turn to dance!",nobody:"Step in front of the camera!",
+  sec2:"copies",of:" of ",over:["Nice try!","Well done!","Great copying!","Statue masters!"],again:"Play again",newbest:"New record!",bestis:"Best: ",
+  ready:"Getting ready…",two:"Two players, side by side!",raise:"Raise a hand to spin!",mix:"MIX-UP!",freeze:"Freeze!",copy:"Copy me!",
+  great:["Great copy!","Perfect!","You're a statue!","Nailed it!"],miss:["Hehe, too tricky!","Almost!","Next one!"],winL:"← Blue wins!",winR:"Pink wins! →",
+  spin:"Spin",left:"s",blue:"Blue",pink:"Pink",tie:"A tie!",nobody:"Step in front of the camera!",
   nocam:"No camera here — this game needs a camera.",aria:"Game area"},
- he:{title:"קופאים ומעתיקים",sub:"רוקדים, קופאים — והשחקן הבא מעתיק את התנוחה!",play:"שחקו",
-  privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח. התמונה הקפואה נמחקת ברגע שמגיעה התנוחה הבאה.",grown:"למבוגרים",
-  g1:"משחק העתקה לשני שחקנים או יותר. שחקן אחד רוקד 3 שניות וקופא בתנוחה; המצלמה שומרת תמונה שלה. השחקן הבא מעתיק את התנוחה — מד מתמלא כל עוד ההעתקה מחזיקה. אחר כך המעתיק רוקד וקופא בתנוחה חדשה לשחקן הבא, כמו שרשרת. דקה אחת, עד 20 תנוחות. תנוחה שכבר הייתה, או סתם עמידה, לא מתקבלת — כך שכל תנוחה חדשה.",
-  body:"גוף",full:"עמידה",seated:"ישיבה",who:"שחקנים",turns:"בתורות",duo:"זה לצד זה",strict:"העתקה",easy:"קל",medium:"בינוני",hard:"קשה",
+ he:{title:"קופאים ומעתיקים",sub:"מסובבים את גלגל החיות, החיה קופאת — ומעתיקים את הפסל!",play:"שחקו",
+  privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
+  g1:"מרימים יד כדי לסובב את הגלגל. החיה רוקדת, קופאת בתנוחה מצחיקה, ומעתיקים אותה — מחזיקים עד שהצנצנת מתמלאת. אחרי כמה סיבובים מגיעים ערבובים: חצי חיה אחת וחצי חיה אחרת. 8 סיבובים במשחק. שחקן אחד משחק נגד השעון; שני שחקנים מתחרים מי מעתיק ראשון.",
+  body:"גוף",full:"עמידה",seated:"ישיבה",who:"שחקנים",solo:"אחד",duo:"שניים",strict:"העתקה",easy:"קל",medium:"בינוני",hard:"קשה",
   music:"מוזיקה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
-  g2:"★ עמידה: טלפון עומד, במרחק של בערך 2.5–3 מ׳, כך שכל שחקן נראה מכף רגל ועד ראש. ישיבה: רק פלג הגוף העליון (ידיים וגו); אפשר לקרב את הטלפון, בערך מטר עד מטר וחצי.",
-  g3:"★ בתורות: שחקן אחד בתמונה בכל פעם — המציג יוצא, המעתיק נכנס. זה לצד זה: שני השחקנים בתמונה יחד; הכי טוב על מסך גדול (📺 או שיקוף המסך של הטלפון), כשהטלפון רחוק יותר ולרוחב.",
-  g4:"★ ״העתקה״ קובע כמה מדויקת צריכה להיות ההעתקה. מתחילים ב״בינוני״.",
+  g2:"★ עמידה: טלפון עומד, במרחק של בערך 2.5–3 מ׳, כך שכל הגוף נראה. ישיבה: רק ידיים וגו; אפשר לקרב את הטלפון, בערך מטר עד מטר וחצי.",
+  g3:"★ שני שחקנים: עומדים זה לצד זה, שניהם בתמונה — הכי טוב על מסך גדול (📺) כשהטלפון רחוק יותר ולרוחב.",
+  g4:"★ ״העתקה״ קובע כמה מדויקת צריכה להיות ההעתקה. מתחילים ב״בינוני״. הזמן להעתקה מתקצר וההחזקה מתארכת ככל שהמשחק מתקדם.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
-  left:"שנ׳",copies:"תנוחות",best:"שיא",sec2:"תנוחות הועתקו",over:["כל הכבוד!","העתקות מעולות!","תנוחות על!","אלופי התנוחות!"],win:"כל 20 התנוחות!",again:"עוד פעם",newbest:"שיא חדש!",bestis:"השיא: ",
-  ready:"מתכוננים…",two:"שני שחקנים, זה לצד זה!",wheel:"שניכם מרימים יד כדי לעצור את הגלגל!",wheelone:"עכשיו השני מרים יד…",startsL:"← אתה מתחיל!",startsR:"אתה מתחיל! →",dance:"רוקדים!",freeze:"קופאים!",hold:"מחזיקים…",
-  used:"התנוחה הזאת כבר הייתה — עשו חדשה!",plain:"עשו תנוחה מצחיקה!",copyme:"העתיקו אותי!",
-  stepout:"השחקן הבא — להיכנס!",swap:"מחליפים שחקנים!",goout:"צאו מהתמונה",same:"שחקן חדש, בבקשה!",wear:"היכנסו לתוך התנוחה!",copy:"העתיקו את התנוחה!",copyR:"העתיקו את התנוחה ←",copyL:"→ העתיקו את התנוחה",great:["העתקה מעולה!","מושלם!","יש!","בול!"],
-  newone:"בואו נעשה תנוחה חדשה!",yourturn:"התור שלכם לרקוד!",nobody:"היכנסו מול המצלמה!",
+  sec2:"העתקות",of:" מתוך ",over:["ניסיון יפה!","כל הכבוד!","העתקות מעולות!","אלופי הפסלים!"],again:"עוד פעם",newbest:"שיא חדש!",bestis:"השיא: ",
+  ready:"מתכוננים…",two:"שני שחקנים, זה לצד זה!",raise:"הרימו יד כדי לסובב!",mix:"ערבוב!",freeze:"קופאים!",copy:"תעתיקו אותי!",
+  great:["העתקה מעולה!","מושלם!","אתם פסל!","בול!"],miss:["חחח, קשה מדי!","כמעט!","הבא!"],winL:"← הכחול ניצח!",winR:"הוורוד ניצח! →",
+  spin:"סיבוב",left:"שנ׳",blue:"כחול",pink:"ורוד",tie:"תיקו!",nobody:"היכנסו מול המצלמה!",
   nocam:"אין כאן מצלמה — המשחק הזה צריך מצלמה.",aria:"אזור המשחק"}
 };
 
-const ROUND=60,MAX=20,DANCE=3,GIVEUP=15,HOLD=1.0;
-const TOL={easy:42,medium:32,hard:23};          // degrees per limb
+const SPINS=8,TOL={easy:40,medium:31,hard:23};
 let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
 let bodyMode=LS.get('fc-body','full'); if(!['full','seated'].includes(bodyMode))bodyMode='full';
-let who=LS.get('fc-who2','duo'); if(!['turns','duo'].includes(who))who='duo';   // 14 Nov: side by side is the main game
+let who=LS.get('fc-who3','solo'); if(!['solo','duo'].includes(who))who='solo';
 let strict=LS.get('fc-strict','medium'); if(!TOL[strict])strict='medium';
-let best=0; const bestKey=()=>'fc-best-'+bodyMode+who+strict; const loadBest=()=>{best=+LS.get(bestKey(),'0')||0;};
+let best=0; const bestKey=()=>'fc2-best-'+bodyMode+strict; const loadBest=()=>{best=+LS.get(bestKey(),'0')||0;};
 S.track='dance'; S.amb='none'; S.ambOn=false;
 const syncSound=bindSound(()=>UI[lang]);
-let casting=false;
-setupCast({canvas:$('c'),button:$('cast'),lang:()=>lang,sound:()=>(audio(),S),onChange:v=>{casting=v;}});
+setupCast({canvas:$('c'),button:$('cast'),lang:()=>lang,sound:()=>(audio(),S),onChange:()=>{}});
 
 function segs(){
   const u=UI[lang],mark=(id,v)=>document.querySelectorAll('#'+id+' button').forEach(b=>{b.setAttribute('aria-pressed',b.dataset.v===String(v));});
   for(const id of ['body-seg','who-seg','strict-seg'])document.querySelectorAll('#'+id+' button').forEach(b=>b.textContent=u[b.dataset.v]);
   mark('body-seg',bodyMode);mark('who-seg',who);mark('strict-seg',strict);
 }
+let lastNew=false;
 function setLang(l){
   lang=l;LS.set('bamboo-lang',l);const u=UI[l];
   document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
@@ -138,7 +136,7 @@ function setLang(l){
 $('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
 const segBind=(id,fn)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{fn(b.dataset.v);loadBest();segs();});
 segBind('body-seg',v=>{bodyMode=v;LS.set('fc-body',v);});
-segBind('who-seg',v=>{who=v;LS.set('fc-who2',v);});
+segBind('who-seg',v=>{who=v;LS.set('fc-who3',v);});
 segBind('strict-seg',v=>{strict=v;LS.set('fc-strict',v);});
 
 /* ================= CANVAS ================= */
@@ -150,17 +148,18 @@ function toast(t,ms=4000){const e=$('toast');e.textContent=t;e.classList.add('on
 
 /* ================= SOUND ================= */
 const FX={
-  shutter(){noise({dur:.05,freq:3000,vol:.3,type:'highpass'});noise({dur:.08,freq:1200,vol:.2,type:'bandpass',at:.07});},
-  great(){[784,988,1175,1568].forEach((f,i)=>tone({f0:f,dur:.25,type:'triangle',vol:.2,at:i*.07}));},
+  great(){[784,988,1175,1568].forEach((f,i)=>tone({f0:f,dur:.25,type:'triangle',vol:.32,at:i*.07}));},
   nope(){tone({f0:420,f1:300,dur:.25,type:'triangle',vol:.16});},
-  fill(p){tone({f0:500+p*600,dur:.06,type:'sine',vol:.07});},
-  whoosh(){noise({dur:.35,freq:1400,vol:.12,type:'bandpass'});}
+  fill(p){tone({f0:500+p*600,dur:.06,type:'sine',vol:.08});},
+  whoosh(){noise({dur:.35,freq:1400,vol:.12,type:'bandpass'});},
+  freeze(){noise({dur:.25,freq:5000,vol:.12,type:'highpass'});[2093,2637,3136].forEach((f,i)=>tone({f0:f,dur:.18,type:'sine',vol:.1,at:.05+i*.05}));},
+  tick(){tone({f0:1300,dur:.03,type:'triangle',vol:.1});},
+  giggle(){[0,1,2,3].forEach(i=>tone({f0:700+i*60,f1:900+i*60,dur:.07,type:'triangle',vol:.12,at:i*.09}));}
 };
 
 /* ================= CAMERA + POSE TRACKING (on device) ================= */
 const video=$('v');
-let tracker=null,camOK=false,lastVT=-1,people=[];   // people: [{lm:[{x,y,v}] in screen px, nose, sw, idx}]
-let wantShot=null;   // set to a person index -> the next tracking frame keeps a cut-out photo
+let tracker=null,camOK=false,lastVT=-1,people=[];   // people: [{lm:[{x,y,v}] in screen px, raw, nose, sw}]
 const vmap=()=>{const vw=video.videoWidth||640,vh=video.videoHeight||480,s=Math.max(W/vw,H/vh);return {vw,vh,s,ox:(W-vw*s)/2,oy:(H-vh*s)/2};};
 async function startCam(){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('nocam');
@@ -168,188 +167,180 @@ async function startCam(){
   video.srcObject=stream;await video.play();
   const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
   const files=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
-  const opts=(d,m,k)=>({baseOptions:{modelAssetPath:`https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_${k}/float16/1/pose_landmarker_${k}.task`,delegate:d},
-    runningMode:'VIDEO',numPoses:2,minPoseDetectionConfidence:.45,minPosePresenceConfidence:.45,minTrackingConfidence:.45,outputSegmentationMasks:m});
+  const opts=(d,k)=>({baseOptions:{modelAssetPath:`https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_${k}/float16/1/pose_landmarker_${k}.task`,delegate:d},
+    runningMode:'VIDEO',numPoses:2,minPoseDetectionConfidence:.45,minPosePresenceConfidence:.45,minTrackingConfidence:.45});
   let err=null;
-  for(const [d,m,k] of [['GPU',true,'full'],['GPU',true,'lite'],['CPU',true,'lite'],['CPU',false,'lite']]){
-    try{tracker=await vision.PoseLandmarker.createFromOptions(files,opts(d,m,k));break;}catch(e){err=e;}}
+  for(const [d,k] of [['GPU','full'],['GPU','lite'],['CPU','lite']]){try{tracker=await vision.PoseLandmarker.createFromOptions(files,opts(d,k));break;}catch(e){err=e;}}
   if(!tracker)throw err||new Error('model');
   camOK=true;
 }
 function track(now){
   if(!tracker||video.readyState<2||video.currentTime===lastVT)return;lastVT=video.currentTime;
   let res;try{res=tracker.detectForVideo(video,now);}catch(e){return;}
-  const m=vmap(),L=res.landmarks||[],M=res.segmentationMasks||[];
-  const ps=L.map((lm,idx)=>{const pts=lm.map(p=>({x:m.ox+(1-p.x)*m.vw*m.s,y:m.oy+p.y*m.vh*m.s,v:p.visibility??1}));
-    return {lm:pts,raw:lm,idx,nose:pts[0],sw:Math.hypot(pts[11].x-pts[12].x,pts[11].y-pts[12].y)};}).filter(p=>p.lm[11].v>.4&&p.lm[12].v>.4);
+  const m=vmap(),L=res.landmarks||[];
+  const ps=L.map(lm=>{const pts=lm.map(p=>({x:m.ox+(1-p.x)*m.vw*m.s,y:m.oy+p.y*m.vh*m.s,v:p.visibility??1}));
+    return {lm:pts,nose:pts[0],sw:Math.hypot(pts[11].x-pts[12].x,pts[11].y-pts[12].y)};}).filter(p=>p.lm[11].v>.4&&p.lm[12].v>.4);
   ps.sort((a,b)=>a.nose.x-b.nose.x);
-  // in turns mode keep only the biggest (closest) person
-  people=who==='turns'&&ps.length>1?[ps.reduce((a,b)=>b.sw>a.sw?b:a)]:ps;
-  if(wantShot!==null){const p=people[wantShot];wantShot=null;if(p)snap(p,M[p.idx]);}
+  people=who==='solo'&&ps.length>1?[ps.reduce((a,b)=>b.sw>a.sw?b:a)]:ps;   // solo: the closest person
 }
 
-/* cut-out photo of one person: video frame + segmentation mask, cropped around the body, mirrored */
-let photo=null;   // {cv, w, h} — lives only for the current pose
-function snap(p,mask){
-  const vw=video.videoWidth,vh=video.videoHeight;if(!vw)return;
-  const vis=p.raw.filter(q=>(q.visibility??1)>.3);
-  let x0=Math.min(...vis.map(q=>q.x)),x1=Math.max(...vis.map(q=>q.x)),y0=Math.min(...vis.map(q=>q.y)),y1=Math.max(...vis.map(q=>q.y));
-  const pw=(x1-x0),ph=(y1-y0);x0-=pw*.18+.04;x1+=pw*.18+.04;y0-=ph*.12+.08;y1+=ph*.06+.03;
-  x0=Math.max(0,x0);y0=Math.max(0,y0);x1=Math.min(1,x1);y1=Math.min(1,y1);
-  const sx=Math.round(x0*vw),sy=Math.round(y0*vh),sw=Math.max(8,Math.round((x1-x0)*vw)),sh=Math.max(8,Math.round((y1-y0)*vh));
-  const full=document.createElement('canvas');full.width=vw;full.height=vh;const fc=full.getContext('2d',{willReadFrequently:true});
-  fc.drawImage(video,0,0,vw,vh);
-  if(mask){try{const arr=mask.getAsFloat32Array(),mw=mask.width,mh=mask.height;const img=fc.getImageData(0,0,vw,vh),d=img.data;
-    for(let y=0;y<vh;y++){const my=Math.min(mh-1,Math.floor(y*mh/vh));for(let x=0;x<vw;x++){const mv=arr[my*mw+Math.min(mw-1,Math.floor(x*mw/vw))];
-      d[(y*vw+x)*4+3]=mv>.6?255:mv<.25?0:Math.round((mv-.25)/.35*255);}}
-    fc.putImageData(img,0,0);}catch(e){}}
-  const out=document.createElement('canvas');out.width=sw;out.height=sh;const oc=out.getContext('2d');
-  oc.translate(sw,0);oc.scale(-1,1);oc.drawImage(full,sx,sy,sw,sh,0,0,sw,sh);
-  const m=vmap();
-  photo={cv:out,w:sw,h:sh,cut:!!mask,
-    scr:{x:m.ox+(1-x1)*m.vw*m.s,y:m.oy+y0*m.vh*m.s,w:(x1-x0)*m.vw*m.s,h:(y1-y0)*m.vh*m.s},   // where it was on the screen
-    anc:anchors(p.lm),lm:p.lm.map(q=>({...q}))};
-  poserSig=sigOf(p);
-}
-/* body anchors (screen px) used to put the see-through pose onto the copier's body */
-function anchors(lm){const ok=i=>lm[i].v>.5;
-  return {sh:{x:(lm[11].x+lm[12].x)/2,y:(lm[11].y+lm[12].y)/2},sw:Math.hypot(lm[11].x-lm[12].x,lm[11].y-lm[12].y),
-    hp:ok(23)&&ok(24)?{x:(lm[23].x+lm[24].x)/2,y:(lm[23].y+lm[24].y)/2}:null};}
-/* a rough "who is this" check: average clothes colours (chest, and legs when standing) from a tiny copy of the camera frame.
-   Nothing is stored — only a few numbers for the current pose. */
-let poserSig=null;const sigCv=document.createElement('canvas');sigCv.width=64;sigCv.height=36;const sigCx=sigCv.getContext('2d',{willReadFrequently:true});
-function sigOf(p){
-  try{const vw=video.videoWidth,vh=video.videoHeight;if(!vw)return null;sigCv.height=Math.round(64*vh/vw);const SW=64,SH=sigCv.height;
-    sigCx.drawImage(video,0,0,SW,SH);const d=sigCx.getImageData(0,0,SW,SH).data,r=p.raw;
-    const px=(x,y)=>{const i=(Math.min(SH-1,Math.max(0,Math.round(y*SH)))*SW+Math.min(SW-1,Math.max(0,Math.round(x*SW))))*4;return [d[i],d[i+1],d[i+2]];};
-    const avg=pts=>{const a=[0,0,0];for(const [x,y] of pts){const c=px(x,y);a[0]+=c[0];a[1]+=c[1];a[2]+=c[2];}return a.map(v=>v/pts.length);};
-    const L=(a,b,t)=>a+(b-a)*t,sh=[r[11],r[12]],okH=(r[23].visibility??1)>.4&&(r[24].visibility??1)>.4;
-    const hp=okH?[r[23],r[24]]:sh.map(q=>({x:q.x,y:q.y+Math.abs(r[11].x-r[12].x)*vw/vh*1.1}));
-    const chest=[];for(const a of [.25,.45,.6])for(const b of [.3,.5,.7])chest.push([L(L(sh[0].x,sh[1].x,b),L(hp[0].x,hp[1].x,b),a),L(L(sh[0].y,sh[1].y,b),L(hp[0].y,hp[1].y,b),a)]);
-    let legs=null;if(bodyMode==='full'&&okH&&(r[25].visibility??1)>.5&&(r[26].visibility??1)>.5)
-      legs=avg([[L(r[23].x,r[25].x,.4),L(r[23].y,r[25].y,.4)],[L(r[24].x,r[26].x,.4),L(r[24].y,r[26].y,.4)],[L(r[23].x,r[25].x,.7),L(r[23].y,r[25].y,.7)],[L(r[24].x,r[26].x,.7),L(r[24].y,r[26].y,.7)]]);
-    return {chest:avg(chest),legs};}catch(e){return null;}
-}
-// colour distance that cares about hue more than light (the newcomer stands in a slightly different light)
-function cdist(a,b){const sa=a[0]+a[1]+a[2]+1,sb=b[0]+b[1]+b[2]+1;
-  return Math.hypot((a[0]/sa-b[0]/sb)*3,(a[1]/sa-b[1]/sb)*3,(a[2]/sa-b[2]/sb)*3,(sa-sb)/765*.8);}
-function samePerson(A,B){if(!A||!B)return false;const c=cdist(A.chest,B.chest)<.11;const l=!A.legs||!B.legs||cdist(A.legs,B.legs)<.13;return c&&l;}
-
-/* ================= POSES ================= */
+/* ================= POSES (screen-space angles, degrees: 0 = right, 90 = down, -90 = up) ================= */
 // segments by screen side (mirrored picture): left arm = the arm whose shoulder is further left on screen
 function sides(lm){const sL=lm[11].x<lm[12].x,hL=lm[23].x<lm[24].x;
   return {aL:sL?[11,13,15]:[12,14,16],aR:sL?[12,14,16]:[11,13,15],lL:hL?[23,25,27]:[24,26,28],lR:hL?[24,26,28]:[23,25,27]};}
+const ARMS=['uaL','faL','uaR','faR'],LEGS=['thL','shL','thR','shR'];
 function poseOf(p){
-  const lm=p.lm,s=sides(lm),seg=[],ang=(a,b)=>(lm[a].v>.5&&lm[b].v>.5)?Math.atan2(lm[b].y-lm[a].y,lm[b].x-lm[a].x)*180/Math.PI:null;
-  const add=(name,a,b,kind)=>seg.push({name,a:ang(a,b),kind});
-  add('uaL',s.aL[0],s.aL[1],'arm');add('faL',s.aL[1],s.aL[2],'arm');add('uaR',s.aR[0],s.aR[1],'arm');add('faR',s.aR[1],s.aR[2],'arm');
-  const sh={x:(lm[11].x+lm[12].x)/2,y:(lm[11].y+lm[12].y)/2},hp={x:(lm[23].x+lm[24].x)/2,y:(lm[23].y+lm[24].y)/2};
-  seg.push({name:'trunk',a:lm[23].v>.5&&lm[24].v>.5?Math.atan2(sh.y-hp.y,sh.x-hp.x)*180/Math.PI:null,kind:'trunk'});
-  if(bodyMode==='full'){add('thL',s.lL[0],s.lL[1],'leg');add('shL',s.lL[1],s.lL[2],'leg');add('thR',s.lR[0],s.lR[1],'leg');add('shR',s.lR[1],s.lR[2],'leg');}
-  return seg;
+  const lm=p.lm,s=sides(lm),o={},ang=(a,b)=>(lm[a].v>.5&&lm[b].v>.5)?Math.atan2(lm[b].y-lm[a].y,lm[b].x-lm[a].x)*180/Math.PI:null;
+  o.uaL=ang(s.aL[0],s.aL[1]);o.faL=ang(s.aL[1],s.aL[2]);o.uaR=ang(s.aR[0],s.aR[1]);o.faR=ang(s.aR[1],s.aR[2]);
+  if(bodyMode==='full'){o.thL=ang(s.lL[0],s.lL[1]);o.shL=ang(s.lL[1],s.lL[2]);o.thR=ang(s.lR[0],s.lR[1]);o.shR=ang(s.lR[1],s.lR[2]);}
+  return o;
 }
 const dAng=(a,b)=>Math.abs(((a-b+540)%360)-180);
-// compare two poses -> {ok, okByName, mean, max}
-function compare(A,B,tol){
-  let n=0,good=0,sum=0,mx=0,armsOk=true;const by={};
-  const Bm={};for(const x of B)Bm[x.name]=x.a;
-  for(let i=0;i<A.length;i++){const a=A[i].a,b=Bm[A[i].name];if(a==null||b==null)continue;
-    const t=tol*(A[i].kind==='trunk'?.75:A[i].kind==='leg'?1.15:1)*(A[i].name.startsWith('fa')?1.15:1);
-    const d=dAng(a,b);n++;sum+=d;mx=Math.max(mx,d);const ok=d<t;by[A[i].name]=ok;if(ok)good++;else if(A[i].kind==='arm')armsOk=false;}
-  return {ok:n>=4&&armsOk&&good>=Math.ceil(n*.75),by,mean:n?sum/n:999,max:mx,n};
+// ONE tolerance for every segment; every visible arm segment must match, and at least 75% of all visible segments
+function compare(T,P,tol){
+  const keys=bodyMode==='full'?[...ARMS,...LEGS]:ARMS;let n=0,good=0,armsOk=true;const by={};
+  for(const k of keys){if(T[k]==null||P[k]==null)continue;n++;const ok=dAng(T[k],P[k])<tol;by[k]=ok;if(ok)good++;else if(ARMS.includes(k))armsOk=false;}
+  return {ok:n>=3&&armsOk&&good>=Math.ceil(n*.75),by,n};
 }
-// plain standing / sitting with arms down: upper arms and forearms pointing down, legs straight down
-const NEUTRAL=()=>[['uaL',90,'arm'],['faL',90,'arm'],['uaR',90,'arm'],['faR',90,'arm'],['trunk',-90,'trunk'],['thL',90,'leg'],['shL',90,'leg'],['thR',90,'leg'],['shR',90,'leg']]
-  .filter(x=>bodyMode==='full'||x[2]!=='leg').map(([name,a,kind])=>({name,a,kind}));
-const sameAs=(A,B)=>{const c=compare(A,B,26);return c.ok&&c.mean<20;};   // close enough to count as "the same pose"
+
+/* ================= THE ANIMALS ================= */
+// colours: body, light (belly/muzzle), hand/foot colour. Poses: arms + legs (screen-space angles)
+const A=(id,en,he,body,light,feet,pose,line)=>({id,en,he,body,light,feet,pose,line});
+const P=(uaL,faL,uaR,faR,thL=90,shL=90,thR=90,shR=90)=>({uaL,faL,uaR,faR,thL,shL,thR,shR});
+const ANIMALS=[
+  A('sprout','Sprout','נבט','#7DCB6B','#B6E59E','#6CC56B',P(-135,-135,-45,-45),{en:"Sunshine, everybody!",he:"שמש לכולם!"}),
+  A('bear','Bear','דוב','#B07A4F','#E8C9A0','#8A5A36',P(150,40,30,140,110,100,70,80),{en:"Bear-y strong!",he:"דוב חזק!"}),
+  A('crab','Crab','סרטן','#F06A5A','#FFB3A6','#F06A5A',P(180,-90,0,-90,140,95,40,85),{en:"Snip snap!",he:"קליק קלאק!"}),
+  A('frog','Frog','צפרדע','#7DCB6B','#D8F2B8','#5DB04E',P(140,80,40,100,150,70,30,110),{en:"Ribbit squat!",he:"קוואק סקוואט!"}),
+  A('flamingo','Flamingo','פלמינגו','#FF9FB0','#FFD3DC','#F28AA0',P(-165,-150,-15,-30,90,90,20,100),{en:"One leg, no wobbles!",he:"רגל אחת, בלי להתנדנד!"}),
+  A('penguin','Penguin','פינגווין','#3E4C6E','#F7F3EA','#FF9A3D',P(110,115,70,65,85,85,95,95),{en:"Flap flap!",he:"פלאפ פלאפ!"}),
+  A('bunny','Bunny','ארנב','#F3EEE4','#FFD3DC','#F3EEE4',P(-135,-25,-45,-155),{en:"Bunny ears!",he:"אוזני ארנב!"}),
+  A('elephant','Elephant','פיל','#A9B4C2','#D6DDE6','#8E99A8',P(-170,-60,-10,-120,100,90,80,90),{en:"Flappy ears!",he:"אוזניים מנפנפות!"}),
+  A('duck','Duck','ברווז','#FFD84D','#FFF1B8','#FF9A3D',P(150,30,30,150,100,80,80,100),{en:"Quack wings!",he:"כנפי קוואק!"}),
+  A('spider','Spider','עכביש','#6B4E9B','#B9A3E0','#6B4E9B',P(-150,-150,-30,-30,120,120,60,60),{en:"Super star spider!",he:"עכביש כוכב!"})
+];
+const IDX=Object.fromEntries(ANIMALS.map((a,i)=>[a.id,i]));
+// mixed name: first half of A + second half of B ("Frog"+"Flamingo" -> "Frmingo"... tuned to sound silly)
+function mixName(a,b,l){const x=a[l],y=b[l];return x.slice(0,Math.max(2,Math.ceil(x.length*.6)))+y.slice(-Math.max(2,Math.ceil(y.length*.6)));}   // Frog+Flamingo -> Fromingo
+// a target = {top: animal (head/body/arms or left arm), bot: animal (legs or right arm), pose, name}
+function makeTarget(a,b){
+  const pa=ANIMALS[a].pose,pb=ANIMALS[b??a].pose,pose={...pa};
+  if(b!=null){ if(bodyMode==='full'){for(const k of LEGS)pose[k]=pb[k];} else {pose.uaR=pb.uaR;pose.faR=pb.faR;} }
+  if(bodyMode!=='full')for(const k of LEGS)pose[k]=90;
+  return {a,b:b??a,pose,mix:b!=null&&b!==a};
+}
+
+/* draw a sticker animal statue in the pose. (x,y) = centre of the body, s = size (about the body height) */
+function drawAnimal(T,x,y,s,t,o={}){
+  const top=ANIMALS[T.a],bot=ANIMALS[T.b],pose=o.pose||T.pose,lw=Math.max(2.5,s*.03);
+  const legC=bodyMode==='full'?bot:top,armR=(bodyMode!=='full'&&T.mix)?bot:top;
+  ctx.save();ctx.translate(x,y+(o.hop||0));
+  const sh={L:{x:-s*.25,y:-s*.2},R:{x:s*.25,y:-s*.2}},hp={L:{x:-s*.15,y:s*.3},R:{x:s*.15,y:s*.3}};
+  const R=a=>a*Math.PI/180,seg=(p,a,len)=>({x:p.x+Math.cos(R(a))*len,y:p.y+Math.sin(R(a))*len});
+  const limb=(p,a1,a2,l1,l2,w,col,end,endCol)=>{const e=seg(p,a1,l1),h=seg(e,a2,l2);
+    ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=INK;ctx.lineWidth=w+lw*2;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(e.x,e.y);ctx.lineTo(h.x,h.y);ctx.stroke();
+    ctx.strokeStyle=col;ctx.lineWidth=w;ctx.stroke();end(h,a2,endCol);};
+  const mitt=(h,a,c)=>sticker(ctx,ell(h.x,h.y,s*.075,s*.075),c,lw);
+  const claw=(h,a,c)=>{ctx.save();ctx.translate(h.x,h.y);ctx.rotate(R(a));const p=new Path2D();p.moveTo(-s*.02,0);p.quadraticCurveTo(s*.06,-s*.13,s*.14,-s*.05);p.lineTo(s*.05,-s*.01);p.lineTo(s*.14,s*.04);p.quadraticCurveTo(s*.06,s*.12,-s*.02,0);sticker(ctx,p,c,lw);ctx.restore();};
+  const foot=(h,a,c)=>sticker(ctx,ell(h.x,h.y+s*.02,s*.11,s*.055),c,lw);
+  const legW=legC.id==='flamingo'?s*.05:s*.11,arm=a=>a.id==='crab'?claw:mitt;
+  // legs
+  if(bodyMode==='full'){limb(hp.L,pose.thL,pose.shL,s*.34,s*.32,legW,legC.body,foot,legC.feet);limb(hp.R,pose.thR,pose.shR,s*.34,s*.32,legW,legC.body,foot,legC.feet);}
+  else{sticker(ctx,ell(0,s*.42,s*.36,s*.1),bot.feet,lw);}
+  // spider: extra little legs out of the body
+  if(top.id==='spider')for(const d of [-1,1])for(let i=0;i<3;i++){const yy=-s*.05+i*s*.12;ctx.strokeStyle=INK;ctx.lineWidth=s*.035+lw*2;ctx.beginPath();ctx.moveTo(d*s*.22,yy);ctx.quadraticCurveTo(d*s*.42,yy-s*.12,d*s*.48,yy+s*.06);ctx.stroke();ctx.strokeStyle=top.body;ctx.lineWidth=s*.035;ctx.stroke();}
+  // body (bean) + belly
+  sticker(ctx,ell(0,s*.05,s*.29,s*.38),top.body,lw);
+  if(top.id!=='spider')sticker(ctx,ell(0,s*.12,s*.18,s*.24),top.light,lw*.7);
+  // arms
+  limb(sh.L,pose.uaL,pose.faL,s*.3,s*.27,s*.1,top.body,arm(top),top.feet);
+  limb(sh.R,pose.uaR,pose.faR,s*.3,s*.27,s*.1,armR.body,arm(armR),armR.feet);
+  // head
+  const hy=-s*.45,hr=s*.22;drawHead(top,0,hy,hr,lw,t,o);
+  ctx.restore();
+}
+function drawHead(a,x,y,r,lw,t,o){
+  const id=a.id;
+  // things behind the head
+  if(id==='bunny')for(const d of [-1,1]){sticker(ctx,ell(x+d*r*.45,y-r*1.25,r*.28,r*.75,d*.15),a.body,lw);ctx.fillStyle='#FFB3C4';ctx.fill(ell(x+d*r*.45,y-r*1.2,r*.13,r*.55,d*.15));}
+  if(id==='bear')for(const d of [-1,1]){sticker(ctx,ell(x+d*r*.75,y-r*.75,r*.3,r*.3),a.body,lw);ctx.fillStyle=a.light;ctx.fill(ell(x+d*r*.75,y-r*.75,r*.15,r*.15));}
+  if(id==='elephant')for(const d of [-1,1]){const fl=Math.sin(t*6)*.08*(o.dance||0);sticker(ctx,ell(x+d*r*1.05,y+r*.05,r*.62,r*.78,d*(.2+fl)),a.body,lw);ctx.fillStyle='#F7C6D0';ctx.fill(ell(x+d*r*1.05,y+r*.08,r*.38,r*.52,d*.2));}
+  if(id==='crab')for(const d of [-1,1]){ctx.strokeStyle=INK;ctx.lineWidth=lw*2.6;ctx.beginPath();ctx.moveTo(x+d*r*.35,y-r*.6);ctx.lineTo(x+d*r*.45,y-r*1.15);ctx.stroke();ctx.strokeStyle=a.body;ctx.lineWidth=lw*1.2;ctx.stroke();}
+  if(id==='sprout')for(const [d,c] of [[-1,'#7CC86B'],[1,'#8BD16B']]){ctx.save();ctx.translate(x+d*r*.3,y-r*.85);ctx.rotate(d*.6-.0);const p=new Path2D();p.moveTo(0,0);p.quadraticCurveTo(d*r*.4,-r*.5,d*r*.1,-r*.95);p.quadraticCurveTo(-d*r*.25,-r*.45,0,0);sticker(ctx,p,c,lw*.8);ctx.restore();}
+  // head
+  sticker(ctx,ell(x,y,r,r*(id==='penguin'?1.05:.95)),a.body,lw);
+  if(id==='penguin')sticker(ctx,ell(x,y+r*.15,r*.68,r*.62),a.light,lw*.6);
+  if(id==='frog')for(const d of [-1,1])sticker(ctx,ell(x+d*r*.5,y-r*.75,r*.34,r*.32),a.body,lw);
+  // eyes
+  const blink=(Math.sin(t*1.7+a.id.length)>.97)?.15:1,ey=id==='frog'?y-r*.78:y-r*.12,ex=id==='frog'?r*.5:r*.36,er=id==='frog'?r*.2:r*.17;
+  const eyes=id==='spider'?[[-.42,-.25,.11],[-.15,-.32,.13],[.15,-.32,.13],[.42,-.25,.11]]:[[-1,0,1],[1,0,1]];
+  if(id==='spider'){for(const [dx,dy,rr] of eyes){sticker(ctx,ell(x+dx*r,y+dy*r,r*rr*1.25,r*rr*1.25*blink),'#fff',lw*.5);ctx.fillStyle=INK;ctx.fill(ell(x+dx*r,y+dy*r,r*rr*.6,r*rr*.6*blink));}}
+  else for(const d of [-1,1]){const cx=x+d*ex,cy=id==='crab'?y-r*1.2:ey;
+    if(o.happy){ctx.strokeStyle=INK;ctx.lineWidth=lw;ctx.beginPath();ctx.arc(cx,cy+er*.3,er*.75,Math.PI*1.1,Math.PI*1.9);ctx.stroke();continue;}
+    if(id==='frog')sticker(ctx,ell(cx,cy,er*1.3,er*1.3),'#fff',lw*.6);
+    ctx.fillStyle=INK;ctx.fill(ell(cx,cy,er*.75,er*.95*blink));ctx.fillStyle='#fff';ctx.fill(ell(cx+er*.25,cy-er*.3,er*.3,er*.3*blink));}
+  // cheeks
+  ctx.fillStyle='rgba(255,130,150,.6)';for(const d of [-1,1])ctx.fill(ell(x+d*r*.62,y+r*.22,r*.17,r*.1));
+  // snout / beak / trunk / mouth
+  if(id==='duck'||id==='penguin'){sticker(ctx,ell(x,y+r*.28,r*.34,r*.15),'#FF9A3D',lw*.7);}
+  else if(id==='flamingo'){const p=new Path2D();p.moveTo(x-r*.2,y+r*.15);p.quadraticCurveTo(x+r*.35,y+r*.05,x+r*.3,y+r*.55);p.quadraticCurveTo(x+r*.05,y+r*.35,x-r*.2,y+r*.35);p.closePath();sticker(ctx,p,'#FFF1E0',lw*.7);ctx.fillStyle=INK;ctx.fill(ell(x+r*.28,y+r*.47,r*.07,r*.09));}
+  else if(id==='elephant'){const sw=Math.sin(t*4)*r*.2*(o.dance||0);const p=new Path2D();p.moveTo(x-r*.16,y+r*.1);p.quadraticCurveTo(x-r*.2+sw,y+r*.9,x+r*.05+sw,y+r*1.05);p.quadraticCurveTo(x+r*.2+sw,y+r*1.0,x+r*.12+sw,y+r*.92);p.quadraticCurveTo(x+r*.05,y+r*.6,x+r*.16,y+r*.1);p.closePath();sticker(ctx,p,a.body,lw*.8);}
+  else if(id==='bear'){sticker(ctx,ell(x,y+r*.32,r*.32,r*.24),a.light,lw*.6);ctx.fillStyle=INK;ctx.fill(ell(x,y+r*.24,r*.11,r*.08));}
+  if(!['duck','penguin','flamingo','elephant'].includes(id)||o.happy){ctx.strokeStyle=INK;ctx.lineWidth=lw*.8;ctx.beginPath();
+    if(o.happy){const m=new Path2D();m.moveTo(x-r*.22,y+r*.42);m.quadraticCurveTo(x,y+r*.78,x+r*.22,y+r*.42);m.closePath();sticker(ctx,m,'#E2564A',lw*.6);}
+    else{ctx.arc(x,y+(id==='frog'?r*.2:r*.4),r*(id==='frog'?.45:.18),.15*Math.PI,.85*Math.PI);ctx.stroke();}}
+}
 
 /* ================= GAME ================= */
-let state='menu',phase='',phaseT=0,tNow=0,timeLeft=ROUND,score=0,lastNew=false,countT=0;
-let poser=0;          // duo: 0 = left player, 1 = right player
-let target=null,used=[],tries=0,meter=0,copyT=0,awayT=0,bigMsg='',bigMsgT=0,pops=[],flash=0,fillTick=0,lastMatch=null;
-let sameNow=false,guide=null,swapStage='out',inT=0,sameT=0,checkT=0,ghost={dx:0,dy:0,k:1,a:0};
+let state='menu',phase='',phaseT=0,tNow=0,countT=0,spinN=0,score=[0,0],target=null,lastPicks=[],meters=[0,0],winner=-1,bigMsg='',bigMsgT=0,pops=[],frost=[],fillTick=0,lastMatch=[];
+let guide=null,awayT=0;
 function say(t,dur=1.6){bigMsg=t;bigMsgT=tNow+dur;}
 function setPhase(p){phase=p;phaseT=0;}
 const pick=a=>a[Math.floor(Math.random()*a.length)];
+const copyTime=()=>Math.max(6,10-spinN*.6), holdTime=()=>Math.min(1.6,.9+spinN*.1);
+
+/* the animal wheel: spins until a hand goes up, then always brakes over exactly 3 s (same braking every time) */
+const WH_W=Math.PI*2*.6,WH_STOP=3,NS=ANIMALS.length;
+const WH={ang:0,stopT:-1,ang0:0,raise:0,up:false,lastSlice:-1,auto:false,result:-1};
+function wheelStart(auto){Object.assign(WH,{stopT:auto?0:-1,ang0:WH.ang,raise:0,up:false,auto,result:-1});if(auto)WH.ang0=WH.ang+Math.random()*Math.PI*2;}
+const sliceAt=a=>{const r=((-Math.PI/2-a)%(Math.PI*2)+Math.PI*4)%(Math.PI*2);return Math.floor(r/(Math.PI*2/NS));};
+const handUp=p=>{const l=p.lm;return [15,16].some(i=>l[i].v>.5&&l[i].y<l[0].y-p.sw*.15);};
+function wheelUpdate(dt){
+  if(WH.stopT<0){WH.ang+=WH_W*dt;WH.up=people.some(handUp);WH.raise=WH.up?WH.raise+dt:0;if(WH.raise>.25){WH.stopT=0;WH.ang0=WH.ang;FX.whoosh();}}
+  else if(WH.result<0){WH.stopT+=dt;const T=WH.auto?1.8:WH_STOP,t2=Math.min(WH.stopT,T);WH.ang=WH.ang0+WH_W*(t2-t2*t2/(2*T))*(WH.auto?1.4:1);
+    if(WH.stopT>=T){let r=sliceAt(WH.ang);
+      while(lastPicks.includes(r)){ // never the same animal as the last two: nudge the wheel one slice on
+        r=(r+1)%NS;WH.ang-=Math.PI*2/NS;}
+      WH.result=r;WH.stopT=0;}}
+  else WH.stopT+=dt;   // after it stops: time to look at the result
+  const sl=sliceAt(WH.ang);if(sl!==WH.lastSlice){if(WH.lastSlice>=0&&WH.stopT>=0&&WH.result<0)FX.tick();WH.lastSlice=sl;}
+}
 
 async function play(){
   audio();SFX.go();
   $('start').hidden=true;$('end').hidden=true;
   if(!camOK){say(UI[lang].ready,99);state='loading';
     try{await startCam();}catch(e){console.warn(e);state='menu';bigMsg='';$('start').hidden=false;toast(UI[lang].nocam,6000);return;}}
-  bigMsg='';score=0;timeLeft=ROUND;used=[];target=null;photo=null;meter=0;poser=0;pops=[];loadBest();
+  bigMsg='';score=[0,0];spinN=0;lastPicks=[];target=null;pops=[];loadBest();
   $('stopx').classList.add('on');musicStart();
   guide=who==='duo'?null:makeGuide(bodyMode==='full'?'full':'body');if(guide)guide.reset();
   state='setup';
 }
 $('play').onclick=play;$('again').onclick=play;
 $('stopx').onclick=()=>endGame(true);
-
 function endGame(quit){
-  state='over';musicStop();$('stopx').classList.remove('on');if(guide)guide.hide();photo=null;target=null;
+  state='over';musicStop();$('stopx').classList.remove('on');if(guide)guide.hide();target=null;
   if(quit){state='menu';$('start').hidden=false;return;}
-  lastNew=score>best;if(lastNew){best=score;LS.set(bestKey(),String(score));}
+  const sc=who==='duo'?Math.max(score[0],score[1]):score[0];
+  lastNew=who==='solo'&&sc>best;if(lastNew){best=sc;LS.set(bestKey(),String(sc));}
   fillEnd(lastNew);$('end').hidden=false;SFX.chime();
 }
-function fillEnd(nb){const u=UI[lang];$('final').textContent=score;$('newbest').hidden=!nb;$('newbest').textContent=u.newbest;
-  $('t-over').textContent=score>=MAX?u.win:u.over[Math.min(3,Math.floor(score/5))];$('best-line').textContent=u.bestis+best;}
+function fillEnd(nb){const u=UI[lang];$('newbest').hidden=!nb;$('newbest').textContent=u.newbest;
+  if(who==='duo'){$('final').textContent=score[0]+' – '+score[1];$('t-over').textContent=score[0]===score[1]?u.tie:(score[0]>score[1]?u.winL:u.winR);$('best-line').textContent='';}
+  else{$('final').textContent=score[0]+u.of+SPINS;$('t-over').textContent=u.over[Math.min(3,Math.floor(score[0]/2.1))];$('best-line').textContent=u.bestis+best;}}
 
-const posers=()=>who==='duo'?people[poser]:people[0];
-const copier=()=>who==='duo'?people[1-poser]:people[0];
+function nextSpin(){ if(spinN>=SPINS){endGame(false);return;} state='play';setPhase('spin');wheelStart(false);target=null;meters=[0,0];winner=-1; }
 
-/* ===== who starts? (14 Nov, Edgar) — side by side: a wheel with both players' live faces spins until BOTH raise a hand.
-   Then it always slows down over exactly 3 s with the same braking, so where it stops depends only on when the hands
-   went up: it looks random, but practised players can time it. Left player = blue slices, right player = pink. ===== */
-const WH_N=6,WH_W=Math.PI*2*.75,WH_STOP=3;   // 6 slices, 0.75 turns a second, 3 s braking
-const WH={ang:0,stopT:-1,ang0:0,raise:[0,0],up:[false,false],faces:[null,null],faceT:0,done:-1,win:0,lastSlice:-1};
-function wheelStart(){Object.assign(WH,{ang:Math.random()*Math.PI*2,stopT:-1,raise:[0,0],up:[false,false],faces:[null,null],faceT:0,done:-1,lastSlice:-1});}
-const handUp=p=>{const l=p.lm;return [15,16].some(i=>l[i].v>.5&&l[i].y<l[0].y-p.sw*.15);};
-function faceCrop(p,old){
-  const vw=video.videoWidth,vh=video.videoHeight;if(!vw)return old;const r=p.raw;
-  const sz=Math.max(40,Math.hypot((r[11].x-r[12].x)*vw,(r[11].y-r[12].y)*vh)*.95),cx=r[0].x*vw,cy=r[0].y*vh-sz*.08;
-  const c=old||document.createElement('canvas');c.width=c.height=112;const x=c.getContext('2d');
-  x.save();x.translate(112,0);x.scale(-1,1);x.drawImage(video,cx-sz/2,cy-sz/2,sz,sz,0,0,112,112);x.restore();return c;}
-const sliceAt=a=>{const r=((-Math.PI/2-a)%(Math.PI*2)+Math.PI*4)%(Math.PI*2);return Math.floor(r/(Math.PI*2/WH_N));};
-function wheelUpdate(dt){
-  const u=UI[lang];
-  WH.faceT-=dt;if(WH.faceT<=0&&people.length>=2&&WH.done<0){WH.faceT=.1;for(const i of [0,1])WH.faces[i]=faceCrop(people[i],WH.faces[i]);}
-  if(WH.stopT<0){
-    WH.ang+=WH_W*dt;
-    for(const i of [0,1]){const p=people[i];WH.up[i]=!!(p&&handUp(p));WH.raise[i]=WH.up[i]?WH.raise[i]+dt:0;}
-    if(WH.raise[0]>.25&&WH.raise[1]>.25){WH.stopT=0;WH.ang0=WH.ang;FX.whoosh();}
-  } else if(WH.done<0){
-    WH.stopT+=dt;const t=Math.min(WH.stopT,WH_STOP);WH.ang=WH.ang0+WH_W*(t-t*t/(2*WH_STOP));   // same braking every time
-    if(WH.stopT>=WH_STOP){WH.done=0;WH.win=sliceAt(WH.ang)%2;poser=WH.win;FX.great();}
-  } else { WH.done+=dt; if(WH.done>2.2){state='count';countT=tNow;} }
-  const sl=sliceAt(WH.ang);if(sl!==WH.lastSlice){if(WH.lastSlice>=0&&WH.stopT>=0&&WH.done<0)tone({f0:1300,dur:.03,type:'triangle',vol:.1});WH.lastSlice=sl;}
-}
-function drawWheel(){
-  const u=UI[lang],cx=W/2,cy=H*.5,R=Math.min(W,H)*.27,cols=['#7FC8F8','#FF9FB0'],seg=Math.PI*2/WH_N;
-  ctx.save();ctx.translate(cx,cy);
-  ctx.fillStyle=INK;ctx.beginPath();ctx.arc(0,6,R+8,0,7);ctx.fill();
-  for(let j=0;j<WH_N;j++){const a0=WH.ang+j*seg,a1=a0+seg,pl=j%2,win=WH.done>=0&&pl===WH.win;
-    ctx.save();ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,R,a0,a1);ctx.closePath();
-    ctx.fillStyle=WH.done>=0&&!win?'#ddd':cols[pl];ctx.fill();ctx.clip();
-    const am=a0+seg/2,fx=Math.cos(am)*R*.6,fy=Math.sin(am)*R*.6,fr=R*.25,f=WH.faces[pl];
-    ctx.beginPath();ctx.arc(fx,fy,fr,0,7);ctx.fillStyle='#fff';ctx.fill();
-    if(f){ctx.save();ctx.clip();ctx.drawImage(f,fx-fr,fy-fr,fr*2,fr*2);ctx.restore();}
-    ctx.lineWidth=3;ctx.strokeStyle=INK;ctx.beginPath();ctx.arc(fx,fy,fr,0,7);ctx.stroke();
-    ctx.restore();
-    ctx.lineWidth=4;ctx.strokeStyle=INK;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a0)*R,Math.sin(a0)*R);ctx.stroke();}
-  ctx.lineWidth=5;ctx.strokeStyle=INK;ctx.beginPath();ctx.arc(0,0,R,0,7);ctx.stroke();
-  sticker(ctx,ell(0,0,R*.12,R*.12),'#FFD84D',4);
-  // pointer at the top
-  ctx.fillStyle='#FFD84D';ctx.strokeStyle=INK;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-R*.11,-R-R*.16);ctx.lineTo(R*.11,-R-R*.16);ctx.lineTo(0,-R+R*.1);ctx.closePath();ctx.fill();ctx.stroke();
-  ctx.restore();
-  // a hand for each player: green when raised
-  const fs=Math.max(18,Math.min(26,W*.045));
-  if(WH.stopT<0){for(const i of [0,1]){const x=i?W*.84:W*.16,y=cy;ctx.save();ctx.globalAlpha=WH.up[i]?1:.55;
-      sticker(ctx,ell(x,y,R*.2,R*.2),WH.up[i]?'#7DCB6B':cols[i],4);ctx.font=`${R*.2}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('✋',x,y+2);ctx.restore();}
-    bubble(WH.up[0]!==WH.up[1]?u.wheelone:u.wheel,W/2,H*.86,fs);}
-  else if(WH.done>=0)bigText(WH.win?u.startsR:u.startsL,W/2,Math.min(H*.9,cy+R+Math.min(70,W*.1)),Math.min(60,W*.1),WH.win?'#FF9FB0':'#7FC8F8',1+.08*Math.sin(tNow*10));
-}
-// after a copy: in turns mode the copier dances next (already in the picture); side by side, the players swap roles
-function nextTurn(){photo=null;target=null;if(who==='duo'){poser=1-poser;setPhase('switch');setTimeout(()=>FX.whoosh(),300);}else setPhase('dance');}
 let last=performance.now();
 function frame(now){
   const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;tNow+=dt;
@@ -357,48 +348,32 @@ function frame(now){
   const u=UI[lang];
   if(state==='setup'){
     if(guide){const p=people[0];if(guide.update(dt,p?{x:p.nose.x,y:p.nose.y,size:p.sw}:null,{x:0,y:0,w:W,h:H})==='done'){state='count';countT=tNow;}}
-    else{ if(people.length>=2){awayT+=dt;if(awayT>1){state='wheel';wheelStart();awayT=0;}}else awayT=0; }
+    else{ if(people.length>=2){awayT+=dt;if(awayT>1){state='count';countT=tNow;awayT=0;}}else awayT=0; }
   }
-  else if(state==='wheel'){ wheelUpdate(dt); 
-  }
-  else if(state==='count'){ if(tNow-countT>=3){state='play';setPhase('dance');FX.whoosh();} }
+  else if(state==='count'){ if(tNow-countT>=3)nextSpin(); }
   else if(state==='play'){
-    phaseT+=dt;if(phase!=='swap'&&phase!=='switch')timeLeft-=dt;   // the clock waits while players switch
-    if(timeLeft<=0){timeLeft=0;endGame(false);}
-    else if(phase==='dance'){                     // 3 s free dance, then "Freeze!"
-      if(phaseT>=DANCE){setPhase('freeze');say(u.freeze,1);SFX.boing();}
-    }
-    else if(phase==='freeze'){                    // a short moment to settle, then the photo
-      if(phaseT>=.6){const p=posers();
-        if(!p){say(u.nobody,1.2);setPhase('freeze');phaseT=.2;}
-        else{const P=poseOf(p);
-          const plain=sameAs(NEUTRAL(),P),rep=used.some(U=>sameAs(U,P));
-          if((plain||rep)&&tries<2){tries++;FX.nope();say(rep?u.used:u.plain,1.6);setPhase('freeze');phaseT=-1.2;}
-          else{tries=0;target=P;used.push(P);photo=null;wantShot=who==='duo'?poser:0;FX.shutter();flash=1;meter=0;copyT=0;awayT=0;
-            swapStage='out';inT=0;sameT=0;checkT=0;ghost={dx:0,dy:0,k:1,a:0};
-            if(who==='duo')setPhase('copy');else{setPhase('swap');FX.whoosh();}}}}
-    }
-    else if(phase==='swap'){                      // take turns (14 Nov): the poser must LEAVE the picture, then someone else steps in
-      const p=people[0];
-      if(swapStage==='out'){ if(!p)awayT+=dt;else awayT=Math.max(0,awayT-dt*2); if(awayT>.8){swapStage='in';inT=0;sameT=0;SFX.boing();} }
-      else{ if(!p){inT=0;sameNow=false;}
-        else{inT+=dt;checkT-=dt;fitGhost(p,dt);
-          if(checkT<=0){checkT=.3;sameNow=samePerson(poserSig,sigOf(p));}
-          if(sameNow&&sameT<5){sameT+=dt;inT=Math.min(inT,.3);}   // looks like the same player (same clothes): ask for a new one; after 5 s let it go (same uniforms)
-          if(inT>.7){setPhase('copy');meter=0;}}}
-    }
-    else if(phase==='switch'){ if(phaseT>1.6)setPhase('dance'); }   // side by side: short "switch" moment before the other player dances
+    phaseT+=dt;
+    if(phase==='spin'){ wheelUpdate(dt);
+      if(WH.result>=0&&WH.stopT>.8){ const a=WH.result;lastPicks=[a,...lastPicks].slice(0,2);
+        if(spinN>=3&&Math.random()<.6){ target={a,b:null};setPhase('mix');say(u.mix,1.2);FX.giggle();wheelStart(true);}
+        else{ target=makeTarget(a);setPhase('show');SFX.boing(); } } }
+    else if(phase==='mix'){ if(phaseT>1.1){ wheelUpdate(dt);
+      if(WH.result>=0&&WH.stopT>.6){let b=WH.result;if(b===target.a)b=(b+1)%NS;target=makeTarget(target.a,b);setPhase('show');SFX.boing();} } }
+    else if(phase==='show'){ // the animal dances, then snaps into the statue
+      if(phaseT>1.4&&!target.frozen){target.frozen=true;FX.freeze();say(u.freeze,.9);for(let i=0;i<18;i++)frost.push({a:Math.random()*6.3,r:0,v:.6+Math.random(),life:1});}
+      if(phaseT>2.2){setPhase('copy');meters=[0,0];spinN++;} }
     else if(phase==='copy'){
-      const c=copier();lastMatch=null;fitGhost(c,dt);
-      if(c){const r=compare(target,poseOf(c),TOL[strict]);lastMatch={r,c};
-        if(r.ok){meter=Math.min(1,meter+dt/HOLD);fillTick+=dt;if(fillTick>.2){fillTick=0;FX.fill(meter);}}
-        else meter=Math.max(0,meter-dt*.35);}
-      else meter=Math.max(0,meter-dt*.35);
-      if(meter>=1){score++;FX.great();say(pick(u.great),1.3);for(let i=0;i<14;i++)pops.push({x:W/2,y:H*.4,vx:(Math.random()-.5)*W*.8,vy:-H*(.3+Math.random()*.5),life:1.2});
-        if(score>=MAX){endGame(false);}
-        else{nextTurn();}}
-      else if(phaseT>GIVEUP){say(u.newone,1.5);FX.nope();nextTurn();}
-    }
+      const n=who==='duo'?2:1;lastMatch=[];
+      for(let i=0;i<n;i++){const p=who==='duo'?people[i]:people[0];
+        if(p){const r=compare(target.pose,poseOf(p),TOL[strict]);lastMatch[i]={r,p};
+          if(r.ok){meters[i]=Math.min(1,meters[i]+dt/holdTime());fillTick+=dt;if(fillTick>.2){fillTick=0;FX.fill(meters[i]);}}
+          else meters[i]=Math.max(0,meters[i]-dt*.4);}
+        else meters[i]=Math.max(0,meters[i]-dt*.4);
+        if(meters[i]>=1&&winner<0)winner=i;}
+      if(winner>=0){score[who==='duo'?winner:0]++;FX.great();say(who==='duo'?(winner?u.winR:u.winL):pick(u.great),1.4);
+        for(let k=0;k<14;k++)pops.push({x:W/2,y:H*.3,vx:(Math.random()-.5)*W*.8,vy:-H*(.3+Math.random()*.5),life:1.2});setPhase('cheer');}
+      else if(phaseT>copyTime()){say(pick(u.miss),1.4);FX.giggle();setPhase('laugh');} }
+    else if(phase==='cheer'||phase==='laugh'){ if(phaseT>1.6)nextSpin(); }
   }
   render(dt);
   requestAnimationFrame(frame);
@@ -417,91 +392,68 @@ function bigText(txt,x,y,fs,col='#FFD84D',sc=1){
   ctx.save();ctx.translate(x,y);ctx.scale(sc,sc);ctx.font=`900 ${fs}px Grandstander,Fredoka,sans-serif`;ctx.direction=lang==='he'?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.lineJoin='round';ctx.lineWidth=fs*.14;ctx.strokeStyle=INK;ctx.fillStyle=INK;ctx.fillText(txt,0,fs*.08);ctx.strokeText(txt,0,0);ctx.fillStyle=col;ctx.fillText(txt,0,0);ctx.restore();
 }
-// the frozen photo, as a tilted sticker card
-function photoRect(){
-  if(who==='duo'){const h=Math.min(H*.36,W*.32);return {x:W/2,y:H*.04+56+h/2,h};}
-  const land=W>H*1.1,h=land?H*.62:H*.34;return {x:land?W-h*.42-16:W-h*.4-12,y:land?H*.5:56+16+h/2,h};
-}
-function drawPhoto(){
-  if(!photo&&!target)return;
-  const R=photoRect(),ar=photo?photo.w/photo.h:.6,h=R.h,w=Math.min(h*ar,W*.45),ph=w/ar;
-  const pad=10,lab=Math.max(18,h*.09);
-  ctx.save();ctx.translate(R.x,R.y);ctx.rotate(-.04);
-  const cw=w+pad*2,ch=ph+pad*2+lab*1.4;
-  ctx.fillStyle=INK;ctx.beginPath();ctx.roundRect(-cw/2,-ch/2+5,cw,ch,18);ctx.fill();
-  ctx.fillStyle='#FFF6E3';ctx.strokeStyle=INK;ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(-cw/2,-ch/2,cw,ch,18);ctx.fill();ctx.stroke();
-  ctx.save();ctx.beginPath();ctx.roundRect(-w/2,-ch/2+pad,w,ph,12);ctx.clip();
-  ctx.fillStyle='#CFEAFF';ctx.fillRect(-w/2,-ch/2+pad,w,ph);
-  if(photo)ctx.drawImage(photo.cv,-w/2,-ch/2+pad,w,ph);
+// the statue stage: a rounded card at the top, with a pedestal (kept apart from the player's picture)
+function stageRect(){const land=W>H*1.1,h=land?H*.42:Math.min(H*.3,W*.62),w=Math.min(W*.5,h*1.05);return {x:W/2-w/2,y:60+(land?6:0),w,h};}
+function animalName(T){if(!T.mix)return ANIMALS[T.a][lang];return mixName(ANIMALS[T.a],ANIMALS[T.b],lang);}
+function drawStage(){
+  if(!target||!target.pose)return;const R=stageRect(),s=R.h*.6,cx=R.x+R.w/2,cy=R.y+R.h*.5;
+  ctx.save();ctx.fillStyle='rgba(255,248,236,.86)';ctx.strokeStyle=INK;ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(R.x,R.y,R.w,R.h,24);ctx.fill();ctx.stroke();
+  // pedestal
+  sticker(ctx,(()=>{const p=new Path2D();p.roundRect(cx-s*.5,R.y+R.h-s*.16,s,s*.13,8);return p;})(),'#E9DCC6',3);
+  ctx.save();const p=new Path2D();p.roundRect(R.x,R.y,R.w,R.h,24);ctx.clip(p);
+  const frozen=phase!=='show'||target.frozen,happy=phase==='cheer'||phase==='laugh';
+  let pose=target.pose,hop=0,dance=0;
+  if(!frozen||happy){ // dancing: arms wave around the target, a little hop
+    const w=Math.sin(tNow*9)*40,v=Math.cos(tNow*9)*25;pose={...target.pose,uaL:target.pose.uaL+w,faL:target.pose.faL+v,uaR:target.pose.uaR-w,faR:target.pose.faR-v};
+    hop=-Math.abs(Math.sin(tNow*9))*s*.06;dance=1;}
+  const d=s*.8,ped=R.y+R.h-s*.16,ay=bodyMode==='full'?ped-.98*d:ped-.55*d;
+  drawAnimal(target,cx,ay,d,tNow,{pose,hop,dance,happy});
+  if(frozen&&!happy){ // icy statue shine
+    ctx.fillStyle='rgba(190,230,255,.28)';ctx.fillRect(R.x,R.y,R.w,R.h);
+    ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=3;for(let i=0;i<3;i++){const x0=cx-s*.4+i*s*.32,y0=R.y+R.h*.25+((tNow*30+i*40)%(R.h*.4));ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x0+10,y0-10);ctx.stroke();}}
   ctx.restore();
-  ctx.font=`700 ${lab}px Fredoka,sans-serif`;ctx.direction=lang==='he'?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=INK;
-  ctx.fillText(UI[lang].copyme,0,ch/2-lab*.75);
-  ctx.restore();
-}
-/* 14 Nov (Edgar): instead of a photo card, the frozen pose stays in the picture as a see-through cut-out, IN FRONT of
-   the player. The copier steps "into" it: it slides and scales onto the copier's trunk, so only the arms/legs need matching. */
-function fitGhost(c,dt){
-  let tx=0,ty=0,tk=1;
-  if(c&&photo){const A=photo.anc,B=anchors(c.lm);
-    if(A.hp&&B.hp){const ra=Math.hypot(A.sh.x-A.hp.x,A.sh.y-A.hp.y),rb=Math.hypot(B.sh.x-B.hp.x,B.sh.y-B.hp.y);
-      tk=ra>5?rb/ra:1;const ca={x:(A.sh.x+A.hp.x)/2,y:(A.sh.y+A.hp.y)/2},cb={x:(B.sh.x+B.hp.x)/2,y:(B.sh.y+B.hp.y)/2};
-      tk=Math.max(.5,Math.min(2,tk));tx=cb.x-ca.x*tk;ty=cb.y-ca.y*tk;}
-    else{tk=Math.max(.5,Math.min(2,A.sw>5?B.sw/A.sw:1));tx=B.sh.x-A.sh.x*tk;ty=B.sh.y-A.sh.y*tk;}}
-  const e=Math.min(1,dt*7);ghost.dx+=(tx-ghost.dx)*e;ghost.dy+=(ty-ghost.dy)*e;ghost.k+=(tk-ghost.k)*e;
-}
-function drawGhost(alpha){
-  if(!photo)return;ghost.a+=(alpha-ghost.a)*.15;
-  ctx.save();ctx.translate(ghost.dx,ghost.dy);ctx.scale(ghost.k,ghost.k);ctx.globalAlpha=ghost.a;
-  const r=photo.scr;
-  if(photo.cut){
-    // soft white glow around the cut-out so it reads on any background, then the see-through photo
-    ctx.save();ctx.shadowColor='rgba(255,255,255,.95)';ctx.shadowBlur=18/ghost.k;ctx.drawImage(photo.cv,r.x,r.y,r.w,r.h);ctx.restore();
-    ctx.drawImage(photo.cv,r.x,r.y,r.w,r.h);
-  } else {   // no body mask on this device: a soft see-through stick figure of the pose instead
-    const lm=photo.lm,bones=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
-    ctx.lineCap='round';for(const [w,col] of [[photo.anc.sw*.34,'#fff'],[photo.anc.sw*.24,'#FF9FB0']]){ctx.lineWidth=w;ctx.strokeStyle=col;ctx.beginPath();
-      for(const [a,b] of bones){if(lm[a].v<.5||lm[b].v<.5)continue;ctx.moveTo(lm[a].x,lm[a].y);ctx.lineTo(lm[b].x,lm[b].y);}ctx.stroke();}
-    ctx.fillStyle='#FF9FB0';ctx.strokeStyle='#fff';ctx.lineWidth=photo.anc.sw*.06;ctx.beginPath();ctx.arc(lm[0].x,lm[0].y,photo.anc.sw*.3,0,7);ctx.fill();ctx.stroke();
-  }
+  // frost burst
+  frost=frost.filter(f=>(f.life-=.02)>0);for(const f of frost){f.r+=f.v*6;ctx.save();ctx.translate(cx+Math.cos(f.a)*f.r*s*.04,cy+Math.sin(f.a)*f.r*s*.04);ctx.globalAlpha=f.life;sticker(ctx,starPath(7),'#DDF3FF',2);ctx.restore();}
+  // name tag
+  const fs=Math.max(16,Math.min(26,R.w*.08));bubble(animalName(target),cx,R.y+R.h+fs*.2,fs,target.mix?'#FFE3E8':'#fff');
   ctx.restore();
 }
-/* "Switch players!" — two little beans hop round each other, with curved arrows */
-function drawSwitch(txt,sub,k){
-  const s=Math.min(W*.16,H*.16),cx=W/2,cy=H*.52,t=tNow*2.2,R=s*.75;
-  ctx.save();ctx.globalAlpha=Math.min(1,k*3);
-  ctx.fillStyle='rgba(255,248,236,.55)';ctx.beginPath();ctx.roundRect(cx-s*2.3,cy-s*1.6,s*4.6,s*3.3,s*.5);ctx.fill();
-  // curved arrows
-  ctx.lineCap='round';ctx.lineWidth=s*.09;
-  for(const d of [0,1]){const a0=Math.PI*(d?0.15:1.15),a1=a0+Math.PI*.7;ctx.strokeStyle=INK;ctx.beginPath();ctx.arc(cx,cy,R*1.05,a0,a1);ctx.stroke();
-    const ax=cx+Math.cos(a1)*R*1.05,ay=cy+Math.sin(a1)*R*1.05,dir=a1+Math.PI/2;ctx.fillStyle=INK;ctx.beginPath();
-    ctx.moveTo(ax+Math.cos(dir)*s*.2,ay+Math.sin(dir)*s*.2);ctx.lineTo(ax+Math.cos(dir+2.4)*s*.16,ay+Math.sin(dir+2.4)*s*.16);ctx.lineTo(ax+Math.cos(dir-2.4)*s*.16,ay+Math.sin(dir-2.4)*s*.16);ctx.fill();}
-  // two beans trading places
-  for(const [ph,col] of [[0,'#7FC8F8'],[Math.PI,'#FF9FB0']]){const a=t+ph,x=cx+Math.cos(a)*R,y=cy+Math.sin(a)*R*.35,hop=Math.abs(Math.sin(t*3+ph))*s*.12;
-    sticker(ctx,ell(x,y-hop,s*.26,s*.34),col,3.5);ctx.fillStyle=INK;ctx.fill(ell(x-s*.08,y-hop-s*.08,s*.03,s*.045));ctx.fill(ell(x+s*.08,y-hop-s*.08,s*.03,s*.045));
-    ctx.fillStyle='rgba(255,140,160,.6)';ctx.fill(ell(x-s*.15,y-hop+s*.02,s*.04,s*.025));ctx.fill(ell(x+s*.15,y-hop+s*.02,s*.04,s*.025));}
+function drawWheel(){
+  const u=UI[lang],cx=W/2,cy=H*.46,Rr=Math.min(W,H)*.28,seg=Math.PI*2/NS,cols=['#FFF1B8','#D8F2B8','#FFD3DC','#DDF3FF','#F3EEE4'];
+  ctx.save();ctx.translate(cx,cy);
+  ctx.fillStyle=INK;ctx.beginPath();ctx.arc(0,6,Rr+8,0,7);ctx.fill();
+  for(let j=0;j<NS;j++){const a0=WH.ang+j*seg,a1=a0+seg,res=WH.result>=0&&j===WH.result;
+    ctx.save();ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,Rr,a0,a1);ctx.closePath();ctx.fillStyle=WH.result>=0&&!res?'#E6E1D8':cols[j%cols.length];ctx.fill();ctx.clip();
+    const am=a0+seg/2,fx=Math.cos(am)*Rr*.66,fy=Math.sin(am)*Rr*.66;
+    ctx.translate(fx,fy);ctx.rotate(am+Math.PI/2);drawHead(ANIMALS[j],0,0,Rr*.13,2.5,tNow,{});ctx.restore();
+    ctx.lineWidth=3;ctx.strokeStyle=INK;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a0)*Rr,Math.sin(a0)*Rr);ctx.stroke();}
+  ctx.lineWidth=5;ctx.strokeStyle=INK;ctx.beginPath();ctx.arc(0,0,Rr,0,7);ctx.stroke();
+  sticker(ctx,ell(0,0,Rr*.12,Rr*.12),'#FFD84D',4);
+  ctx.fillStyle='#FFD84D';ctx.strokeStyle=INK;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-Rr*.11,-Rr-Rr*.16);ctx.lineTo(Rr*.11,-Rr-Rr*.16);ctx.lineTo(0,-Rr+Rr*.1);ctx.closePath();ctx.fill();ctx.stroke();
   ctx.restore();
-  bigText(txt,cx,cy-s*1.15,Math.min(60,W*.09),'#FFD84D',1+.05*Math.sin(tNow*8));
-  if(sub)bubble(sub,cx,cy+s*1.15,Math.max(18,Math.min(26,W*.045)));
+  const fs=Math.max(18,Math.min(26,W*.045));
+  if(phase==='spin'&&WH.stopT<0){bubble('✋ '+u.raise,W/2,Math.min(H*.9,cy+Rr+fs*2.4),fs,WH.up?'#E6F7DE':'#fff');}
+  if(phase==='mix'&&target)bubble(ANIMALS[target.a][lang]+' + ?',W/2,Math.min(H*.9,cy+Rr+fs*2.4),fs,'#FFE3E8');
 }
-// the copy meter: a soft jar that fills with a wavy green, a star on top
-function drawMeter(){
-  const h=Math.min(H*.42,300),w=Math.max(34,h*.17),x=18+w/2,y=H*.55;
+// the copy jar: one per player (blue left, pink right in two-player mode)
+function drawMeter(i,x){
+  const h=Math.min(H*.36,280),w=Math.max(34,h*.17),y=H*.6,m=meters[i];
   ctx.save();ctx.translate(x,y);
   const jar=new Path2D();jar.roundRect(-w/2,-h/2,w,h,w/2);
   ctx.fillStyle=INK;ctx.fill(new Path2D(jar));ctx.translate(0,-4);
   ctx.fillStyle='rgba(255,255,255,.85)';ctx.fill(jar);
-  ctx.save();ctx.clip(jar);const top=h/2-h*meter;ctx.fillStyle=meter>=1?'#FFD84D':'#7DCB6B';ctx.beginPath();ctx.moveTo(-w/2,h/2);
-  for(let i=0;i<=10;i++){const xx=-w/2+w*i/10;ctx.lineTo(xx,top+Math.sin(i*1.3+tNow*7)*3);}ctx.lineTo(w/2,h/2);ctx.closePath();ctx.fill();ctx.restore();
+  ctx.save();ctx.clip(jar);const top=h/2-h*m;ctx.fillStyle=m>=1?'#FFD84D':(who==='duo'?(i?'#FF9FB0':'#7FC8F8'):'#7DCB6B');ctx.beginPath();ctx.moveTo(-w/2,h/2);
+  for(let k=0;k<=10;k++){const xx=-w/2+w*k/10;ctx.lineTo(xx,top+Math.sin(k*1.3+tNow*7)*3);}ctx.lineTo(w/2,h/2);ctx.closePath();ctx.fill();ctx.restore();
   ctx.lineWidth=4;ctx.strokeStyle=INK;ctx.stroke(jar);
-  ctx.translate(0,-h/2-w*.55);ctx.rotate(Math.sin(tNow*2)*.1);sticker(ctx,starPath(w*.55),meter>=1?'#FFD84D':'#FFF1B8',3);
+  ctx.translate(0,-h/2-w*.55);ctx.rotate(Math.sin(tNow*2)*.1);sticker(ctx,starPath(w*.55),m>=1?'#FFD84D':'#FFF1B8',3);
   ctx.restore();
 }
-// soft dots on the copier's hands, elbows, knees and feet: green when that limb matches
+// soft dots on the player's elbows, hands, knees and feet: green when that part matches
 function drawCopyDots(){
-  if(!lastMatch)return;const {r,c}=lastMatch,lm=c.lm,s=sides(lm),R=Math.max(9,c.sw*.09);
-  const dots=[[s.aL[1],'uaL'],[s.aL[2],'faL'],[s.aR[1],'uaR'],[s.aR[2],'faR']];
-  if(bodyMode==='full')dots.push([s.lL[1],'thL'],[s.lL[2],'shL'],[s.lR[1],'thR'],[s.lR[2],'shR']);
-  for(const [i,n] of dots){const p=lm[i];if(p.v<.5||r.by[n]===undefined)continue;sticker(ctx,ell(p.x,p.y,R,R),r.by[n]?'#7DCB6B':'rgba(255,255,255,.9)',3);}
+  for(const lmatch of lastMatch){if(!lmatch)continue;const {r,p}=lmatch,lm=p.lm,s=sides(lm),R=Math.max(9,p.sw*.09);
+    const dots=[[s.aL[1],'uaL'],[s.aL[2],'faL'],[s.aR[1],'uaR'],[s.aR[2],'faR']];
+    if(bodyMode==='full')dots.push([s.lL[1],'thL'],[s.lL[2],'shL'],[s.lR[1],'thR'],[s.lR[2],'shR']);
+    for(const [i,n] of dots){const q=lm[i];if(q.v<.5||r.by[n]===undefined)continue;sticker(ctx,ell(q.x,q.y,R,R),r.by[n]?'#7DCB6B':'rgba(255,255,255,.9)',3);}}
 }
 function render(dt){
   ctx.setTransform(DPR,0,0,DPR,0,0);
@@ -509,48 +461,34 @@ function render(dt){
   if(live){drawMirrored();ctx.fillStyle='rgba(255,248,236,.08)';ctx.fillRect(0,0,W,H);}
   else drawRoom(ctx,W,H);
   if(state==='menu'||state==='over'){drawDemo();return;}
-  if(state==='setup'){
-    if(guide)guide.draw(ctx,{x:0,y:0,w:W,h:H},lang);
-    else bubble(u.two,W/2,H*.16,Math.max(18,Math.min(26,W*.045)));
-  }
-  else if(state==='wheel')drawWheel();
+  const fs=Math.max(18,Math.min(26,W*.045));
+  if(state==='setup'){ if(guide)guide.draw(ctx,{x:0,y:0,w:W,h:H},lang); else bubble(u.two,W/2,H*.16,fs); }
   else if(state==='count'){const n=3-Math.floor(tNow-countT),k=(tNow-countT)%1;if(n>0)bigText(String(n),W/2,H*.42,Math.min(150,H*.22),'#fff',1+.25*Math.max(0,1-k*4));}
   else if(state==='play'){
-    const fs=Math.max(18,Math.min(26,W*.045));
-    if(phase==='copy'){drawGhost(.5);drawMeter();drawCopyDots();}
-    if(phase==='swap'){
-      if(swapStage==='out'){drawGhost(.22);drawSwitch(u.swap,u.goout,phaseT);}
-      else{drawGhost(.38+.12*Math.sin(tNow*5));drawMeter();bubble(sameNow&&sameT<5?u.same:u.wear,W/2,H*.86,fs,sameNow&&sameT<5?'#FFE3E8':'#fff');}}
-    if(phase==='switch')drawSwitch(u.swap,'',phaseT);
-    if(phase==='dance'){const n=Math.ceil(DANCE-phaseT),k=phaseT%1;
-      bigText(u.dance,W/2,H*.2,Math.min(76,W*.13),'#FF9FB0',1+.06*Math.sin(tNow*12));
-      if(n>0)bigText(String(n),W/2,H*.2+Math.min(90,W*.15),Math.min(70,W*.12),'#fff',1+.25*Math.max(0,1-k*4));
-      if(phaseT<1.4&&score>0)bubble(who==='duo'?(poser?'→ ':'')+u.yourturn+(poser?'':' ←'):u.yourturn,W/2,H*.82,fs);}
-    if(phase==='copy'){const t=who==='duo'?(poser===0?u.copyR:u.copyL):u.copy;bubble(t,W/2,H*.88,fs);}
-    // HUD: time and poses, drawn into the picture so it also shows on the big screen
-    const hf=Math.max(18,Math.min(28,W*.05));
-    bubble(Math.ceil(timeLeft)+' '+u.left,W*.5-hf*3.4,64+hf,hf);bubble(score+' / '+MAX,W*.5+hf*3.4,64+hf,hf,'#E6F7DE');
+    if(phase==='spin'||phase==='mix')drawWheel();
+    else{drawStage();
+      if(phase==='copy'||phase==='cheer'||phase==='laugh'){
+        if(who==='duo'){drawMeter(0,18+25);drawMeter(1,W-18-25);}else drawMeter(0,18+25);
+        if(phase==='copy'){drawCopyDots();const left=Math.ceil(copyTime()-phaseT);bubble('⏱ '+left,W/2,H-fs*2.2,fs,left<=3?'#FFE3E8':'#fff');}}
+      if(phase==='show'&&!target.frozen){const ln=ANIMALS[target.a].line[lang];bubble(ln,W/2,stageRect().y+stageRect().h+fs*2.4,fs);}}
+    // HUD: spin count and score(s)
+    const hf=Math.max(16,Math.min(24,W*.042)),hy=H-hf*1.6;
+    if(phase==='spin'||phase==='mix'){bubble(u.spin+' '+Math.min(SPINS,spinN+1)+' / '+SPINS,W*.5,64+hf*.2,hf);}
+    if(who==='duo'){bubble(String(score[0]),36,64+hf*.2,hf,'#DDF3FF');bubble(String(score[1]),W-36,64+hf*.2,hf,'#FFE3E8');}
+    else bubble('★ '+score[0],W-44,64+hf*.2,hf,'#E6F7DE');
   }
-  if(flash>0){ctx.fillStyle=`rgba(255,255,255,${flash*.8})`;ctx.fillRect(0,0,W,H);flash=Math.max(0,flash-dt*3);}
-  if(bigMsg&&tNow<bigMsgT){const k=1-Math.max(0,bigMsgT-tNow-1.2)*4;bigText(bigMsg,W/2,H*.4,Math.min(64,W*.1),'#FFD84D',Math.max(.6,Math.min(1,k)));}
+  if(bigMsg&&tNow<bigMsgT){const k=1-Math.max(0,bigMsgT-tNow-1.2)*4;bigText(bigMsg,W/2,H*.5,Math.min(64,W*.1),'#FFD84D',Math.max(.6,Math.min(1,k)));}
   pops=pops.filter(p=>(p.life-=dt)>0);
   for(const p of pops){p.vy+=H*1.2*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.life*5);ctx.globalAlpha=Math.min(1,p.life*2);sticker(ctx,starPath(12),'#FFD84D',2.5);ctx.restore();}
 }
-// menu: two little sticker beans — one strikes a pose, the other copies it a moment later
+// menu: two animals take turns striking poses (bear and flamingo, then others)
 function drawDemo(){
-  const poses=[[-150,-150,-30,-30],[-60,-120,-60,-120],[-170,-90,-10,-90],[-120,-120,-120,-120],[-40,-40,-140,-140]];
-  const i=Math.floor(tNow/2.4)%poses.length,k=(tNow%2.4)/2.4;
-  const bean=(cx,cy,s,col,pz)=>{const [l1,l2,r1,r2]=pz,arm=(sx,a1,a2)=>{ctx.lineCap='round';ctx.lineWidth=s*.13;ctx.strokeStyle=INK;
-      const e={x:sx+Math.cos(a1*Math.PI/180)*s*.35,y:cy-s*.15+Math.sin(a1*Math.PI/180)*s*.35},h={x:e.x+Math.cos(a2*Math.PI/180)*s*.32,y:e.y+Math.sin(a2*Math.PI/180)*s*.32};
-      ctx.beginPath();ctx.moveTo(sx,cy-s*.15);ctx.lineTo(e.x,e.y);ctx.lineTo(h.x,h.y);ctx.stroke();ctx.lineWidth=s*.08;ctx.strokeStyle=col;ctx.stroke();sticker(ctx,ell(h.x,h.y,s*.07,s*.07),col,3);};
-    arm(cx-s*.28,l1,l2);arm(cx+s*.28,180-r1,180-r2);
-    sticker(ctx,ell(cx,cy,s*.34,s*.48),col,4);sticker(ctx,ell(cx-s*.11,cy-s*.18,s*.05,s*.07),'#fff',2.5);sticker(ctx,ell(cx+s*.11,cy-s*.18,s*.05,s*.07),'#fff',2.5);
-    ctx.fillStyle=INK;ctx.fill(ell(cx-s*.1,cy-s*.17,s*.025,s*.035));ctx.fill(ell(cx+s*.12,cy-s*.17,s*.025,s*.035));
-    ctx.fillStyle='rgba(255,140,160,.6)';ctx.fill(ell(cx-s*.2,cy-s*.06,s*.05,s*.03));ctx.fill(ell(cx+s*.2,cy-s*.06,s*.05,s*.03));};
-  const s=Math.min(W*.3,H*.28),y=H*.78;
-  const lerp=(a,b,t)=>a.map((x,j)=>x+(b[j]-x)*t),prev=poses[(i+poses.length-1)%poses.length],cur=poses[i],e=t=>t<0?0:t>1?1:1-Math.pow(1-t,3);
-  bean(W/2-s*.62,y,s,'#7FC8F8',lerp(prev,cur,e(k*4)));
-  bean(W/2+s*.62,y,s,'#FF9FB0',lerp(prev,cur,e(k*4-1.6)));
+  const card=$('start').hidden?$('end'):$('start'),ct=card&&!card.hidden?card.getBoundingClientRect().top:H;
+  const i=Math.floor(tNow/2.4)%NS,j=(i+4)%NS,k=(tNow%2.4)/2.4,s=Math.max(40,Math.min(W*.26,H*.2,(ct-120)/1.75)),y=Math.min(H*.6,ct-s*1.05);
+  const ta=makeTarget(i),tb=makeTarget(j),wig=k<.35;
+  const wave=T=>wig?{...T.pose,uaL:T.pose.uaL+Math.sin(tNow*9)*40,uaR:T.pose.uaR-Math.sin(tNow*9)*40}:T.pose;
+  drawAnimal(ta,W/2-s*.75,y,s,tNow,{pose:wave(ta),dance:wig?1:0});
+  drawAnimal(tb,W/2+s*.75,y,s,tNow,{pose:wave(tb),dance:wig?1:0});
 }
 
 setLang(lang);loadBest();

@@ -355,7 +355,7 @@ function armMatch(target,actual){
   const tol=TOL[exact];
   if(target==='rest')return actual[0]<-40;
   const d=(x,y)=>Math.abs(((x-y+540)%360)-180);
-  return d(target[0],actual[0])<tol&&d(target[1],actual[1])<tol*1.25;
+  return d(target[0],actual[0])<tol&&d(target[1],actual[1])<tol;   // 14 Nov: one tolerance for every limb segment (no per-body-part weighting)
 }
 
 /* finger fallback */
