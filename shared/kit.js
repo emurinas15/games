@@ -195,6 +195,19 @@ const DRUM_FX = {
     g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.5 * v, t + .004); g.gain.exponentialRampToValueAtTime(.0001, t + .35);
     w.gain.value = .5; o.connect(g); g.connect(bus); g.connect(w); w.connect(S.BUS.rev); o.start(t); o.stop(t + .4); },
   // a round little bubble pop (m = pitch multiplier)
+  // soft cajon (14 Nov, Sprout folk): low wooden thump, and a gentle hand slap with a little snare buzz
+  '~cajonB'(t, v, bus) { const a = S.AC, o = a.createOscillator(), g = a.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(58, t + .12);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.7 * v, t + .006); g.gain.exponentialRampToValueAtTime(.0001, t + .26);
+    o.connect(g); g.connect(bus); o.start(t); o.stop(t + .3);
+    const s = noiseBuf(a, .05, 6), f = a.createBiquadFilter(), ng = a.createGain(); f.type = 'lowpass'; f.frequency.value = 900; ng.gain.value = .25 * v;
+    s.connect(f); f.connect(ng); ng.connect(bus); s.start(t); },
+  '~cajonS'(t, v, bus) { const a = S.AC, s = noiseBuf(a, .14, 5), f = a.createBiquadFilter(), g = a.createGain(), w = a.createGain();
+    f.type = 'bandpass'; f.frequency.value = 2300; f.Q.value = .9; g.gain.value = .55 * v; w.gain.value = .25;
+    s.connect(f); f.connect(g); g.connect(bus); g.connect(w); w.connect(S.BUS.rev); s.start(t);
+    const o = a.createOscillator(), og = a.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(230, t); o.frequency.exponentialRampToValueAtTime(170, t + .05);
+    og.gain.setValueAtTime(.0001, t); og.gain.exponentialRampToValueAtTime(.18 * v, t + .004); og.gain.exponentialRampToValueAtTime(.0001, t + .09);
+    o.connect(og); og.connect(bus); o.start(t); o.stop(t + .1); },
   '~bubble'(t, v, bus, p = 1) { const a = S.AC, o = a.createOscillator(), g = a.createGain(), w = a.createGain();
     o.type = 'sine'; o.frequency.setValueAtTime(380 * p, t); o.frequency.exponentialRampToValueAtTime(1300 * p, t + .07);
     g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.3 * v, t + .006); g.gain.exponentialRampToValueAtTime(.0001, t + .09);
