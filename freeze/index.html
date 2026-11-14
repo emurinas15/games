@@ -82,28 +82,28 @@ const UI={
   g1:"Raise a hand to spin the wheel. The animal dances, freezes into a funny pose, and you copy it — hold the copy until the jar fills. After a few spins come mix-ups: half one animal, half another. 8 spins a game. One player plays against the clock; two players race to copy first.",
   body:"Body",full:"Standing",seated:"Seated",who:"Players",solo:"One",duo:"Two",strict:"Copy",easy:"Easy",medium:"Medium",hard:"Hard",
   music:"Music",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
-  g2:"★ Standing: phone upright, about 2.5–3 m away, so the whole body is seen. Seated: arms and trunk only; the phone can be closer, about 1–1.5 m.",
+  g2:"★ Turn the phone sideways. Standing: about 2.5–3 m away, so the whole body is seen. Seated: arms and trunk only; the phone can be closer, about 1–1.5 m.",
   g3:"★ Two players: stand side by side, both in the picture — best on a big screen (📺) with the phone farther back and sideways.",
   g4:"★ Copy sets how close the copy must be. Start with Medium. Time to copy gets shorter and holds get longer as the game goes on.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
   sec2:"copies",of:" of ",over:["Nice try!","Well done!","Great copying!","Statue masters!"],again:"Play again",newbest:"New record!",bestis:"Best: ",
   ready:"Getting ready…",two:"Two players, side by side!",raise:"Raise a hand to spin!",mix:"MIX-UP!",freeze:"Freeze!",copy:"Copy me!",
   great:["Great copy!","Perfect!","You're a statue!","Nailed it!"],miss:["Hehe, too tricky!","Almost!","Next one!"],winL:"← Blue wins!",winR:"Pink wins! →",
-  spin:"Spin",left:"s",blue:"Blue",pink:"Pink",tie:"A tie!",nobody:"Step in front of the camera!",
+  spin:"Spin",left:"s",blue:"Blue",pink:"Pink",tie:"A tie!",nobody:"Step in front of the camera!",turn:"Turn the phone sideways to play",
   nocam:"No camera here — this game needs a camera.",aria:"Game area"},
  he:{title:"קופאים ומעתיקים",sub:"מסובבים את גלגל החיות, החיה קופאת — ומעתיקים את הפסל!",play:"שחקו",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
   g1:"מרימים יד כדי לסובב את הגלגל. החיה רוקדת, קופאת בתנוחה מצחיקה, ומעתיקים אותה — מחזיקים עד שהצנצנת מתמלאת. אחרי כמה סיבובים מגיעים ערבובים: חצי חיה אחת וחצי חיה אחרת. 8 סיבובים במשחק. שחקן אחד משחק נגד השעון; שני שחקנים מתחרים מי מעתיק ראשון.",
   body:"גוף",full:"עמידה",seated:"ישיבה",who:"שחקנים",solo:"אחד",duo:"שניים",strict:"העתקה",easy:"קל",medium:"בינוני",hard:"קשה",
   music:"מוזיקה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
-  g2:"★ עמידה: טלפון עומד, במרחק של בערך 2.5–3 מ׳, כך שכל הגוף נראה. ישיבה: רק ידיים וגו; אפשר לקרב את הטלפון, בערך מטר עד מטר וחצי.",
+  g2:"★ מסובבים את הטלפון לרוחב. עמידה: במרחק של בערך 2.5–3 מ׳, כך שכל הגוף נראה. ישיבה: רק ידיים וגו; אפשר לקרב את הטלפון, בערך מטר עד מטר וחצי.",
   g3:"★ שני שחקנים: עומדים זה לצד זה, שניהם בתמונה — הכי טוב על מסך גדול (📺) כשהטלפון רחוק יותר ולרוחב.",
   g4:"★ ״העתקה״ קובע כמה מדויקת צריכה להיות ההעתקה. מתחילים ב״בינוני״. הזמן להעתקה מתקצר וההחזקה מתארכת ככל שהמשחק מתקדם.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
   sec2:"העתקות",of:" מתוך ",over:["ניסיון יפה!","כל הכבוד!","העתקות מעולות!","אלופי הפסלים!"],again:"עוד פעם",newbest:"שיא חדש!",bestis:"השיא: ",
   ready:"מתכוננים…",two:"שני שחקנים, זה לצד זה!",raise:"הרימו יד כדי לסובב!",mix:"ערבוב!",freeze:"קופאים!",copy:"תעתיקו אותי!",
   great:["העתקה מעולה!","מושלם!","אתם פסל!","בול!"],miss:["חחח, קשה מדי!","כמעט!","הבא!"],winL:"← הכחול ניצח!",winR:"הוורוד ניצח! →",
-  spin:"סיבוב",left:"שנ׳",blue:"כחול",pink:"ורוד",tie:"תיקו!",nobody:"היכנסו מול המצלמה!",
+  spin:"סיבוב",left:"שנ׳",blue:"כחול",pink:"ורוד",tie:"תיקו!",nobody:"היכנסו מול המצלמה!",turn:"סובבו את הטלפון לרוחב כדי לשחק",
   nocam:"אין כאן מצלמה — המשחק הזה צריך מצלמה.",aria:"אזור המשחק"}
 };
 
@@ -204,30 +204,67 @@ function compare(T,P,tol){
 }
 
 /* ================= THE ANIMALS ================= */
-// colours: body, light (belly/muzzle), hand/foot colour. Poses: arms + legs (screen-space angles)
-const A=(id,en,he,body,light,feet,pose,line)=>({id,en,he,body,light,feet,pose,line});
+/* 14 Nov (Edgar): no dancing; each animal has 3 poses, picked at random (surprise), with clearly different legs.
+   Leg patterns (screen-space, detectable from the front in 2D): together · wide · wide squat · side lunge ·
+   one leg lifted out to the side · tree (foot to the other knee) · crossed. Forward knee lifts are avoided:
+   a front camera can't see them. */
+const LG={N:[90,90,90,90],W:[112,112,68,68],SQ:[150,88,30,92],LL:[142,92,66,66],LR:[114,114,38,88],
+  UL:[148,148,90,90],UR:[90,90,32,32],TL:[160,15,90,90],TR:[90,90,20,165],X:[80,62,100,118],HS:[118,78,62,102]};
+const PZ=(en,he,arms,legs,line)=>({en,he,pose:P(...arms,...LG[legs]),legs,line});
+const A=(id,en,he,body,light,feet,poses)=>({id,en,he,body,light,feet,poses});
 const P=(uaL,faL,uaR,faR,thL=90,shL=90,thR=90,shR=90)=>({uaL,faL,uaR,faR,thL,shL,thR,shR});
 const ANIMALS=[
-  A('sprout','Sprout','נבט','#7DCB6B','#B6E59E','#6CC56B',P(-135,-135,-45,-45),{en:"Sunshine, everybody!",he:"שמש לכולם!"}),
-  A('bear','Bear','דוב','#B07A4F','#E8C9A0','#8A5A36',P(150,40,30,140,110,100,70,80),{en:"Bear-y strong!",he:"דוב חזק!"}),
-  A('crab','Crab','סרטן','#F06A5A','#FFB3A6','#F06A5A',P(180,-90,0,-90,140,95,40,85),{en:"Snip snap!",he:"קליק קלאק!"}),
-  A('frog','Frog','צפרדע','#7DCB6B','#D8F2B8','#5DB04E',P(140,80,40,100,150,70,30,110),{en:"Ribbit squat!",he:"קוואק סקוואט!"}),
-  A('flamingo','Flamingo','פלמינגו','#FF9FB0','#FFD3DC','#F28AA0',P(-165,-150,-15,-30,90,90,20,100),{en:"One leg, no wobbles!",he:"רגל אחת, בלי להתנדנד!"}),
-  A('penguin','Penguin','פינגווין','#3E4C6E','#F7F3EA','#FF9A3D',P(110,115,70,65,85,85,95,95),{en:"Flap flap!",he:"פלאפ פלאפ!"}),
-  A('bunny','Bunny','ארנב','#F3EEE4','#FFD3DC','#F3EEE4',P(-135,-25,-45,-155),{en:"Bunny ears!",he:"אוזני ארנב!"}),
-  A('elephant','Elephant','פיל','#A9B4C2','#D6DDE6','#8E99A8',P(-170,-60,-10,-120,100,90,80,90),{en:"Flappy ears!",he:"אוזניים מנפנפות!"}),
-  A('duck','Duck','ברווז','#FFD84D','#FFF1B8','#FF9A3D',P(150,30,30,150,100,80,80,100),{en:"Quack wings!",he:"כנפי קוואק!"}),
-  A('spider','Spider','עכביש','#6B4E9B','#B9A3E0','#6B4E9B',P(-150,-150,-30,-30,120,120,60,60),{en:"Super star spider!",he:"עכביש כוכב!"})
+  A('sprout','Sprout','נבט','#7DCB6B','#B6E59E','#6CC56B',[
+    PZ('Sunshine','שמש',[-135,-135,-45,-45],'N',{en:"Sunshine, everybody!",he:"שמש לכולם!"}),
+    PZ('Windy day','יום עם רוח',[-60,-45,-35,-30],'X',{en:"Whoosh, the wind!",he:"וווש, רוח!"}),
+    PZ('Big leaves','עלים גדולים',[180,180,0,0],'W',{en:"Look at my leaves!",he:"תראו את העלים שלי!"})]),
+  A('bear','Bear','דוב','#B07A4F','#E8C9A0','#8A5A36',[
+    PZ('Bear-y strong','דוב חזק',[150,40,30,140],'W',{en:"Bear-y strong!",he:"דוב חזק!"}),
+    PZ('Big roar','שאגה גדולה',[170,-120,10,-60],'SQ',{en:"ROAAAR!",he:"רוווארר!"}),
+    PZ('Honey reach','להגיע לדבש',[115,10,-90,-90],'UL',{en:"Honey up there!",he:"הדבש שם למעלה!"})]),
+  A('crab','Crab','סרטן','#F06A5A','#FFB3A6','#F06A5A',[
+    PZ('Snip snap','קליק קלאק',[180,-90,0,-90],'SQ',{en:"Snip snap!",he:"קליק קלאק!"}),
+    PZ('Sideways','הולך הצידה',[180,180,165,180],'LL',{en:"Sideways only!",he:"רק הצידה!"}),
+    PZ('Claws up','צבתות למעלה',[-120,-60,-60,-120],'W',{en:"Pinch the sky!",he:"צובטים את השמיים!"})]),
+  A('frog','Frog','צפרדע','#7DCB6B','#D8F2B8','#5DB04E',[
+    PZ('Ribbit squat','קוואק סקוואט',[140,80,40,100],'SQ',{en:"Ribbit squat!",he:"קוואק סקוואט!"}),
+    PZ('Big jump','קפיצה גדולה',[-140,-140,-40,-40],'W',{en:"Boing!",he:"בוינג!"}),
+    PZ('Fly catcher','תופס זבובים',[150,40,0,0],'LR',{en:"Got the fly!",he:"תפסתי זבוב!"})]),
+  A('flamingo','Flamingo','פלמינגו','#FF9FB0','#FFD3DC','#F28AA0',[
+    PZ('One leg','רגל אחת',[-165,-150,-15,-30],'TR',{en:"One leg, no wobbles!",he:"רגל אחת, בלי להתנדנד!"}),
+    PZ('Long stretch','מתיחה ארוכה',[-100,-70,-80,-110],'UR',{en:"So tall!",he:"כמה גבוה!"}),
+    PZ('Other leg','הרגל השנייה',[160,130,20,50],'TL',{en:"Now the other leg!",he:"עכשיו הרגל השנייה!"})]),
+  A('penguin','Penguin','פינגווין','#3E4C6E','#F7F3EA','#FF9A3D',[
+    PZ('Flap flap','פלאפ פלאפ',[110,115,70,65],'W',{en:"Flap flap!",he:"פלאפ פלאפ!"}),
+    PZ('Ice skater','מחליק על הקרח',[180,180,0,0],'UR',{en:"Wheee, ice!",he:"ויייי, קרח!"}),
+    PZ('Dive','צלילה',[-95,-88,-85,-92],'N',{en:"Splash dive!",he:"צלילה!"})]),
+  A('bunny','Bunny','ארנב','#F3EEE4','#FFD3DC','#F3EEE4',[
+    PZ('Bunny ears','אוזני ארנב',[-135,-25,-45,-155],'N',{en:"Bunny ears!",he:"אוזני ארנב!"}),
+    PZ('Ready to hop','מוכן לקפוץ',[100,-60,80,-120],'HS',{en:"Hop hop!",he:"הופ הופ!"}),
+    PZ('Thump thump','טופף טופף',[150,40,30,140],'UL',{en:"Thump thump!",he:"טופף טופף!"})]),
+  A('elephant','Elephant','פיל','#A9B4C2','#D6DDE6','#8E99A8',[
+    PZ('Flappy ears','אוזניים מנפנפות',[-170,-60,-10,-120],'W',{en:"Flappy ears!",he:"אוזניים מנפנפות!"}),
+    PZ('Trunk swing','חדק מתנדנד',[70,80,110,100],'SQ',{en:"Swing the trunk!",he:"מנדנדים את החדק!"}),
+    PZ('Trumpet','חצוצרה',[100,95,-70,-150],'UR',{en:"Toot toot!",he:"טוּט טוּט!"})]),
+  A('duck','Duck','ברווז','#FFD84D','#FFF1B8','#FF9A3D',[
+    PZ('Quack wings','כנפי קוואק',[150,30,30,150],'HS',{en:"Quack wings!",he:"כנפי קוואק!"}),
+    PZ('Wing flap','נפנוף כנפיים',[-150,-100,-30,-80],'X',{en:"Flap to fly!",he:"מנפנפים ועפים!"}),
+    PZ('Splash','שפריץ',[180,180,0,0],'LL',{en:"Splash!",he:"שפריץ!"})]),
+  A('spider','Spider','עכביש','#6B4E9B','#B9A3E0','#6B4E9B',[
+    PZ('Super star','כוכב',[-150,-150,-30,-30],'W',{en:"Super star spider!",he:"עכביש כוכב!"}),
+    PZ('Web climb','טיפוס ברשת',[-120,-80,60,100],'UL',{en:"Climbing my web!",he:"מטפס ברשת!"}),
+    PZ('Spider sprint','ריצת עכביש',[180,180,165,180],'LR',{en:"Zoom!",he:"זום!"})])
 ];
 const IDX=Object.fromEntries(ANIMALS.map((a,i)=>[a.id,i]));
-// mixed name: first half of A + second half of B ("Frog"+"Flamingo" -> "Frmingo"... tuned to sound silly)
 function mixName(a,b,l){const x=a[l],y=b[l];return x.slice(0,Math.max(2,Math.ceil(x.length*.6)))+y.slice(-Math.max(2,Math.ceil(y.length*.6)));}   // Frog+Flamingo -> Fromingo
-// a target = {top: animal (head/body/arms or left arm), bot: animal (legs or right arm), pose, name}
-function makeTarget(a,b){
-  const pa=ANIMALS[a].pose,pb=ANIMALS[b??a].pose,pose={...pa};
-  if(b!=null){ if(bodyMode==='full'){for(const k of LEGS)pose[k]=pb[k];} else {pose.uaR=pb.uaR;pose.faR=pb.faR;} }
+// a target = {a: animal for head/body/arms (or left arm), b: animal for legs (or right arm), pa/pb: which of their 3 poses}
+function makeTarget(a,b,pa,pb){
+  pa=pa??Math.floor(Math.random()*3);const A1=ANIMALS[a].poses[pa];
+  if(b==null){b=a;pb=pa;} else pb=pb??Math.floor(Math.random()*3);
+  const A2=ANIMALS[b].poses[pb],pose={...A1.pose};
+  if(b!==a){ if(bodyMode==='full'){for(const k of LEGS)pose[k]=A2.pose[k];} else {pose.uaR=A2.pose.uaR;pose.faR=A2.pose.faR;} }
   if(bodyMode!=='full')for(const k of LEGS)pose[k]=90;
-  return {a,b:b??a,pose,mix:b!=null&&b!==a};
+  return {a,b,pa,pb,pose,mix:b!==a,line:A1.line};
 }
 
 /* draw a sticker animal statue in the pose. (x,y) = centre of the body, s = size (about the body height) */
@@ -346,8 +383,9 @@ function frame(now){
   const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;tNow+=dt;
   if(camOK)track(now);
   const u=UI[lang];
+  if(portraitPlay()){render(dt);requestAnimationFrame(frame);return;}   // the game waits until the phone is turned sideways
   if(state==='setup'){
-    if(guide){const p=people[0];if(guide.update(dt,p?{x:p.nose.x,y:p.nose.y,size:p.sw}:null,{x:0,y:0,w:W,h:H})==='done'){state='count';countT=tNow;}}
+    if(guide){const p=people[0];if(guide.update(dt,p?{x:p.nose.x,y:p.nose.y,size:p.sw}:null,playRect())==='done'){state='count';countT=tNow;}}
     else{ if(people.length>=2){awayT+=dt;if(awayT>1){state='count';countT=tNow;awayT=0;}}else awayT=0; }
   }
   else if(state==='count'){ if(tNow-countT>=3)nextSpin(); }
@@ -359,9 +397,9 @@ function frame(now){
         else{ target=makeTarget(a);setPhase('show');SFX.boing(); } } }
     else if(phase==='mix'){ if(phaseT>1.1){ wheelUpdate(dt);
       if(WH.result>=0&&WH.stopT>.6){let b=WH.result;if(b===target.a)b=(b+1)%NS;target=makeTarget(target.a,b);setPhase('show');SFX.boing();} } }
-    else if(phase==='show'){ // the animal dances, then snaps into the statue
-      if(phaseT>1.4&&!target.frozen){target.frozen=true;FX.freeze();say(u.freeze,.9);for(let i=0;i<18;i++)frost.push({a:Math.random()*6.3,r:0,v:.6+Math.random(),life:1});}
-      if(phaseT>2.2){setPhase('copy');meters=[0,0];spinN++;} }
+    else if(phase==='show'){ // 14 Nov: no dancing — the statue pops in already frozen in one of the animal's 3 poses
+      if(!target.frozen){target.frozen=true;FX.freeze();say(u.freeze,.9);for(let i=0;i<18;i++)frost.push({a:Math.random()*6.3,r:0,v:.6+Math.random(),life:1});}
+      if(phaseT>1.2){setPhase('copy');meters=[0,0];spinN++;} }
     else if(phase==='copy'){
       const n=who==='duo'?2:1;lastMatch=[];
       for(let i=0;i<n;i++){const p=who==='duo'?people[i]:people[0];
@@ -392,22 +430,31 @@ function bigText(txt,x,y,fs,col='#FFD84D',sc=1){
   ctx.save();ctx.translate(x,y);ctx.scale(sc,sc);ctx.font=`900 ${fs}px Grandstander,Fredoka,sans-serif`;ctx.direction=lang==='he'?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.lineJoin='round';ctx.lineWidth=fs*.14;ctx.strokeStyle=INK;ctx.fillStyle=INK;ctx.fillText(txt,0,fs*.08);ctx.strokeText(txt,0,0);ctx.fillStyle=col;ctx.fillText(txt,0,0);ctx.restore();
 }
-// the statue stage: a rounded card at the top, with a pedestal (kept apart from the player's picture)
-function stageRect(){const land=W>H*1.1,h=land?H*.42:Math.min(H*.3,W*.62),w=Math.min(W*.5,h*1.05);return {x:W/2-w/2,y:60+(land?6:0),w,h};}
-function animalName(T){if(!T.mix)return ANIMALS[T.a][lang];return mixName(ANIMALS[T.a],ANIMALS[T.b],lang);}
+/* 14 Nov (Edgar): the game is played with the phone SIDEWAYS. The statue stands on a card on the left;
+   the player plays in the rest of the picture, so their face and arms stay visible. */
+const portraitPlay=()=>H>W*1.05&&['setup','count','play'].includes(state);
+function stageRect(){const y=58,h=H-y-Math.max(56,H*.11),w=Math.min(W*.3,h*.82);return {x:12,y,w,h};}
+function playRect(){const R=stageRect(),x=R.x+R.w+8;return {x,y:0,w:W-x,h:H};}
+function animalName(T){if(!T.mix)return ANIMALS[T.a][lang]+' · '+ANIMALS[T.a].poses[T.pa][lang];return mixName(ANIMALS[T.a],ANIMALS[T.b],lang);}
+function drawTurnPhone(){
+  ctx.fillStyle='rgba(255,248,236,.92)';ctx.fillRect(0,0,W,H);
+  const cx=W/2,cy=H*.42,s=Math.min(W,H)*.22,k=(tNow%2.4)/2.4,rot=-Math.PI/2*Math.min(1,Math.max(0,(k-.3)*3));
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(rot);const p=new Path2D();p.roundRect(-s*.32,-s*.58,s*.64,s*1.16,s*.12);sticker(ctx,p,'#fff',5);
+  ctx.fillStyle='#DDF3FF';ctx.fillRect(-s*.24,-s*.46,s*.48,s*.92);ctx.restore();
+  ctx.strokeStyle=INK;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.arc(cx,cy,s*.85,-Math.PI*.9,-Math.PI*.55);ctx.stroke();
+  bubble(UI[lang].turn,W/2,H*.72,Math.max(18,Math.min(26,W*.05)));
+}
 function drawStage(){
-  if(!target||!target.pose)return;const R=stageRect(),s=R.h*.6,cx=R.x+R.w/2,cy=R.y+R.h*.5;
+  if(!target||!target.pose)return;const R=stageRect(),s=Math.min(R.h*.5,R.w*.95),cx=R.x+R.w/2,cy=R.y+R.h*.5;
   ctx.save();ctx.fillStyle='rgba(255,248,236,.86)';ctx.strokeStyle=INK;ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(R.x,R.y,R.w,R.h,24);ctx.fill();ctx.stroke();
   // pedestal
   sticker(ctx,(()=>{const p=new Path2D();p.roundRect(cx-s*.5,R.y+R.h-s*.16,s,s*.13,8);return p;})(),'#E9DCC6',3);
   ctx.save();const p=new Path2D();p.roundRect(R.x,R.y,R.w,R.h,24);ctx.clip(p);
-  const frozen=phase!=='show'||target.frozen,happy=phase==='cheer'||phase==='laugh';
-  let pose=target.pose,hop=0,dance=0;
-  if(!frozen||happy){ // dancing: arms wave around the target, a little hop
-    const w=Math.sin(tNow*9)*40,v=Math.cos(tNow*9)*25;pose={...target.pose,uaL:target.pose.uaL+w,faL:target.pose.faL+v,uaR:target.pose.uaR-w,faR:target.pose.faR-v};
-    hop=-Math.abs(Math.sin(tNow*9))*s*.06;dance=1;}
+  const happy=phase==='cheer',frozen=!happy;
+  const hop=happy?-Math.abs(Math.sin(tNow*9))*s*.06:0,pop=phase==='show'?Math.min(1,phaseT/.3)*(1+.15*Math.sin(Math.min(1,phaseT/.3)*Math.PI)):1;
   const d=s*.8,ped=R.y+R.h-s*.16,ay=bodyMode==='full'?ped-.98*d:ped-.55*d;
-  drawAnimal(target,cx,ay,d,tNow,{pose,hop,dance,happy});
+  ctx.save();ctx.translate(cx,ped);ctx.scale(pop,pop);ctx.translate(-cx,-ped);
+  drawAnimal(target,cx,ay,d,tNow,{hop,happy});ctx.restore();
   if(frozen&&!happy){ // icy statue shine
     ctx.fillStyle='rgba(190,230,255,.28)';ctx.fillRect(R.x,R.y,R.w,R.h);
     ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=3;for(let i=0;i<3;i++){const x0=cx-s*.4+i*s*.32,y0=R.y+R.h*.25+((tNow*30+i*40)%(R.h*.4));ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x0+10,y0-10);ctx.stroke();}}
@@ -415,7 +462,8 @@ function drawStage(){
   // frost burst
   frost=frost.filter(f=>(f.life-=.02)>0);for(const f of frost){f.r+=f.v*6;ctx.save();ctx.translate(cx+Math.cos(f.a)*f.r*s*.04,cy+Math.sin(f.a)*f.r*s*.04);ctx.globalAlpha=f.life;sticker(ctx,starPath(7),'#DDF3FF',2);ctx.restore();}
   // name tag
-  const fs=Math.max(16,Math.min(26,R.w*.08));bubble(animalName(target),cx,R.y+R.h+fs*.2,fs,target.mix?'#FFE3E8':'#fff');
+  const fs=Math.max(15,Math.min(24,R.w*.075));bubble(animalName(target),cx,R.y+R.h+fs*.2,fs,target.mix?'#FFE3E8':'#fff');
+  if(phase==='show'||(phase==='copy'&&phaseT<1.5))bubble(target.line[lang],cx,R.y+fs*1.4,fs*.9,'#FFF1B8');
   ctx.restore();
 }
 function drawWheel(){
@@ -462,15 +510,15 @@ function render(dt){
   else drawRoom(ctx,W,H);
   if(state==='menu'||state==='over'){drawDemo();return;}
   const fs=Math.max(18,Math.min(26,W*.045));
-  if(state==='setup'){ if(guide)guide.draw(ctx,{x:0,y:0,w:W,h:H},lang); else bubble(u.two,W/2,H*.16,fs); }
+  if(portraitPlay()){drawTurnPhone();return;}
+  if(state==='setup'){ if(guide)guide.draw(ctx,playRect(),lang); else bubble(u.two,W/2,H*.16,fs); }
   else if(state==='count'){const n=3-Math.floor(tNow-countT),k=(tNow-countT)%1;if(n>0)bigText(String(n),W/2,H*.42,Math.min(150,H*.22),'#fff',1+.25*Math.max(0,1-k*4));}
   else if(state==='play'){
     if(phase==='spin'||phase==='mix')drawWheel();
     else{drawStage();
       if(phase==='copy'||phase==='cheer'||phase==='laugh'){
-        if(who==='duo'){drawMeter(0,18+25);drawMeter(1,W-18-25);}else drawMeter(0,18+25);
-        if(phase==='copy'){drawCopyDots();const left=Math.ceil(copyTime()-phaseT);bubble('⏱ '+left,W/2,H-fs*2.2,fs,left<=3?'#FFE3E8':'#fff');}}
-      if(phase==='show'&&!target.frozen){const ln=ANIMALS[target.a].line[lang];bubble(ln,W/2,stageRect().y+stageRect().h+fs*2.4,fs);}}
+        const PR=playRect();if(who==='duo'){drawMeter(0,PR.x+30);drawMeter(1,W-43);}else drawMeter(0,W-43);
+        if(phase==='copy'){drawCopyDots();const left=Math.ceil(copyTime()-phaseT);bubble('⏱ '+left,PR.x+PR.w/2,H-fs*1.6,fs,left<=3?'#FFE3E8':'#fff');}}}
     // HUD: spin count and score(s)
     const hf=Math.max(16,Math.min(24,W*.042)),hy=H-hf*1.6;
     if(phase==='spin'||phase==='mix'){bubble(u.spin+' '+Math.min(SPINS,spinN+1)+' / '+SPINS,W*.5,64+hf*.2,hf);}
@@ -485,10 +533,8 @@ function render(dt){
 function drawDemo(){
   const card=$('start').hidden?$('end'):$('start'),ct=card&&!card.hidden?card.getBoundingClientRect().top:H;
   const i=Math.floor(tNow/2.4)%NS,j=(i+4)%NS,k=(tNow%2.4)/2.4,s=Math.max(40,Math.min(W*.26,H*.2,(ct-120)/1.75)),y=Math.min(H*.6,ct-s*1.05);
-  const ta=makeTarget(i),tb=makeTarget(j),wig=k<.35;
-  const wave=T=>wig?{...T.pose,uaL:T.pose.uaL+Math.sin(tNow*9)*40,uaR:T.pose.uaR-Math.sin(tNow*9)*40}:T.pose;
-  drawAnimal(ta,W/2-s*.75,y,s,tNow,{pose:wave(ta),dance:wig?1:0});
-  drawAnimal(tb,W/2+s*.75,y,s,tNow,{pose:wave(tb),dance:wig?1:0});
+  const n=Math.floor(tNow/2.4),pi=n%3,ta=makeTarget(i,null,pi),tb=makeTarget(j,null,(pi+1)%3),pop=Math.min(1,k*5);
+  for(const [T,x] of [[ta,W/2-s*.75],[tb,W/2+s*.75]]){ctx.save();ctx.translate(x,y+s);ctx.scale(pop,pop);ctx.translate(-x,-y-s);drawAnimal(T,x,y,s,tNow,{});ctx.restore();}
 }
 
 setLang(lang);loadBest();
