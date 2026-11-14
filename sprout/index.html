@@ -460,8 +460,14 @@ function render(now,dt){
       const okAll=state==='celebrate';drawHandLeaf(kid.hands.L.x,kid.hands.L.y,okAll||kid.okL,s,tNow);drawHandLeaf(kid.hands.R.x,kid.hands.R.y,okAll||kid.okR,s,tNow);}
   }
   // sprout
-  const size=playing?Math.min((spR.h-56)/1.85,spR.w/1.45):Math.min(spR.h*.45,spR.w*.55);
-  const cx=spR.x+spR.w/2, by=spR.y+spR.h*(playing?.96:(portrait?.6:.75));
+  // start / end screen: pot sits low, just above the grown-ups card (not floating mid-screen)
+  let size,by,cx=spR.x+spR.w/2;
+  if(playing){size=Math.min((spR.h-56)/1.85,spR.w/1.45);by=spR.y+spR.h*.96;}
+  else{let floor=spR.y+spR.h*.97,maxW=spR.w*.55;const cd=[$('start'),$('end')].find(e=>e&&!e.hidden);
+    if(cd){const r=cd.getBoundingClientRect(),t=r.top-6,side=r.left-spR.x-8;
+      if(t<spR.y+170&&side>130){cx=spR.x+side/2;maxW=side*.62;} // short landscape: stand beside the card
+      else floor=Math.min(floor,Math.max(t,spR.y+120));}
+    by=floor;size=Math.min(spR.h*.45,maxW,(by-spR.y-30)/1.85);}
   drawSprout(cx,by,size,tNow);
   // bubble & counter placement
   const b=$('bubble');b.style.left=(spR.x+spR.w/2)+'px';b.style.top=(spR.y+8)+'px';
