@@ -86,7 +86,7 @@ const UI={
   g4:"★ Copy sets how close the copy must be. Start with Medium.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
   left:"s",copies:"poses",best:"best",sec2:"poses copied",over:["Well done!","Great copying!","Super poses!","Pose masters!"],win:"All 20 poses!",again:"Play again",newbest:"New record!",bestis:"Best: ",
-  ready:"Getting ready…",two:"Two players, side by side!",dance:"Dance!",freeze:"Freeze!",hold:"Hold it…",
+  ready:"Getting ready…",two:"Two players, side by side!",wheel:"Both raise a hand to stop the wheel!",wheelone:"Now the other hand-raiser…",startsL:"← You start!",startsR:"You start! →",dance:"Dance!",freeze:"Freeze!",hold:"Hold it…",
   used:"That pose was already used — make a new one!",plain:"Make a funny pose!",copyme:"Copy me!",
   stepout:"Next player — step in!",swap:"Switch players!",goout:"Step out of the picture",same:"A new player, please!",wear:"Step into the pose!",copy:"Copy the pose!",copyR:"Copy the pose →",copyL:"← Copy the pose",great:["Great copy!","Perfect!","Yes!","Nailed it!"],
   newone:"Let's make a new pose!",yourturn:"Your turn to dance!",nobody:"Step in front of the camera!",
@@ -101,7 +101,7 @@ const UI={
   g4:"★ ״העתקה״ קובע כמה מדויקת צריכה להיות ההעתקה. מתחילים ב״בינוני״.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
   left:"שנ׳",copies:"תנוחות",best:"שיא",sec2:"תנוחות הועתקו",over:["כל הכבוד!","העתקות מעולות!","תנוחות על!","אלופי התנוחות!"],win:"כל 20 התנוחות!",again:"עוד פעם",newbest:"שיא חדש!",bestis:"השיא: ",
-  ready:"מתכוננים…",two:"שני שחקנים, זה לצד זה!",dance:"רוקדים!",freeze:"קופאים!",hold:"מחזיקים…",
+  ready:"מתכוננים…",two:"שני שחקנים, זה לצד זה!",wheel:"שניכם מרימים יד כדי לעצור את הגלגל!",wheelone:"עכשיו השני מרים יד…",startsL:"← אתה מתחיל!",startsR:"אתה מתחיל! →",dance:"רוקדים!",freeze:"קופאים!",hold:"מחזיקים…",
   used:"התנוחה הזאת כבר הייתה — עשו חדשה!",plain:"עשו תנוחה מצחיקה!",copyme:"העתיקו אותי!",
   stepout:"השחקן הבא — להיכנס!",swap:"מחליפים שחקנים!",goout:"צאו מהתמונה",same:"שחקן חדש, בבקשה!",wear:"היכנסו לתוך התנוחה!",copy:"העתיקו את התנוחה!",copyR:"העתיקו את התנוחה ←",copyL:"→ העתיקו את התנוחה",great:["העתקה מעולה!","מושלם!","יש!","בול!"],
   newone:"בואו נעשה תנוחה חדשה!",yourturn:"התור שלכם לרקוד!",nobody:"היכנסו מול המצלמה!",
@@ -112,7 +112,7 @@ const ROUND=60,MAX=20,DANCE=3,GIVEUP=15,HOLD=1.0;
 const TOL={easy:42,medium:32,hard:23};          // degrees per limb
 let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
 let bodyMode=LS.get('fc-body','full'); if(!['full','seated'].includes(bodyMode))bodyMode='full';
-let who=LS.get('fc-who','turns'); if(!['turns','duo'].includes(who))who='turns';
+let who=LS.get('fc-who2','duo'); if(!['turns','duo'].includes(who))who='duo';   // 14 Nov: side by side is the main game
 let strict=LS.get('fc-strict','medium'); if(!TOL[strict])strict='medium';
 let best=0; const bestKey=()=>'fc-best-'+bodyMode+who+strict; const loadBest=()=>{best=+LS.get(bestKey(),'0')||0;};
 S.track='dance'; S.amb='none'; S.ambOn=false;
@@ -138,7 +138,7 @@ function setLang(l){
 $('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
 const segBind=(id,fn)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{fn(b.dataset.v);loadBest();segs();});
 segBind('body-seg',v=>{bodyMode=v;LS.set('fc-body',v);});
-segBind('who-seg',v=>{who=v;LS.set('fc-who',v);});
+segBind('who-seg',v=>{who=v;LS.set('fc-who2',v);});
 segBind('strict-seg',v=>{strict=v;LS.set('fc-strict',v);});
 
 /* ================= CANVAS ================= */
@@ -297,6 +297,57 @@ function fillEnd(nb){const u=UI[lang];$('final').textContent=score;$('newbest').
 const posers=()=>who==='duo'?people[poser]:people[0];
 const copier=()=>who==='duo'?people[1-poser]:people[0];
 
+/* ===== who starts? (14 Nov, Edgar) — side by side: a wheel with both players' live faces spins until BOTH raise a hand.
+   Then it always slows down over exactly 3 s with the same braking, so where it stops depends only on when the hands
+   went up: it looks random, but practised players can time it. Left player = blue slices, right player = pink. ===== */
+const WH_N=6,WH_W=Math.PI*2*.75,WH_STOP=3;   // 6 slices, 0.75 turns a second, 3 s braking
+const WH={ang:0,stopT:-1,ang0:0,raise:[0,0],up:[false,false],faces:[null,null],faceT:0,done:-1,win:0,lastSlice:-1};
+function wheelStart(){Object.assign(WH,{ang:Math.random()*Math.PI*2,stopT:-1,raise:[0,0],up:[false,false],faces:[null,null],faceT:0,done:-1,lastSlice:-1});}
+const handUp=p=>{const l=p.lm;return [15,16].some(i=>l[i].v>.5&&l[i].y<l[0].y-p.sw*.15);};
+function faceCrop(p,old){
+  const vw=video.videoWidth,vh=video.videoHeight;if(!vw)return old;const r=p.raw;
+  const sz=Math.max(40,Math.hypot((r[11].x-r[12].x)*vw,(r[11].y-r[12].y)*vh)*.95),cx=r[0].x*vw,cy=r[0].y*vh-sz*.08;
+  const c=old||document.createElement('canvas');c.width=c.height=112;const x=c.getContext('2d');
+  x.save();x.translate(112,0);x.scale(-1,1);x.drawImage(video,cx-sz/2,cy-sz/2,sz,sz,0,0,112,112);x.restore();return c;}
+const sliceAt=a=>{const r=((-Math.PI/2-a)%(Math.PI*2)+Math.PI*4)%(Math.PI*2);return Math.floor(r/(Math.PI*2/WH_N));};
+function wheelUpdate(dt){
+  const u=UI[lang];
+  WH.faceT-=dt;if(WH.faceT<=0&&people.length>=2&&WH.done<0){WH.faceT=.1;for(const i of [0,1])WH.faces[i]=faceCrop(people[i],WH.faces[i]);}
+  if(WH.stopT<0){
+    WH.ang+=WH_W*dt;
+    for(const i of [0,1]){const p=people[i];WH.up[i]=!!(p&&handUp(p));WH.raise[i]=WH.up[i]?WH.raise[i]+dt:0;}
+    if(WH.raise[0]>.25&&WH.raise[1]>.25){WH.stopT=0;WH.ang0=WH.ang;FX.whoosh();}
+  } else if(WH.done<0){
+    WH.stopT+=dt;const t=Math.min(WH.stopT,WH_STOP);WH.ang=WH.ang0+WH_W*(t-t*t/(2*WH_STOP));   // same braking every time
+    if(WH.stopT>=WH_STOP){WH.done=0;WH.win=sliceAt(WH.ang)%2;poser=WH.win;FX.great();}
+  } else { WH.done+=dt; if(WH.done>2.2){state='count';countT=tNow;} }
+  const sl=sliceAt(WH.ang);if(sl!==WH.lastSlice){if(WH.lastSlice>=0&&WH.stopT>=0&&WH.done<0)tone({f0:1300,dur:.03,type:'triangle',vol:.1});WH.lastSlice=sl;}
+}
+function drawWheel(){
+  const u=UI[lang],cx=W/2,cy=H*.5,R=Math.min(W,H)*.27,cols=['#7FC8F8','#FF9FB0'],seg=Math.PI*2/WH_N;
+  ctx.save();ctx.translate(cx,cy);
+  ctx.fillStyle=INK;ctx.beginPath();ctx.arc(0,6,R+8,0,7);ctx.fill();
+  for(let j=0;j<WH_N;j++){const a0=WH.ang+j*seg,a1=a0+seg,pl=j%2,win=WH.done>=0&&pl===WH.win;
+    ctx.save();ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,R,a0,a1);ctx.closePath();
+    ctx.fillStyle=WH.done>=0&&!win?'#ddd':cols[pl];ctx.fill();ctx.clip();
+    const am=a0+seg/2,fx=Math.cos(am)*R*.6,fy=Math.sin(am)*R*.6,fr=R*.25,f=WH.faces[pl];
+    ctx.beginPath();ctx.arc(fx,fy,fr,0,7);ctx.fillStyle='#fff';ctx.fill();
+    if(f){ctx.save();ctx.clip();ctx.drawImage(f,fx-fr,fy-fr,fr*2,fr*2);ctx.restore();}
+    ctx.lineWidth=3;ctx.strokeStyle=INK;ctx.beginPath();ctx.arc(fx,fy,fr,0,7);ctx.stroke();
+    ctx.restore();
+    ctx.lineWidth=4;ctx.strokeStyle=INK;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a0)*R,Math.sin(a0)*R);ctx.stroke();}
+  ctx.lineWidth=5;ctx.strokeStyle=INK;ctx.beginPath();ctx.arc(0,0,R,0,7);ctx.stroke();
+  sticker(ctx,ell(0,0,R*.12,R*.12),'#FFD84D',4);
+  // pointer at the top
+  ctx.fillStyle='#FFD84D';ctx.strokeStyle=INK;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-R*.11,-R-R*.16);ctx.lineTo(R*.11,-R-R*.16);ctx.lineTo(0,-R+R*.1);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.restore();
+  // a hand for each player: green when raised
+  const fs=Math.max(18,Math.min(26,W*.045));
+  if(WH.stopT<0){for(const i of [0,1]){const x=i?W*.84:W*.16,y=cy;ctx.save();ctx.globalAlpha=WH.up[i]?1:.55;
+      sticker(ctx,ell(x,y,R*.2,R*.2),WH.up[i]?'#7DCB6B':cols[i],4);ctx.font=`${R*.2}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('✋',x,y+2);ctx.restore();}
+    bubble(WH.up[0]!==WH.up[1]?u.wheelone:u.wheel,W/2,H*.86,fs);}
+  else if(WH.done>=0)bigText(WH.win?u.startsR:u.startsL,W/2,Math.min(H*.9,cy+R+Math.min(70,W*.1)),Math.min(60,W*.1),WH.win?'#FF9FB0':'#7FC8F8',1+.08*Math.sin(tNow*10));
+}
 // after a copy: in turns mode the copier dances next (already in the picture); side by side, the players swap roles
 function nextTurn(){photo=null;target=null;if(who==='duo'){poser=1-poser;setPhase('switch');setTimeout(()=>FX.whoosh(),300);}else setPhase('dance');}
 let last=performance.now();
@@ -306,7 +357,9 @@ function frame(now){
   const u=UI[lang];
   if(state==='setup'){
     if(guide){const p=people[0];if(guide.update(dt,p?{x:p.nose.x,y:p.nose.y,size:p.sw}:null,{x:0,y:0,w:W,h:H})==='done'){state='count';countT=tNow;}}
-    else{ if(people.length>=2){awayT+=dt;if(awayT>1){state='count';countT=tNow;awayT=0;}}else awayT=0; }
+    else{ if(people.length>=2){awayT+=dt;if(awayT>1){state='wheel';wheelStart();awayT=0;}}else awayT=0; }
+  }
+  else if(state==='wheel'){ wheelUpdate(dt); 
   }
   else if(state==='count'){ if(tNow-countT>=3){state='play';setPhase('dance');FX.whoosh();} }
   else if(state==='play'){
@@ -460,6 +513,7 @@ function render(dt){
     if(guide)guide.draw(ctx,{x:0,y:0,w:W,h:H},lang);
     else bubble(u.two,W/2,H*.16,Math.max(18,Math.min(26,W*.045)));
   }
+  else if(state==='wheel')drawWheel();
   else if(state==='count'){const n=3-Math.floor(tNow-countT),k=(tNow-countT)%1;if(n>0)bigText(String(n),W/2,H*.42,Math.min(150,H*.22),'#fff',1+.25*Math.max(0,1-k*4));}
   else if(state==='play'){
     const fs=Math.max(18,Math.min(26,W*.045));
