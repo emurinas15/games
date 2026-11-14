@@ -88,7 +88,7 @@ const UI={
   left:"s",copies:"poses",best:"best",sec2:"poses copied",over:["Well done!","Great copying!","Super poses!","Pose masters!"],win:"All 20 poses!",again:"Play again",newbest:"New record!",bestis:"Best: ",
   ready:"Getting ready…",two:"Two players, side by side!",dance:"Dance!",freeze:"Freeze!",hold:"Hold it…",
   used:"That pose was already used — make a new one!",plain:"Make a funny pose!",copyme:"Copy me!",
-  stepout:"Next player — step in!",copy:"Copy the pose!",copyR:"Copy the pose →",copyL:"← Copy the pose",great:["Great copy!","Perfect!","Yes!","Nailed it!"],
+  stepout:"Next player — step in!",swap:"Switch players!",goout:"Step out of the picture",same:"A new player, please!",wear:"Step into the pose!",copy:"Copy the pose!",copyR:"Copy the pose →",copyL:"← Copy the pose",great:["Great copy!","Perfect!","Yes!","Nailed it!"],
   newone:"Let's make a new pose!",yourturn:"Your turn to dance!",nobody:"Step in front of the camera!",
   nocam:"No camera here — this game needs a camera.",aria:"Game area"},
  he:{title:"קופאים ומעתיקים",sub:"רוקדים, קופאים — והשחקן הבא מעתיק את התנוחה!",play:"שחקו",
@@ -103,7 +103,7 @@ const UI={
   left:"שנ׳",copies:"תנוחות",best:"שיא",sec2:"תנוחות הועתקו",over:["כל הכבוד!","העתקות מעולות!","תנוחות על!","אלופי התנוחות!"],win:"כל 20 התנוחות!",again:"עוד פעם",newbest:"שיא חדש!",bestis:"השיא: ",
   ready:"מתכוננים…",two:"שני שחקנים, זה לצד זה!",dance:"רוקדים!",freeze:"קופאים!",hold:"מחזיקים…",
   used:"התנוחה הזאת כבר הייתה — עשו חדשה!",plain:"עשו תנוחה מצחיקה!",copyme:"העתיקו אותי!",
-  stepout:"השחקן הבא — להיכנס!",copy:"העתיקו את התנוחה!",copyR:"העתיקו את התנוחה ←",copyL:"→ העתיקו את התנוחה",great:["העתקה מעולה!","מושלם!","יש!","בול!"],
+  stepout:"השחקן הבא — להיכנס!",swap:"מחליפים שחקנים!",goout:"צאו מהתמונה",same:"שחקן חדש, בבקשה!",wear:"היכנסו לתוך התנוחה!",copy:"העתיקו את התנוחה!",copyR:"העתיקו את התנוחה ←",copyL:"→ העתיקו את התנוחה",great:["העתקה מעולה!","מושלם!","יש!","בול!"],
   newone:"בואו נעשה תנוחה חדשה!",yourturn:"התור שלכם לרקוד!",nobody:"היכנסו מול המצלמה!",
   nocam:"אין כאן מצלמה — המשחק הזה צריך מצלמה.",aria:"אזור המשחק"}
 };
@@ -205,8 +205,35 @@ function snap(p,mask){
     fc.putImageData(img,0,0);}catch(e){}}
   const out=document.createElement('canvas');out.width=sw;out.height=sh;const oc=out.getContext('2d');
   oc.translate(sw,0);oc.scale(-1,1);oc.drawImage(full,sx,sy,sw,sh,0,0,sw,sh);
-  photo={cv:out,w:sw,h:sh,cut:!!mask};
+  const m=vmap();
+  photo={cv:out,w:sw,h:sh,cut:!!mask,
+    scr:{x:m.ox+(1-x1)*m.vw*m.s,y:m.oy+y0*m.vh*m.s,w:(x1-x0)*m.vw*m.s,h:(y1-y0)*m.vh*m.s},   // where it was on the screen
+    anc:anchors(p.lm),lm:p.lm.map(q=>({...q}))};
+  poserSig=sigOf(p);
 }
+/* body anchors (screen px) used to put the see-through pose onto the copier's body */
+function anchors(lm){const ok=i=>lm[i].v>.5;
+  return {sh:{x:(lm[11].x+lm[12].x)/2,y:(lm[11].y+lm[12].y)/2},sw:Math.hypot(lm[11].x-lm[12].x,lm[11].y-lm[12].y),
+    hp:ok(23)&&ok(24)?{x:(lm[23].x+lm[24].x)/2,y:(lm[23].y+lm[24].y)/2}:null};}
+/* a rough "who is this" check: average clothes colours (chest, and legs when standing) from a tiny copy of the camera frame.
+   Nothing is stored — only a few numbers for the current pose. */
+let poserSig=null;const sigCv=document.createElement('canvas');sigCv.width=64;sigCv.height=36;const sigCx=sigCv.getContext('2d',{willReadFrequently:true});
+function sigOf(p){
+  try{const vw=video.videoWidth,vh=video.videoHeight;if(!vw)return null;sigCv.height=Math.round(64*vh/vw);const SW=64,SH=sigCv.height;
+    sigCx.drawImage(video,0,0,SW,SH);const d=sigCx.getImageData(0,0,SW,SH).data,r=p.raw;
+    const px=(x,y)=>{const i=(Math.min(SH-1,Math.max(0,Math.round(y*SH)))*SW+Math.min(SW-1,Math.max(0,Math.round(x*SW))))*4;return [d[i],d[i+1],d[i+2]];};
+    const avg=pts=>{const a=[0,0,0];for(const [x,y] of pts){const c=px(x,y);a[0]+=c[0];a[1]+=c[1];a[2]+=c[2];}return a.map(v=>v/pts.length);};
+    const L=(a,b,t)=>a+(b-a)*t,sh=[r[11],r[12]],okH=(r[23].visibility??1)>.4&&(r[24].visibility??1)>.4;
+    const hp=okH?[r[23],r[24]]:sh.map(q=>({x:q.x,y:q.y+Math.abs(r[11].x-r[12].x)*vw/vh*1.1}));
+    const chest=[];for(const a of [.25,.45,.6])for(const b of [.3,.5,.7])chest.push([L(L(sh[0].x,sh[1].x,b),L(hp[0].x,hp[1].x,b),a),L(L(sh[0].y,sh[1].y,b),L(hp[0].y,hp[1].y,b),a)]);
+    let legs=null;if(bodyMode==='full'&&okH&&(r[25].visibility??1)>.5&&(r[26].visibility??1)>.5)
+      legs=avg([[L(r[23].x,r[25].x,.4),L(r[23].y,r[25].y,.4)],[L(r[24].x,r[26].x,.4),L(r[24].y,r[26].y,.4)],[L(r[23].x,r[25].x,.7),L(r[23].y,r[25].y,.7)],[L(r[24].x,r[26].x,.7),L(r[24].y,r[26].y,.7)]]);
+    return {chest:avg(chest),legs};}catch(e){return null;}
+}
+// colour distance that cares about hue more than light (the newcomer stands in a slightly different light)
+function cdist(a,b){const sa=a[0]+a[1]+a[2]+1,sb=b[0]+b[1]+b[2]+1;
+  return Math.hypot((a[0]/sa-b[0]/sb)*3,(a[1]/sa-b[1]/sb)*3,(a[2]/sa-b[2]/sb)*3,(sa-sb)/765*.8);}
+function samePerson(A,B){if(!A||!B)return false;const c=cdist(A.chest,B.chest)<.11;const l=!A.legs||!B.legs||cdist(A.legs,B.legs)<.13;return c&&l;}
 
 /* ================= POSES ================= */
 // segments by screen side (mirrored picture): left arm = the arm whose shoulder is further left on screen
@@ -240,7 +267,7 @@ const sameAs=(A,B)=>{const c=compare(A,B,26);return c.ok&&c.mean<20;};   // clos
 let state='menu',phase='',phaseT=0,tNow=0,timeLeft=ROUND,score=0,lastNew=false,countT=0;
 let poser=0;          // duo: 0 = left player, 1 = right player
 let target=null,used=[],tries=0,meter=0,copyT=0,awayT=0,bigMsg='',bigMsgT=0,pops=[],flash=0,fillTick=0,lastMatch=null;
-let guide=null;
+let sameNow=false,guide=null,swapStage='out',inT=0,sameT=0,checkT=0,ghost={dx:0,dy:0,k:1,a:0};
 function say(t,dur=1.6){bigMsg=t;bigMsgT=tNow+dur;}
 function setPhase(p){phase=p;phaseT=0;}
 const pick=a=>a[Math.floor(Math.random()*a.length)];
@@ -270,9 +297,11 @@ function fillEnd(nb){const u=UI[lang];$('final').textContent=score;$('newbest').
 const posers=()=>who==='duo'?people[poser]:people[0];
 const copier=()=>who==='duo'?people[1-poser]:people[0];
 
+// after a copy: in turns mode the copier dances next (already in the picture); side by side, the players swap roles
+function nextTurn(){photo=null;target=null;if(who==='duo'){poser=1-poser;setPhase('switch');setTimeout(()=>FX.whoosh(),300);}else setPhase('dance');}
 let last=performance.now();
 function frame(now){
-  const dt=Math.min(.05,(now-last)/1000);last=now;tNow+=dt;
+  const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;tNow+=dt;
   if(camOK)track(now);
   const u=UI[lang];
   if(state==='setup'){
@@ -281,7 +310,7 @@ function frame(now){
   }
   else if(state==='count'){ if(tNow-countT>=3){state='play';setPhase('dance');FX.whoosh();} }
   else if(state==='play'){
-    phaseT+=dt;timeLeft-=dt;
+    phaseT+=dt;if(phase!=='swap'&&phase!=='switch')timeLeft-=dt;   // the clock waits while players switch
     if(timeLeft<=0){timeLeft=0;endGame(false);}
     else if(phase==='dance'){                     // 3 s free dance, then "Freeze!"
       if(phaseT>=DANCE){setPhase('freeze');say(u.freeze,1);SFX.boing();}
@@ -293,23 +322,29 @@ function frame(now){
           const plain=sameAs(NEUTRAL(),P),rep=used.some(U=>sameAs(U,P));
           if((plain||rep)&&tries<2){tries++;FX.nope();say(rep?u.used:u.plain,1.6);setPhase('freeze');phaseT=-1.2;}
           else{tries=0;target=P;used.push(P);photo=null;wantShot=who==='duo'?poser:0;FX.shutter();flash=1;meter=0;copyT=0;awayT=0;
-            setPhase(who==='duo'?'copy':'swap');}}}
+            swapStage='out';inT=0;sameT=0;checkT=0;ghost={dx:0,dy:0,k:1,a:0};
+            if(who==='duo')setPhase('copy');else{setPhase('swap');FX.whoosh();}}}}
     }
-    else if(phase==='swap'){                      // take turns: the poser steps out, the copier steps in
+    else if(phase==='swap'){                      // take turns (14 Nov): the poser must LEAVE the picture, then someone else steps in
       const p=people[0];
-      if(!p||!compare(target,poseOf(p),TOL[strict]).ok)awayT+=dt;else awayT=Math.max(0,awayT-dt);
-      if(awayT>.6||phaseT>6){setPhase('copy');meter=0;}
+      if(swapStage==='out'){ if(!p)awayT+=dt;else awayT=Math.max(0,awayT-dt*2); if(awayT>.8){swapStage='in';inT=0;sameT=0;SFX.boing();} }
+      else{ if(!p){inT=0;sameNow=false;}
+        else{inT+=dt;checkT-=dt;fitGhost(p,dt);
+          if(checkT<=0){checkT=.3;sameNow=samePerson(poserSig,sigOf(p));}
+          if(sameNow&&sameT<5){sameT+=dt;inT=Math.min(inT,.3);}   // looks like the same player (same clothes): ask for a new one; after 5 s let it go (same uniforms)
+          if(inT>.7){setPhase('copy');meter=0;}}}
     }
+    else if(phase==='switch'){ if(phaseT>1.6)setPhase('dance'); }   // side by side: short "switch" moment before the other player dances
     else if(phase==='copy'){
-      const c=copier();lastMatch=null;
+      const c=copier();lastMatch=null;fitGhost(c,dt);
       if(c){const r=compare(target,poseOf(c),TOL[strict]);lastMatch={r,c};
         if(r.ok){meter=Math.min(1,meter+dt/HOLD);fillTick+=dt;if(fillTick>.2){fillTick=0;FX.fill(meter);}}
         else meter=Math.max(0,meter-dt*.35);}
       else meter=Math.max(0,meter-dt*.35);
       if(meter>=1){score++;FX.great();say(pick(u.great),1.3);for(let i=0;i<14;i++)pops.push({x:W/2,y:H*.4,vx:(Math.random()-.5)*W*.8,vy:-H*(.3+Math.random()*.5),life:1.2});
         if(score>=MAX){endGame(false);}
-        else{setPhase('dance');photo=null;target=null;if(who==='duo')poser=1-poser;}}
-      else if(phaseT>GIVEUP){say(u.newone,1.5);FX.nope();setPhase('dance');photo=null;target=null;if(who==='duo')poser=1-poser;}
+        else{nextTurn();}}
+      else if(phaseT>GIVEUP){say(u.newone,1.5);FX.nope();nextTurn();}
     }
   }
   render(dt);
@@ -350,6 +385,51 @@ function drawPhoto(){
   ctx.fillText(UI[lang].copyme,0,ch/2-lab*.75);
   ctx.restore();
 }
+/* 14 Nov (Edgar): instead of a photo card, the frozen pose stays in the picture as a see-through cut-out, IN FRONT of
+   the player. The copier steps "into" it: it slides and scales onto the copier's trunk, so only the arms/legs need matching. */
+function fitGhost(c,dt){
+  let tx=0,ty=0,tk=1;
+  if(c&&photo){const A=photo.anc,B=anchors(c.lm);
+    if(A.hp&&B.hp){const ra=Math.hypot(A.sh.x-A.hp.x,A.sh.y-A.hp.y),rb=Math.hypot(B.sh.x-B.hp.x,B.sh.y-B.hp.y);
+      tk=ra>5?rb/ra:1;const ca={x:(A.sh.x+A.hp.x)/2,y:(A.sh.y+A.hp.y)/2},cb={x:(B.sh.x+B.hp.x)/2,y:(B.sh.y+B.hp.y)/2};
+      tk=Math.max(.5,Math.min(2,tk));tx=cb.x-ca.x*tk;ty=cb.y-ca.y*tk;}
+    else{tk=Math.max(.5,Math.min(2,A.sw>5?B.sw/A.sw:1));tx=B.sh.x-A.sh.x*tk;ty=B.sh.y-A.sh.y*tk;}}
+  const e=Math.min(1,dt*7);ghost.dx+=(tx-ghost.dx)*e;ghost.dy+=(ty-ghost.dy)*e;ghost.k+=(tk-ghost.k)*e;
+}
+function drawGhost(alpha){
+  if(!photo)return;ghost.a+=(alpha-ghost.a)*.15;
+  ctx.save();ctx.translate(ghost.dx,ghost.dy);ctx.scale(ghost.k,ghost.k);ctx.globalAlpha=ghost.a;
+  const r=photo.scr;
+  if(photo.cut){
+    // soft white glow around the cut-out so it reads on any background, then the see-through photo
+    ctx.save();ctx.shadowColor='rgba(255,255,255,.95)';ctx.shadowBlur=18/ghost.k;ctx.drawImage(photo.cv,r.x,r.y,r.w,r.h);ctx.restore();
+    ctx.drawImage(photo.cv,r.x,r.y,r.w,r.h);
+  } else {   // no body mask on this device: a soft see-through stick figure of the pose instead
+    const lm=photo.lm,bones=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
+    ctx.lineCap='round';for(const [w,col] of [[photo.anc.sw*.34,'#fff'],[photo.anc.sw*.24,'#FF9FB0']]){ctx.lineWidth=w;ctx.strokeStyle=col;ctx.beginPath();
+      for(const [a,b] of bones){if(lm[a].v<.5||lm[b].v<.5)continue;ctx.moveTo(lm[a].x,lm[a].y);ctx.lineTo(lm[b].x,lm[b].y);}ctx.stroke();}
+    ctx.fillStyle='#FF9FB0';ctx.strokeStyle='#fff';ctx.lineWidth=photo.anc.sw*.06;ctx.beginPath();ctx.arc(lm[0].x,lm[0].y,photo.anc.sw*.3,0,7);ctx.fill();ctx.stroke();
+  }
+  ctx.restore();
+}
+/* "Switch players!" — two little beans hop round each other, with curved arrows */
+function drawSwitch(txt,sub,k){
+  const s=Math.min(W*.16,H*.16),cx=W/2,cy=H*.52,t=tNow*2.2,R=s*.75;
+  ctx.save();ctx.globalAlpha=Math.min(1,k*3);
+  ctx.fillStyle='rgba(255,248,236,.55)';ctx.beginPath();ctx.roundRect(cx-s*2.3,cy-s*1.6,s*4.6,s*3.3,s*.5);ctx.fill();
+  // curved arrows
+  ctx.lineCap='round';ctx.lineWidth=s*.09;
+  for(const d of [0,1]){const a0=Math.PI*(d?0.15:1.15),a1=a0+Math.PI*.7;ctx.strokeStyle=INK;ctx.beginPath();ctx.arc(cx,cy,R*1.05,a0,a1);ctx.stroke();
+    const ax=cx+Math.cos(a1)*R*1.05,ay=cy+Math.sin(a1)*R*1.05,dir=a1+Math.PI/2;ctx.fillStyle=INK;ctx.beginPath();
+    ctx.moveTo(ax+Math.cos(dir)*s*.2,ay+Math.sin(dir)*s*.2);ctx.lineTo(ax+Math.cos(dir+2.4)*s*.16,ay+Math.sin(dir+2.4)*s*.16);ctx.lineTo(ax+Math.cos(dir-2.4)*s*.16,ay+Math.sin(dir-2.4)*s*.16);ctx.fill();}
+  // two beans trading places
+  for(const [ph,col] of [[0,'#7FC8F8'],[Math.PI,'#FF9FB0']]){const a=t+ph,x=cx+Math.cos(a)*R,y=cy+Math.sin(a)*R*.35,hop=Math.abs(Math.sin(t*3+ph))*s*.12;
+    sticker(ctx,ell(x,y-hop,s*.26,s*.34),col,3.5);ctx.fillStyle=INK;ctx.fill(ell(x-s*.08,y-hop-s*.08,s*.03,s*.045));ctx.fill(ell(x+s*.08,y-hop-s*.08,s*.03,s*.045));
+    ctx.fillStyle='rgba(255,140,160,.6)';ctx.fill(ell(x-s*.15,y-hop+s*.02,s*.04,s*.025));ctx.fill(ell(x+s*.15,y-hop+s*.02,s*.04,s*.025));}
+  ctx.restore();
+  bigText(txt,cx,cy-s*1.15,Math.min(60,W*.09),'#FFD84D',1+.05*Math.sin(tNow*8));
+  if(sub)bubble(sub,cx,cy+s*1.15,Math.max(18,Math.min(26,W*.045)));
+}
 // the copy meter: a soft jar that fills with a wavy green, a star on top
 function drawMeter(){
   const h=Math.min(H*.42,300),w=Math.max(34,h*.17),x=18+w/2,y=H*.55;
@@ -383,12 +463,15 @@ function render(dt){
   else if(state==='count'){const n=3-Math.floor(tNow-countT),k=(tNow-countT)%1;if(n>0)bigText(String(n),W/2,H*.42,Math.min(150,H*.22),'#fff',1+.25*Math.max(0,1-k*4));}
   else if(state==='play'){
     const fs=Math.max(18,Math.min(26,W*.045));
-    if(phase==='copy'||phase==='swap'){drawPhoto();drawMeter();if(phase==='copy')drawCopyDots();}
+    if(phase==='copy'){drawGhost(.5);drawMeter();drawCopyDots();}
+    if(phase==='swap'){
+      if(swapStage==='out'){drawGhost(.22);drawSwitch(u.swap,u.goout,phaseT);}
+      else{drawGhost(.38+.12*Math.sin(tNow*5));drawMeter();bubble(sameNow&&sameT<5?u.same:u.wear,W/2,H*.86,fs,sameNow&&sameT<5?'#FFE3E8':'#fff');}}
+    if(phase==='switch')drawSwitch(u.swap,'',phaseT);
     if(phase==='dance'){const n=Math.ceil(DANCE-phaseT),k=phaseT%1;
       bigText(u.dance,W/2,H*.2,Math.min(76,W*.13),'#FF9FB0',1+.06*Math.sin(tNow*12));
       if(n>0)bigText(String(n),W/2,H*.2+Math.min(90,W*.15),Math.min(70,W*.12),'#fff',1+.25*Math.max(0,1-k*4));
       if(phaseT<1.4&&score>0)bubble(who==='duo'?(poser?'→ ':'')+u.yourturn+(poser?'':' ←'):u.yourturn,W/2,H*.82,fs);}
-    if(phase==='swap')bubble(u.stepout,W/2,H*.85,fs);
     if(phase==='copy'){const t=who==='duo'?(poser===0?u.copyR:u.copyL):u.copy;bubble(t,W/2,H*.88,fs);}
     // HUD: time and poses, drawn into the picture so it also shows on the big screen
     const hf=Math.max(18,Math.min(28,W*.05));

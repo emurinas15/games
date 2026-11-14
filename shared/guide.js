@@ -23,7 +23,7 @@ import { tone, SFX } from './kit.js';
 
 export const TARGET = {
   face: { x: .5, y: .5, size: r => Math.min(r.h * .2, r.w * .42), sizeMin: .6, sizeMax: 1.65, dx: .17, dy: .14 },
-  full: { x: .5, y: .17, size: r => Math.min(r.h * .15, r.w * .3), sizeMin: .6, sizeMax: 1.7, dx: .2, dy: .1 },   // standing, head to toe
+  full: { x: .5, y: .17, foot: .96, size: r => Math.min(r.h * .15, r.w * .3), sizeMin: .6, sizeMax: 1.7, dx: .2, dy: .1 },   // standing, head to toe; 14 Nov: feet near the bottom edge (was too high)
   body: { x: .5, y: .45, size: r => Math.min(r.w * .22, r.h * .2), sizeMin: .58, sizeMax: 1.75, dx: .18, dy: .15 }
 };
 const HOLD = 1.5;        // seconds to hold the pose
@@ -62,6 +62,7 @@ export function makeGuide(kind, snd = {}) {
   /* where the avatar sits in this rect */
   function place(r) {
     const s = T.size(r);
+    if (T.foot) return { x: r.x + r.w * T.x, y: Math.max(r.y + r.h * T.y, r.y + r.h * T.foot - s * 4.37), s };   // feet at T.foot of the height
     return { x: r.x + r.w * T.x, y: r.y + r.h * T.y, s };
   }
 
@@ -198,7 +199,7 @@ export function makeGuide(kind, snd = {}) {
       ctx.save();
       const fs = Math.max(17, Math.min(26, r.w * .05));
       ctx.font = `700 ${fs}px Fredoka, sans-serif`; ctx.direction = g.lang === 'he' ? 'rtl' : 'ltr'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      const tw = ctx.measureText(txt).width, bw = tw + fs * 1.6, bh = fs * 2, bx = r.x + r.w / 2 - bw / 2, by = T.y < .3 ? r.y + r.h * .9 - bh : r.y + Math.max(12, r.h * .06);   // head near the top (standing) -> hint at the bottom
+      const tw = ctx.measureText(txt).width, bw = tw + fs * 1.6, bh = fs * 2, bx = r.x + r.w / 2 - bw / 2, by = T.foot ? r.y + Math.max(70, r.h * .07) : T.y < .3 ? r.y + r.h * .9 - bh : r.y + Math.max(12, r.h * .06);   // standing: hint above the head
       ctx.fillStyle = '#2b2118'; ctx.beginPath(); ctx.roundRect(bx, by + 4, bw, bh, bh / 2); ctx.fill();
       ctx.fillStyle = g.inside || pop ? '#E6F7DE' : '#fff'; ctx.strokeStyle = '#2b2118'; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, bh / 2); ctx.fill(); ctx.stroke();
