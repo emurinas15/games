@@ -91,9 +91,9 @@ export function loadSamples(ac, list) {
   return Promise.all(jobs);
 }
 /* plays a note if its sample is loaded; returns the gain node (so callers can add reverb) or null */
-export function playSample(ac, inst, m, t, v, dest, len = 2.2) {
+export function playSample(ac, inst, m, t, v, dest, len = 2.2, rate = 1) {
   const c = sampleCache.get(ac), buf = c && c[inst + m]; if (!buf) return null;
-  const s = ac.createBufferSource(); s.buffer = buf; const g = ac.createGain();
+  const s = ac.createBufferSource(); s.buffer = buf; if (rate !== 1) s.playbackRate.value = rate; const g = ac.createGain();
   g.gain.setValueAtTime(v, t); g.gain.setTargetAtTime(0.0001, t + len, .12);
   s.connect(g); g.connect(dest); s.start(t); s.stop(t + len + .8); return g;
 }
@@ -195,6 +195,15 @@ const DRUM_FX = {
     g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.5 * v, t + .004); g.gain.exponentialRampToValueAtTime(.0001, t + .35);
     w.gain.value = .5; o.connect(g); g.connect(bus); g.connect(w); w.connect(S.BUS.rev); o.start(t); o.stop(t + .4); },
   // a round little bubble pop (m = pitch multiplier)
+  // gentle tambourine (14 Nov): a little shake into one jingly hit — bright filtered noise with a few metallic ringing partials
+  '~tamb'(t, v, bus) { const a = S.AC;
+    const hit = (tt, vv, d) => { const s = noiseBuf(a, d, 3), hp = a.createBiquadFilter(), bp = a.createBiquadFilter(), g = a.createGain();
+      hp.type = 'highpass'; hp.frequency.value = 5500; bp.type = 'peaking'; bp.frequency.value = 9500; bp.gain.value = 6; g.gain.value = vv;
+      s.connect(hp); hp.connect(bp); bp.connect(g); g.connect(bus); const w = a.createGain(); w.gain.value = .3; g.connect(w); w.connect(S.BUS.rev); s.start(tt);
+      for (const f of [5400, 7150, 8900, 11200]) { const o = a.createOscillator(), og = a.createGain(); o.frequency.value = f * (1 + (Math.random() - .5) * .01);
+        og.gain.setValueAtTime(.0001, tt); og.gain.exponentialRampToValueAtTime(vv * .035, tt + .003); og.gain.exponentialRampToValueAtTime(.0001, tt + d * 1.4);
+        o.connect(og); og.connect(bus); o.start(tt); o.stop(tt + d * 1.5); } };
+    hit(t - .07, .12 * v, .06); hit(t - .035, .18 * v, .06); hit(t, .5 * v, .22); },
   // soft cajon (14 Nov, Sprout folk): low wooden thump, and a gentle hand slap with a little snare buzz
   '~cajonB'(t, v, bus) { const a = S.AC, o = a.createOscillator(), g = a.createGain();
     o.type = 'sine'; o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(58, t + .12);
@@ -228,8 +237,28 @@ function amp(key) { const B = S.BUS, a = S.AC; B.amps = B.amps || {}; if (B.amps
   const w = a.createGain(); w.gain.value = .12; post.connect(w); w.connect(B.rev);
   return (B.amps[key] = sh); }
 const AMP_POST = { distortion_guitar: .07, overdriven_guitar: .1 };
-function playEvent([inst, m, v, len, wet, delay, pan], t) {
+/* real-guitar feel (14 Nov, Sprout folk): each note a little off the grid and in loudness, a hair out of tune,
+   strings spread across the stereo field, a new note on a string stops the one ringing on it (like a real string),
+   and a 'wooden body' EQ (warm low-mids, a bit of presence, softer fizz) instead of the flat dry sample */
+const HUMAN = { acoustic_guitar_steel: 1 };
+function guitarBody() { const B = S.BUS, a = S.AC; if (B.gbody) return B.gbody;
+  const lo = a.createBiquadFilter(); lo.type = 'peaking'; lo.frequency.value = 210; lo.Q.value = .9; lo.gain.value = 3.5;
+  const box = a.createBiquadFilter(); box.type = 'peaking'; box.frequency.value = 520; box.Q.value = 1.2; box.gain.value = -2;
+  const pr = a.createBiquadFilter(); pr.type = 'peaking'; pr.frequency.value = 3200; pr.Q.value = .8; pr.gain.value = 2.5;
+  const hs = a.createBiquadFilter(); hs.type = 'highshelf'; hs.frequency.value = 8500; hs.gain.value = -4;
+  lo.connect(box); box.connect(pr); pr.connect(hs); hs.connect(B.music);
+  const w = a.createGain(); w.gain.value = .32; hs.connect(w); w.connect(B.rev);   // a little room
+  B.gbody = lo; return lo; }
+const ringing = {};
+function playEvent([inst, m, v, len, wet, delay, pan, str], t) {
   if (delay) t += delay;
+  if (HUMAN[inst]) { const a = S.AC; t += (Math.random() - .5) * .012; v *= .86 + Math.random() * .28;
+    let dest = guitarBody();
+    if (pan && a.createStereoPanner) { const p = a.createStereoPanner(); p.pan.value = pan; p.connect(dest); dest = p; }
+    const g = playSample(a, inst, m, Math.max(a.currentTime, t), v / .7, dest, len, Math.pow(2, (Math.random() - .5) * 8 / 1200));
+    if (g) { if (str != null) { const k = inst + str, old = ringing[k];
+        if (old) { old.gain.cancelScheduledValues(t); old.gain.setTargetAtTime(0.0001, t, .02); } ringing[k] = g; }
+      if (wet) { const w = a.createGain(); w.gain.value = wet; g.connect(w); w.connect(S.BUS.rev); } return; } }
   if (AMP_INST[inst]) { const a = S.AC; let dest = amp(inst);
     if (pan && a.createStereoPanner) { const p = a.createStereoPanner(); p.pan.value = pan; p.connect(dest); dest = p; }
     if (playSample(a, inst, m, t, v / .7, dest, len)) return; }

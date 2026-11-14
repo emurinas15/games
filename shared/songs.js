@@ -176,25 +176,27 @@ export const STYLES = {
     if (i === 2 || i === 6) ev.push(['voice_k', 60, .07, .2, .05]);
     if (k === 21 || k === 46 || k === 59) ev.push(['~bubble', k === 46 ? 1.25 : 1, .7, 0, 0, sw]);
     return ev.map(e => (e[2] *= 1.4, e)); } },
-  /* Copy the Sprout (14 Nov, v4): folk band feel (Edgar: "less lullaby, more folk — gentle percussion, cajon, very gentle").
-     Steel-string guitar strummed D . D U . U D U (down-strums low->high, up-strums on the top strings only), lead steel
-     guitar carries the melody, upright bass on 1 and 3, soft cajon: bass thump on 1 and the and-of-2, slap on 2 and 4,
-     whisper ghost taps. Ends on a ringing strum. */
+  /* Copy the Sprout (14 Nov, v4.1): folk band feel (Edgar: "less lullaby, more folk — gentle percussion, cajon, very gentle";
+     then "a very gentle tambourine every 8 beats; the guitar sounds flat / computer generated").
+     Steel-string guitar strummed D . D U . U D U (down-strums low->high, up-strums on the top strings only); strings ring
+     until re-struck (kit.js stops the old note on the same string), spread across the stereo field, humanized in kit.js.
+     Lead steel guitar carries the melody (slightly right), upright bass on 1 and 3, soft cajon, tambourine shake every 2 bars. */
   folk: { bpm: 104, play(s) {
     const { mel, ch, root, i, sec } = at(s), ev = [], k = ((s % STEPS) + STEPS) % STEPS, sw = i % 2 ? .045 : 0;
     const G = 'acoustic_guitar_steel', lo = root < 45 ? root + 12 : root;
     const voice = [lo, lo + 7, ...ch, ch[0] + 12].sort((a, b) => a - b);
-    const strum = (dir, v, len) => { const n = dir > 0 ? voice : voice.slice(-3).reverse();
-      n.forEach((m, j) => ev.push([G, m, v * (dir > 0 ? (j < 2 ? .8 : 1) : .85), len, .2, sw + j * (dir > 0 ? .012 : .009)])); };
-    if (mel != null) ev.push([G, mel - 12, .34, .9, .3, sw]);
-    if (sec === 'end' && k >= STEPS - 8) { if (i === 0) { strum(1, .14, 2.6); ev.push(['acoustic_bass', root, .2, 2.2, .1]); ev.push(['~cajonB', 0, .7, 0, 0]); } return ev.map(e => (e[2] *= .8, e)); }
+    const strum = (dir, v, len) => { const idx = dir > 0 ? [0, 1, 2, 3, 4, 5] : [5, 4, 3], sp = (dir > 0 ? .011 : .008) + Math.random() * .006;
+      idx.forEach((j, n) => ev.push([G, voice[j], v * (dir > 0 ? (j < 2 ? .75 : 1) : .8 - n * .08), len, .22, sw + n * sp, -.45 + j * .18, 'r' + j])); };
+    if (mel != null) ev.push([G, mel - 12, .34, .9, .3, sw, .25, 'lead']);
+    if (sec === 'end' && k >= STEPS - 8) { if (i === 0) { strum(1, .14, 3); ev.push(['acoustic_bass', root, .2, 2.2, .1]); ev.push(['~cajonB', 0, .7, 0, 0]); ev.push(['~tamb', 0, .5, 0, 0]); } return ev.map(e => (e[2] *= 1.05, e)); }
     const pat = { 0: [1, .12], 2: [1, .09], 3: [-1, .07], 5: [-1, .07], 6: [1, .09], 7: [-1, .06] }[i];
-    if (pat) strum(pat[0], pat[1], i === 0 ? .9 : .35);
+    if (pat) strum(pat[0], pat[1], 1.6);                  // let it ring; the next strum stops each string
     if (i === 0 || i === 4) ev.push(['acoustic_bass', i ? (root + 7 > 50 ? root - 5 : root + 7) : root, .17, .7, .1]);
     if (i === 0 || i === 3) ev.push(['~cajonB', 0, i ? .45 : .7, 0, 0, sw]);
     else if (i === 2 || i === 6) ev.push(['~cajonS', 0, .55, 0, 0]);
     else ev.push(['~cajonS', 0, .12, 0, 0, sw]);          // ghost taps
-    return ev.map(e => (e[2] *= .8, e)); } }
+    if (i === 0 && k % 16 === 0) ev.push(['~tamb', 0, .3, 0, 0]);   // tambourine every 8 beats (2 bars), very gentle
+    return ev.map(e => (e[2] *= 1.05, e)); } }
 };
 export const STEPS = PLAN.length * 32;   // 256 eighth-notes = 32 bars
 function at(s) {
