@@ -25,7 +25,10 @@ export const TARGET = {
   face: { x: .5, y: .5, size: r => Math.min(r.h * .2, r.w * .42), sizeMin: .6, sizeMax: 1.65, dx: .17, dy: .14 },
   full: { x: .5, y: .17, foot: .96, size: r => Math.min(r.h * .15, r.w * .3), sizeMin: .6, sizeMax: 1.7, dx: .2, dy: .1 },   // standing, head to toe; 14 Nov: feet near the bottom edge (was too high)
   body: { x: .5, y: .45, size: r => Math.min(r.w * .22, r.h * .2), sizeMin: .58, sizeMax: 1.75, dx: .18, dy: .15 },
-  jump: { x: .5, y: .55, size: r => Math.min(r.w * .32, r.h * .4), sizeMin: .7, sizeMax: 1.45, dx: .18, dy: .14 }   // Jump Race: standing close to the phone (head + chest fill the picture), room above the head
+  // 15 Nov (Edgar's sketch): close to the phone, big; head a little below the middle with room above it,
+  // trunk running off the bottom edge, both arms held out and down to the sides so the hands show.
+  // Spider Swat, Copy the Sprout, Jump Race. obs.arms === false (hands not seen) -> "Show me both hands".
+  reach: { x: .5, y: .47, size: r => Math.min(r.w * .3, r.h * .34), sizeMin: .7, sizeMax: 1.45, dx: .18, dy: .14 }
 };
 const HOLD = 1.5;        // seconds to hold the pose
 const POP = .7;          // seconds of the "done" animation
@@ -33,16 +36,16 @@ const SKIP_AFTER = 8;    // "start anyway" button appears after this many second
 
 const TXT = {
   en: { find: 'Sit in front of the camera', fit: 'Fit into the shape', closer: 'Come a little closer', back: 'Move back a little',
-        middle: 'Move to the middle', raise: 'Raise the phone a little', lower: 'Lower the phone a little', hold: 'Hold still…', great: 'Great!', skip: 'Start anyway' },
+        middle: 'Move to the middle', raise: 'Raise the phone a little', lower: 'Lower the phone a little', hold: 'Hold still…', great: 'Great!', skip: 'Start anyway', arms: 'Arms out — show me both hands' },
   he: { find: 'שבו מול המצלמה', fit: 'היכנסו לתוך הצורה', closer: 'התקרבו קצת', back: 'התרחקו קצת',
-        middle: 'זוזו לאמצע', raise: 'הרימו קצת את הטלפון', lower: 'הנמיכו קצת את הטלפון', hold: 'להחזיק ככה…', great: 'מעולה!', skip: 'להתחיל בכל זאת' }
+        middle: 'זוזו לאמצע', raise: 'הרימו קצת את הטלפון', lower: 'הנמיכו קצת את הטלפון', hold: 'להחזיק ככה…', great: 'מעולה!', skip: 'להתחיל בכל זאת', arms: 'ידיים לצדדים — תראו לי את שתי הידיים' }
 };
 
 export function makeGuide(kind, snd = {}, over = {}) {   // txt: optional per-language text overrides, e.g. {en:{find:'…'},he:{find:'…'}}
   // games with their own sound engine can pass {tick(p), done()}
   const tick = snd.tick || (p => tone({ f0: 520 + p * 500, dur: .08, type: 'sine', vol: .08 }));
   const doneSnd = snd.done || (() => SFX.chime());
-  const T = TARGET[kind];
+  const T = TARGET[kind === 'jump' ? 'reach' : kind];
   const g = { kind, done: false, prog: 0, popT: -1, t: 0, inside: false, hintKey: 'find', obs: null, lastTick: 0, btn: null, lang: 'en' };
   const off = document.createElement('canvas'), oc = off.getContext('2d');
   const off2 = document.createElement('canvas'), oc2 = off2.getContext('2d');
@@ -87,6 +90,7 @@ export function makeGuide(kind, snd = {}, over = {}) {   // txt: optional per-la
     else if (Math.abs(dx) > tx) key = 'middle';
     else if (dy > ty) key = 'lower';          // head too low on the screen -> the phone is aimed too high
     else if (dy < -ty) key = 'raise';
+    else if (obs.arms === false) key = 'arms';
     g.inside = !key;
     if (g.inside) {
       g.prog += dt / HOLD; g.hintKey = 'hold';
@@ -132,6 +136,17 @@ export function makeGuide(kind, snd = {}, over = {}) {   // txt: optional per-la
         blob(x + d * s * .33, footY, s * .2, s * .1);                                                 // foot
       }
       return { top: y - hr * 1.5, bot: footY + s * .12 };
+    }
+    if (kind === 'reach' || kind === 'jump') {
+      blob(x, y - hr * .2, hr, hr * 1.22);                                      // head
+      bust(s * .13, y + hr * .7, hw, shy, bottom, hw * 1.12);                   // neck, shoulders, egg-shaped trunk off the bottom edge
+      c.lineCap = 'round'; c.lineJoin = 'round';
+      for (const d of [-1, 1]) {                                                // arms out and down, hands well away from the body
+        const hx = x + d * hw * 2.2, hy = shy + s * .6;
+        c.lineWidth = s * .26; c.beginPath(); c.moveTo(x + d * hw * .9, shy + s * .18); c.quadraticCurveTo(x + d * hw * 1.75, shy + s * .12, hx, hy); c.stroke();
+        blob(hx + d * s * .02, hy + s * .05, s * .15, s * .16);                // hand
+      }
+      return { top: y - hr * 1.5, bot: Math.min(bottom, r.y + r.h) };
     }
     blob(x, y - hr * .2, hr, hr * 1.22);                                        // head
     bust(s * .13, y + hr * .7, hw, shy, low, hw * .78);                         // neck, shoulders, trunk to the hips

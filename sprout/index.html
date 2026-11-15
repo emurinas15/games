@@ -99,7 +99,7 @@ summary::after{content:" ▾"}details[open] summary::after{content:" ▴"}
 <script type="module">
 import {S,audio as kitAudio,musicStart,musicStop,bindSound} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
-const guide=makeGuide('body');
+const guide=makeGuide('reach');   // 15 Nov (Edgar's sketch): big, close, arms out
 S.track='folk';S.amb='pond';S.ambVol=.5;   // 14 Nov: folk acoustic guitar; garden sounds at half volume
 const SOUND_TXT={en:{music:"Music",amb:"Garden sounds",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off"},
   he:{music:"מוזיקה",amb:"צלילי גינה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול"}};
@@ -337,7 +337,7 @@ function track(now){
   if(a.s.x>b.s.x)[a,b]=[b,a];       // a = screen-left arm
   const vis=[a.s,a.e,a.w,b.s,b.e,b.w].every(p=>p.v>.45);
   const nose=P(0);
-  kid.g=a.s.v>.45&&b.s.v>.45?{x:nose.x,y:nose.y,size:Math.hypot(b.s.x-a.s.x,b.s.y-a.s.y)}:null;
+  kid.g=a.s.v>.45&&b.s.v>.45?{x:nose.x,y:nose.y,size:Math.hypot(b.s.x-a.s.x,b.s.y-a.s.y),arms:a.w.v>.45&&b.w.v>.45}:null;
   if(!vis){kid.ok=false;kid.far=a.s.v>.45&&b.s.v>.45;return;}   // shoulders seen but not the hands -> too close
   const ang=(arm,side)=>[outAngle(side,arm.e.x-arm.s.x,arm.e.y-arm.s.y),outAngle(side,arm.w.x-arm.e.x,arm.w.y-arm.e.y)];
   const nL=ang(a,-1),nR=ang(b,1),k=kid.ok?.5:1;

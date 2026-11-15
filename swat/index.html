@@ -76,7 +76,7 @@
 <script type="module">
 import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom,startPoseTracker,poseFrame,drawMirroredVideo} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
-const guide=makeGuide('body');
+const guide=makeGuide('reach');   // 15 Nov (Edgar's sketch): big, close, arms out
 
 /* ================= TEXT ================= */
 const UI={
@@ -332,7 +332,7 @@ function frame(now){
   }
   else if(state==='ready'){
     // setup: fit the see-through avatar (head in the middle, trunk and hands visible) and hold
-    if(mode==='camera'&&guide.update(dt,body.ok?{x:body.nose.x,y:body.nose.y,size:body.sw}:null,{x:0,y:0,w:W,h:H})==='done'){state='count';countT=tNow;msg('');}
+    if(mode==='camera'&&guide.update(dt,body.ok?{x:body.nose.x,y:body.nose.y,size:body.sw,arms:body.hands[0].ok&&body.hands[1].ok}:null,{x:0,y:0,w:W,h:H})==='done'){state='count';countT=tNow;msg('');}
   }
   else if(state==='count'){
     const n=3-Math.floor(tNow-countT),el=$('count');
