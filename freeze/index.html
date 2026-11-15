@@ -11,6 +11,8 @@
 <style>
 .stopx{position:fixed;left:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:7;width:44px;height:44px;border-radius:50%;background:#fff;border:3px solid var(--ink);font:900 20px Fredoka,sans-serif;box-shadow:0 3px 0 var(--ink);display:none;cursor:pointer}
 .stopx.on{display:block}
+.who-row{display:flex;justify-content:center;margin:2px 0 12px}
+.seg.big button{font-size:16px;padding:9px 14px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -29,6 +31,8 @@
 <div class="card" id="start">
   <h1 id="t-title">Freeze & Copy</h1>
   <p class="sub" id="t-sub"></p>
+  <!-- 15 Nov (Edgar wanted a PvP mode): the 2-player race was hidden under For grown-ups, so it's now right above Play -->
+  <div class="who-row"><div class="seg big" id="who-seg"><button data-v="solo"></button><button data-v="duo"></button></div></div>
   <button class="btn" id="play"><span id="t-play">Play</span></button>
   <p class="note" id="t-privacy"></p>
   <details id="grown">
@@ -37,8 +41,6 @@
       <p id="t-g1"></p>
       <div class="g-row"><span id="t-body">Body</span>
         <div class="seg" id="body-seg"><button data-v="full"></button><button data-v="seated"></button></div></div>
-      <div class="g-row"><span id="t-who">Players</span>
-        <div class="seg" id="who-seg"><button data-v="solo"></button><button data-v="duo"></button></div></div>
       <div class="g-row"><span id="t-strict">Copy</span>
         <div class="seg" id="strict-seg"><button data-v="easy"></button><button data-v="medium"></button><button data-v="hard"></button></div></div>
       <div class="g-row"><span id="t-music">Music</span>
@@ -80,7 +82,7 @@ const UI={
  en:{title:"Freeze & Copy",sub:"Spin the animal wheel, watch it freeze — and copy the statue!",play:"Play",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
   g1:"Raise a hand to spin the wheel. The animal dances, freezes into a funny pose, and you copy it — hold the copy until the jar fills. After a few spins come mix-ups: half one animal, half another. 8 spins a game. One player plays against the clock; two players race to copy first.",
-  body:"Body",full:"Standing",seated:"Seated",who:"Players",solo:"One",duo:"Two",strict:"Copy",easy:"Easy",medium:"Medium",hard:"Hard",
+  body:"Body",full:"Standing",seated:"Seated",who:"Players",solo:"👤 1 player",duo:"👥 2-player race",strict:"Copy",easy:"Easy",medium:"Medium",hard:"Hard",
   music:"Music",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
   g2:"★ Turn the phone sideways. Standing: about 2.5–3 m away, so the whole body is seen. Seated: arms and trunk only; the phone can be closer, about 1–1.5 m.",
   g3:"★ Two players: stand side by side, both in the picture — best on a big screen (📺) with the phone farther back and sideways.",
@@ -94,7 +96,7 @@ const UI={
  he:{title:"קופאים ומעתיקים",sub:"מסובבים את גלגל החיות, החיה קופאת — ומעתיקים את הפסל!",play:"שחקו",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
   g1:"מרימים יד כדי לסובב את הגלגל. החיה רוקדת, קופאת בתנוחה מצחיקה, ומעתיקים אותה — מחזיקים עד שהצנצנת מתמלאת. אחרי כמה סיבובים מגיעים ערבובים: חצי חיה אחת וחצי חיה אחרת. 8 סיבובים במשחק. שחקן אחד משחק נגד השעון; שני שחקנים מתחרים מי מעתיק ראשון.",
-  body:"גוף",full:"עמידה",seated:"ישיבה",who:"שחקנים",solo:"אחד",duo:"שניים",strict:"העתקה",easy:"קל",medium:"בינוני",hard:"קשה",
+  body:"גוף",full:"עמידה",seated:"ישיבה",who:"שחקנים",solo:"👤 שחקן אחד",duo:"👥 מרוץ לשניים",strict:"העתקה",easy:"קל",medium:"בינוני",hard:"קשה",
   music:"מוזיקה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
   g2:"★ מסובבים את הטלפון לרוחב. עמידה: במרחק של בערך 2.5–3 מ׳, כך שכל הגוף נראה. ישיבה: רק ידיים וגו; אפשר לקרב את הטלפון, בערך מטר עד מטר וחצי.",
   g3:"★ שני שחקנים: עומדים זה לצד זה, שניהם בתמונה — הכי טוב על מסך גדול (📺) כשהטלפון רחוק יותר ולרוחב.",

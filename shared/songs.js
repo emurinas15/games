@@ -157,6 +157,24 @@ export const STYLES = {
     }
     if (k === 0) ev.push(['~crash', 0, .8, 0, 0]);
     return ev.map(e => (e[0].includes('guitar') || (e[2] *= e[0] === '~kick' ? .42 : .5), e)); } },
+  /* Floor Is Lava v4 (15 Nov, Edgar: "not rock — fun action / cartoon"): a cartoon chase. Bright trumpet on the melody,
+     oom-pah — tuba on the beat, short trombone chord stabs on the off-beat — snappy marching snare, kick and hats,
+     xylophone sparkles doubling the tune in the A3 / B2 sections, snare roll into each new section. Major key. */
+  lavaChase: { bpm: 144, play(s) {
+    const { mel, ch, root, i, sec } = at(s), ev = [], k = ((s % STEPS) + STEPS) % STEPS % 32, roll = k >= 28;
+    const tb = root < 41 ? root + 12 : root > 52 ? root - 12 : root, top = mel != null && mel > 86 ? mel - 12 : mel;
+    if (mel != null) ev.push(['trumpet', top, .36, .32, .22]);
+    if (mel != null && (sec === 'A3' || sec === 'B2')) ev.push(['xylophone', top + 12 > 96 ? top : top + 12, .16, .3, .2]);
+    if (i % 2 === 0) ev.push(['tuba', i % 4 === 0 ? tb : tb + 7 > 55 ? tb - 5 : tb + 7, .3, .24, .05]);   // oom
+    else for (const n of ch) ev.push(['trombone', n < 53 ? n + 12 : n, .085, .12, .12]);                 // pah
+    if (!roll) {
+      if (i === 0 || i === 4) ev.push(['~kick', 0, .45, 0, 0]);
+      if (i === 2 || i === 6) ev.push(['~snare', 0, .24, 0, 0]);
+      ev.push(['~hat', 0, i % 2 ? .18 : .28, 0, 0]);
+    } else { ev.push(['~snare', 0, .1 + (k - 28) * .045, 0, 0]); ev.push(['~snare', 0, .09 + (k - 28) * .04, 0, 0, 60 / 144 / 4]); }   // snare roll
+    if (k === 0) ev.push(['~crash', 0, .45, 0, 0]);
+    const out = sec === 'end' && k >= 24 ? (k === 24 ? [['trumpet', 84, .36, 1.2, .3], ['tuba', 36, .3, 1, .1], ['~crash', 0, .5, 0, 0], ...ch.map(n => ['trombone', n < 53 ? n + 12 : n, .1, 1, .2])] : []) : ev;
+    return out.map(e => (e[2] *= .44, e)); } },   // level-matched to the other games' music (offline RMS)
   /* Copy the Sprout (13 Nov, v2): a cappella in Edgar's own voice at the centre — 'doo'/'dah' scat melody with a
      chromatic scoop, 'bom' bass, a soft 'aah' choir harmony and a recorder third below in the B sections, gentle
      fingerpicked nylon guitar; mouth drums only a whisper; a bubble pop now and then */

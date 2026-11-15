@@ -28,7 +28,10 @@ export const TARGET = {
   // 15 Nov (Edgar): from the belt up — whole torso and both hands in the picture, arms about 30° out from the body,
   // room above the head (for jumps).
   // Spider Swat, Copy the Sprout, Jump Race. obs.arms === false (hands not seen) -> "Show me both hands".
-  reach: { x: .5, y: .36, size: r => Math.min(r.w * .26, r.h * .3), sizeMin: .7, sizeMax: 1.45, dx: .18, dy: .14 }
+  reach: { x: .5, y: .36, size: r => Math.min(r.w * .26, r.h * .3), sizeMin: .7, sizeMax: 1.45, dx: .18, dy: .14,
+    // 15 Nov (Edgar): phone upright (portrait) — the shape was small and floated mid-screen. Upright: bigger (hands near
+    // the sides) and the belt sits at the bottom edge, so the free space is above the head (where the spiders come).
+    portrait: { size: r => r.w * .3, belt: .95 } }
 };
 const HOLD = 1.5;        // seconds to hold the pose
 const POP = .7;          // seconds of the "done" animation
@@ -66,6 +69,7 @@ export function makeGuide(kind, snd = {}, over = {}) {   // txt: optional per-la
   /* where the avatar sits in this rect */
   function place(r) {
     const s = T.size(r);
+    if (T.portrait && r.h > r.w * 1.05) { const s2 = T.portrait.size(r); return { x: r.x + r.w * T.x, y: r.y + r.h * T.portrait.belt - s2 * 2, s: s2 }; }   // belt = nose + 2 shoulder widths
     if (T.foot) return { x: r.x + r.w * T.x, y: Math.max(r.y + r.h * T.y, r.y + r.h * T.foot - s * 4.37), s };   // feet at T.foot of the height
     return { x: r.x + r.w * T.x, y: r.y + r.h * T.y, s };
   }

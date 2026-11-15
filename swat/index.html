@@ -254,7 +254,10 @@ function spawn(force){
   const dist=F.sw*(reach==='far'?1.55:1.15)*(.9+Math.random()*.2);
   const size=Math.floor(Math.random()*3),s=Math.max(22,F.sw*[.2,.3,.42][size]);   // small = harder to hit, big = easier
   let x=sh.x+side*Math.cos(ang)*dist,y=sh.y-Math.sin(ang)*dist;
-  x=Math.max(s*1.2,Math.min(W-s*1.2,x));y=Math.max(H*.2,Math.min(H*.78,y));
+  // 15 Nov: phone upright — sideways spiders would land past the screen edge and all pile up there.
+  // Instead, tilt them upward (same distance from the shoulder) until they fit on the screen.
+  for(let a2=ang,k=0;k<12&&(x<s*1.2||x>W-s*1.2);k++){a2=a2<Math.PI/2?a2+Math.PI/36*2:a2-Math.PI/36*2;x=sh.x+side*Math.cos(a2)*dist;y=sh.y-Math.sin(a2)*dist;}
+  x=Math.max(s*1.2,Math.min(W-s*1.2,x));y=Math.max(H*(H>W?.12:.2),Math.min(H*.78,y));
   if(spiders.some(o=>o.state!=='fly'&&Math.hypot(o.x-x,o.ty-y)<s*2.2))return false;   // don't stack spiders
   let type='n';const r=Math.random();
   if(elapsed>=60){if(r<.2)type='b';else if(r<.36)type='h';else if(r<.58)type='r';}
