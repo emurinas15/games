@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Jump Race · Bamboo Physio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Grandstander:wght@700;900&family=Fredoka:wght@500;600;700&family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/kit.css">
+<style>
+.stopx{position:fixed;left:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:7;width:44px;height:44px;border-radius:50%;background:#fff;border:3px solid var(--ink);font:900 20px Fredoka,sans-serif;box-shadow:0 3px 0 var(--ink);display:none;cursor:pointer}
+.stopx.on{display:block}
+.snd.cast{font-size:19px}
+.lv b{display:block;font:700 14px Fredoka,sans-serif}
+.lv .stars{display:block;font-size:13px;min-height:16px;letter-spacing:1px}
+.levels.modes .lv{max-width:170px}
+.levels.modes .lv canvas{width:110px;height:64px}
+.btn2{display:block;margin:10px auto 0;background:#fff;border:3px solid var(--ink);border-radius:999px;padding:6px 18px;font:700 16px Fredoka,sans-serif;color:var(--ink);box-shadow:0 3px 0 var(--ink);cursor:pointer}
+.btn2:active{transform:translateY(3px);box-shadow:0 0 0 var(--ink)}
+.vs-names{display:flex;justify-content:center;gap:28px;font:700 15px Fredoka,sans-serif;margin:-2px 0 10px}
+body.casting .toast{visibility:hidden}
+@media (max-height:520px){
+  .card{padding:10px 14px 8px}
+  h1{font-size:26px}
+  .sub{display:none}
+  .levels{margin:0 0 8px}
+  .lv{padding:2px 2px 4px}
+  .lv canvas{width:44px;height:44px}
+  .levels.modes .lv canvas{width:76px;height:44px}
+  .btn{font-size:24px;padding:6px 0 5px}
+  .note{margin:6px 4px 2px}
+  .big-score{font-size:46px}
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<video id="v" playsinline muted></video>
+
+<div class="top">
+  <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 33 C 10 20, 20 9, 34 6 C 33 20, 24 31, 8 33 Z" fill="#7DCB6B" stroke="#2b2118" stroke-width="3.5" stroke-linejoin="round"/><path d="M11 30 C 17 23, 23 16, 29 11" fill="none" stroke="#2b2118" stroke-width="2.5" stroke-linecap="round"/></svg><span>Bamboo Physio</span></div>
+  <div class="tr"><button class="snd cast" id="cast">📺</button><button class="snd" id="snd" aria-pressed="false">🔊</button>
+  <div class="lang"><button id="lang-en" aria-pressed="true">EN</button><button id="lang-he" aria-pressed="false">עב</button></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+<button class="stopx" id="stopx" aria-label="Stop">✕</button>
+
+<div class="card" id="start">
+  <h1 id="t-title">Jump Race</h1>
+  <p class="sub" id="t-sub"></p>
+  <div class="levels modes" id="modes">
+    <button class="lv" data-m="vs"><canvas width="220" height="128"></canvas><b id="t-vs"></b></button>
+    <button class="lv" data-m="duo"><canvas width="220" height="128"></canvas><b id="t-duo"></b></button>
+  </div>
+  <div class="levels" id="animals">
+    <button class="lv" data-a="panda"><canvas width="128" height="128"></canvas><b></b><span class="stars"></span></button>
+    <button class="lv" data-a="duck"><canvas width="128" height="128"></canvas><b></b><span class="stars"></span></button>
+    <button class="lv" data-a="rabbit"><canvas width="128" height="128"></canvas><b></b><span class="stars"></span></button>
+  </div>
+  <button class="btn" id="play"><span id="t-play">Play</span></button>
+  <p class="note" id="t-privacy"></p>
+  <details id="grown">
+    <summary id="t-grown">For grown-ups</summary>
+    <div class="g-body">
+      <p id="t-g1"></p>
+      <div class="g-row"><span id="t-sens">Jump size</span>
+        <div class="seg" id="sens-seg"><button data-v="small"></button><button data-v="normal"></button></div></div>
+      <div class="g-row"><span id="t-music">Music</span>
+        <div class="seg" id="music-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-sfx">Sound effects</span>
+        <div class="seg" id="sfx-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <p id="t-g2"></p>
+      <p id="t-g3"></p>
+      <p class="mini" id="t-legal"></p>
+    </div>
+  </details>
+</div>
+
+<div class="card" id="end" hidden>
+  <h1 id="t-over"></h1>
+  <div class="big-score" dir="ltr"><span id="final">0</span></div>
+  <div class="vs-names" dir="ltr"><span id="n-left"></span><span id="n-right"></span></div>
+  <button class="btn" id="again"><span id="t-again">Play again</span></button>
+  <button class="btn2" id="menu"></button>
+  <p class="note" id="t-privacy2"></p>
+</div>
+
+<script type="module">
+/* Jump Race — Edgar, 15 Nov 2026.
+   One-minute jumping race in front of the camera (phone sideways, whole body in view).
+   · 2 players: two children side by side, each jump counted separately; most jumps after 1 minute wins.
+   · Beat the animals: race the Panda (jumps every 3 s: all fours → two legs → jump → wobbly landing),
+     then the Duck (every 2 s, flaps its wings in the air), then the Rabbit (every 1 s, ears flap at random).
+     Beat an animal = more jumps than it when the minute ends.
+   A jump = both ankles rise clearly above their standing level (hips as a fallback when the feet are not seen),
+   measured relative to the child's own trunk length, so it works near or far, big or small. Counting jumps from
+   body landmarks only (no audio, no rope); see project doc IP-CHECK.md. Nothing is recorded or sent. */
+import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom} from '../shared/kit.js';
+import {makeGuide} from '../shared/guide.js';
+import {setupCast} from '../shared/cast.js';
+import {DRAW,RACERS,jumpsAt} from './animals.js';
+
+const ROUND=60,ORDER=['panda','duck','rabbit'];
+const UI={
+ en:{title:"Jump Race",sub:"Jump as many times as you can in one minute!",play:"Play",vs:"Beat the animals",duo:"2 players",
+  panda:"Panda",duck:"Duck",rabbit:"Rabbit",
+  privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
+  g1:"Jump as many times as you can in one minute. 2 players: race each other, standing side by side. Beat the animals: race the Panda (it jumps every 3 seconds), then the Duck (every 2 seconds), then the Rabbit (every second). Jump more times than the animal before the minute ends to beat it. A jump counts when both feet leave the floor.",
+  sens:"Jump size",small:"Small jumps",normal:"Normal",music:"Music",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
+  g2:"★ Turn the phone sideways and stand it on the floor or a low shelf, about 2.5–3 m away, so the whole body shows, feet included. 2 players: stand side by side with space between you; best on a big screen (📺).",
+  g3:"★ Small jumps also counts little hops, for young children or children who find jumping hard.",
+  legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
+  ready:"Getting ready…",two:"Two players, side by side!",feet:"Step back so I can see your feet!",go:"Jump!",beat:a=>"Beat the "+a+"!",
+  turn:"Turn the phone sideways to play",nocam:"No camera here. Tap the screen to jump.",aria:"Game area",
+  you:"You",blue:"Blue",pink:"Pink",winL:"Blue wins!",winR:"Pink wins!",tie:"A tie!",won:a=>"You beat the "+a+"!",lost:"Almost!",tieA:"A tie! So close!",champ:"Animal champion!",
+  next:a=>"Next: "+a,again:"Try again",playagain:"Play again",menu:"Menu",left:"s"},
+ he:{title:"מירוץ קפיצות",sub:"קופצים הכי הרבה שאפשר בדקה אחת!",play:"שחקו",vs:"נגד החיות",duo:"2 שחקנים",
+  panda:"פנדה",duck:"ברווז",rabbit:"ארנב",
+  privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
+  g1:"קופצים כמה שיותר פעמים בדקה אחת. 2 שחקנים: מתחרים זה בזה, עומדים זה לצד זה. נגד החיות: מתחרים בפנדה (קופצת כל 3 שניות), אחר כך בברווז (כל 2 שניות) ואחר כך בארנב (כל שנייה). כדי לנצח חיה צריך לקפוץ יותר ממנה עד סוף הדקה. קפיצה נספרת כששתי הרגליים עוזבות את הרצפה.",
+  sens:"גודל קפיצה",small:"קפיצות קטנות",normal:"רגיל",music:"מוזיקה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
+  g2:"★ סובבו את הטלפון לרוחב והעמידו אותו על הרצפה או על מדף נמוך, בערך 2.5–3 מטר מהשחקנים, כך שכל הגוף נראה כולל הרגליים. 2 שחקנים: עומדים זה לצד זה עם רווח ביניהם — הכי טוב על מסך גדול (📺).",
+  g3:"★ ״קפיצות קטנות״ סופר גם ניתורים קטנים, לילדים צעירים או לילדים שקשה להם לקפוץ.",
+  legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
+  ready:"מתכוננים…",two:"שני שחקנים, זה לצד זה!",feet:"התרחקו קצת כדי שאראה את הרגליים!",go:"קופצים!",beat:a=>"נצחו את ה"+a+"!",
+  turn:"סובבו את הטלפון לרוחב כדי לשחק",nocam:"אין כאן מצלמה. הקישו על המסך כדי לקפוץ.",aria:"אזור המשחק",
+  you:"אתם",blue:"כחול",pink:"ורוד",winL:"הכחול ניצח!",winR:"הוורוד ניצח!",tie:"תיקו!",won:a=>"ניצחתם את ה"+a+"!",lost:"כמעט!",tieA:"תיקו! ממש קרוב!",champ:"אלופי החיות!",
+  next:a=>"הבא: "+a,again:"עוד ניסיון",playagain:"עוד פעם",menu:"תפריט",left:"שנ׳"}
+};
+
+let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
+let mode=LS.get('jr-mode','vs'); if(!['vs','duo'].includes(mode))mode='vs';
+let beaten=LS.get('jr-beat','');
+let animal=LS.get('jr-animal','')||ORDER.find(a=>!beaten.includes(a[0]))||'panda'; if(!ORDER.includes(animal))animal='panda';
+let sens=LS.get('jr-sens','normal'); if(!['small','normal'].includes(sens))sens='normal';
+const QS=new URLSearchParams(location.search),FAKE=QS.has('fake'),SPEED=FAKE?(+QS.get('speed')||1):1;   // ?fake = no camera, tap to jump (testing)
+S.track='island'; S.amb='none'; S.ambOn=false;   // bouncy marimba + kalimba (unused since Lava moved to rock)
+const syncSound=bindSound(()=>UI[lang]);
+let casting=false;
+const cast=setupCast({canvas:$('c'),button:$('cast'),lang:()=>lang,sound:()=>(audio(),S),onChange:v=>{casting=v;document.body.classList.toggle('casting',v);}});
+
+function segs(){
+  const u=UI[lang];
+  document.querySelectorAll('#sens-seg button').forEach(b=>{b.textContent=u[b.dataset.v];b.setAttribute('aria-pressed',b.dataset.v===sens);});
+  document.querySelectorAll('#modes .lv').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===mode));
+  document.querySelectorAll('#animals .lv').forEach(b=>{b.setAttribute('aria-pressed',b.dataset.a===animal);b.querySelector('b').textContent=u[b.dataset.a];
+    b.querySelector('.stars').textContent=beaten.includes(b.dataset.a[0])?'⭐':'';});
+  $('animals').hidden=mode!=='vs';
+}
+let lastRes=null;
+function setLang(l){
+  lang=l;LS.set('bamboo-lang',l);const u=UI[l];
+  document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
+  for(const k of ['title','sub','play','privacy','grown','g1','sens','music','sfx','g2','g3','legal','vs','duo'])
+    {const e=$('t-'+k);if(e)e.textContent=u[k];}
+  $('t-privacy2').textContent=u.privacy;$('menu').textContent=u.menu;
+  $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
+  $('c').setAttribute('aria-label',u.aria);
+  segs();syncSound();cast.paint&&cast.paint();if(lastRes&&!$('end').hidden)fillEnd();
+}
+$('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
+document.querySelectorAll('#sens-seg button').forEach(b=>b.onclick=()=>{sens=b.dataset.v;LS.set('jr-sens',sens);segs();});
+document.querySelectorAll('#modes .lv').forEach(b=>b.onclick=()=>{mode=b.dataset.m;LS.set('jr-mode',mode);SFX.tink();segs();});
+document.querySelectorAll('#animals .lv').forEach(b=>b.onclick=()=>{animal=b.dataset.a;LS.set('jr-animal',animal);SFX.tink();segs();});
+
+/* ================= CANVAS ================= */
+const cv=$('c'),ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;}
+addEventListener('resize',resize);resize();
+function toast(t,ms=4000){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.tm);if(ms)toast.tm=setTimeout(()=>e.classList.remove('on'),ms);}
+
+/* ================= SOUND ================= */
+const FX={
+  jump(k=0){const f=[520,660][k]||560;tone({f0:f*.6,f1:f*1.5,dur:.16,type:'sine',vol:.26});tone({f0:f*1.5,f1:f*1.9,dur:.08,type:'triangle',vol:.08,at:.05});},
+  thud(){tone({f0:120,f1:50,dur:.35,type:'sine',vol:.42});noise({dur:.25,freq:280,vol:.35});},
+  quack(){[0,.13].forEach(at=>tone({f0:640,f1:470,dur:.12,type:'sawtooth',vol:.12,filter:1150,q:3,at}));},
+  flutter(){for(let i=0;i<5;i++)noise({dur:.04,freq:2200,vol:.07,type:'bandpass',at:i*.07});},
+  hop(){tone({f0:900,f1:1500,dur:.07,type:'sine',vol:.12});},
+  whistle(){tone({f0:1900,f1:2100,dur:.5,type:'sine',vol:.14});tone({f0:2000,f1:2250,dur:.5,type:'sine',vol:.08});},
+  win(){[784,988,1175,1568].forEach((f,i)=>tone({f0:f,dur:.28,type:'triangle',vol:.28,at:i*.08}));},
+  aww(){tone({f0:520,f1:330,dur:.5,type:'triangle',vol:.16});}
+};
+
+/* ================= CAMERA + POSE TRACKING (on device) ================= */
+const video=$('v');
+let tracker=null,camOK=false,lastVT=-1,people=[];
+const vmap=()=>{const vw=video.videoWidth||640,vh=video.videoHeight||480,s=Math.max(W/vw,H/vh);return {vw,vh,s,ox:(W-vw*s)/2,oy:(H-vh*s)/2};};
+async function startCam(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('nocam');
+  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:false});
+  video.srcObject=stream;await video.play();
+  const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
+  const files=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+  const opts=(d,k)=>({baseOptions:{modelAssetPath:`https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_${k}/float16/1/pose_landmarker_${k}.task`,delegate:d},
+    runningMode:'VIDEO',numPoses:2,minPoseDetectionConfidence:.45,minPosePresenceConfidence:.45,minTrackingConfidence:.45});
+  let err=null;
+  for(const [d,k] of [['GPU','full'],['GPU','lite'],['CPU','lite']]){try{tracker=await vision.PoseLandmarker.createFromOptions(files,opts(d,k));break;}catch(e){err=e;}}
+  if(!tracker)throw err||new Error('model');
+  camOK=true;
+}
+function track(now){
+  if(!tracker||video.readyState<2||video.currentTime===lastVT)return false;lastVT=video.currentTime;
+  let res;try{res=tracker.detectForVideo(video,now);}catch(e){return false;}
+  const m=vmap(),L=res.landmarks||[];
+  const ps=L.map(lm=>{const p=lm.map(q=>({x:m.ox+(1-q.x)*m.vw*m.s,y:m.oy+q.y*m.vh*m.s,v:q.visibility??1}));
+    return {lm:p,nose:p[0],sw:Math.hypot(p[11].x-p[12].x,p[11].y-p[12].y)};}).filter(p=>p.lm[11].v>.4&&p.lm[12].v>.4);
+  ps.sort((a,b)=>a.nose.x-b.nose.x);
+  people=mode==='vs'&&ps.length>1?[ps.reduce((a,b)=>b.sw>a.sw?b:a)]:ps;   // vs: the closest person
+  return true;
+}
+const feetSeen=p=>p&&p.lm[27].v>.5&&p.lm[28].v>.5;
+
+/* ================= JUMP COUNTER ================= */
+/* Each player has their own detector. rise = how far both ankles (and the hips) are above their standing level,
+   in trunk lengths. A jump counts once when the rise passes the threshold; it re-arms after landing. */
+const TH={normal:{feet:.1,hip:.13},small:{feet:.065,hip:.09}};
+function makeDet(){return {n:0,armed:true,last:-9e9,seen:-9e9,base:null,pop:-9};}
+function stepDet(d,p,now,onJump){
+  const lm=p.lm;if(lm[23].v<.4||lm[24].v<.4)return;
+  const sh={x:(lm[11].x+lm[12].x)/2,y:(lm[11].y+lm[12].y)/2},hp={x:(lm[23].x+lm[24].x)/2,y:(lm[23].y+lm[24].y)/2};
+  const torso=Math.max(20,Math.hypot(sh.x-hp.x,sh.y-hp.y)),dt=Math.min(.2,(now-d.seen)/1000);
+  if(!d.base||now-d.seen>600)d.base={hip:hp.y,a0:lm[27].y,a1:lm[28].y};   // (re)start after being out of view
+  d.seen=now;
+  const B=d.base,feet=lm[27].v>.5&&lm[28].v>.5;
+  const rh=(B.hip-hp.y)/torso,r0=(B.a0-lm[27].y)/torso,r1=(B.a1-lm[28].y)/torso;
+  const rise=feet?Math.min(r0,r1,rh+.04):rh,th=feet?TH[sens].feet:TH[sens].hip;
+  // standing level follows the child slowly whenever they're on the ground (crouching is followed more slowly)
+  if(rise<.04){const k=Math.min(1,dt*4),kd=Math.min(1,dt*1.5);
+    B.hip+=(hp.y-B.hip)*(hp.y>B.hip?kd:k);if(feet){B.a0+=(lm[27].y-B.a0)*k;B.a1+=(lm[28].y-B.a1)*k;}}
+  if(d.armed&&rise>th&&now-d.last>250){d.armed=false;d.last=now;d.n++;d.pop=tNow;onJump&&onJump();}
+  else if(!d.armed&&rise<th*.4)d.armed=true;
+}
+
+/* ================= GAME ================= */
+let state='menu',tNow=0,countT=0,lastCount=9,elapsed=0,dets=[makeDet(),makeDet()],aCount=0,guide=null,setupT=0,pops=[],animSide=0,lastSec=99;
+const slotOf=p=>people.length>=2?people.indexOf(p):(p.nose.x<W/2?0:1);
+
+async function play(){
+  audio();SFX.go();
+  $('start').hidden=true;$('end').hidden=true;
+  if(!camOK&&!FAKE){toast(UI[lang].ready,0);state='loading';
+    try{await startCam();$('toast').classList.remove('on');}
+    catch(e){console.warn(e);toast(UI[lang].nocam,6000);}}
+  dets=[makeDet(),makeDet()];aCount=0;elapsed=0;pops=[];lastRes=null;lastSec=99;
+  $('stopx').classList.add('on');musicStart();
+  guide=null;
+  if(camOK&&mode==='vs'){guide=makeGuide('full');guide.reset();}
+  state=camOK?'setup':'count';countT=tNow;setupT=0;lastCount=9;
+}
+$('play').onclick=play;$('again').onclick=()=>{if(lastRes&&lastRes.next){animal=lastRes.next;LS.set('jr-animal',animal);segs();}play();};
+$('menu').onclick=()=>{$('end').hidden=true;$('start').hidden=false;state='menu';segs();};
+$('stopx').onclick=()=>endGame(true);
+
+/* no camera (or ?fake): tap = jump (2 players: left / right half of the screen) */
+cv.addEventListener('pointerdown',e=>{ if(camOK||state!=='play')return; const k=mode==='duo'&&e.clientX>W/2?1:0; jumpFx(k);dets[k].n++;dets[k].pop=tNow; });
+function jumpFx(k){FX.jump(k);}
+
+function endGame(quit){
+  state='over';musicStop();$('stopx').classList.remove('on');if(guide)guide.hide();
+  if(quit){state='menu';$('start').hidden=false;segs();return;}
+  FX.whistle();
+  const me=dets[0].n,other=mode==='duo'?dets[1].n:aCount;
+  const won=me>other;
+  lastRes={mode,me,other,won,tie:me===other,animal,next:null};
+  if(mode==='vs'&&won){if(!beaten.includes(animal[0])){beaten+=animal[0];LS.set('jr-beat',beaten);}
+    const i=ORDER.indexOf(animal);lastRes.next=ORDER[i+1]||null;}
+  if(mode==='duo'?!lastRes.tie:won){setTimeout(FX.win,500);confetti();} else if(mode==='vs')setTimeout(FX.aww,500);
+  fillEnd();$('end').hidden=false;
+}
+function fillEnd(){
+  const u=UI[lang],R=lastRes,an=u[R.animal];
+  $('final').textContent=R.me+' : '+R.other;
+  if(R.mode==='duo'){$('t-over').textContent=R.tie?u.tie:(R.me>R.other?u.winL:u.winR);$('n-left').textContent='🔵 '+u.blue;$('n-right').textContent='🩷 '+u.pink;
+    $('t-again').textContent=u.playagain;}
+  else{$('t-over').textContent=R.won?(R.animal==='rabbit'?u.champ:u.won(an)):(R.tie?u.tieA:u.lost);$('n-left').textContent=u.you;$('n-right').textContent=an;
+    $('t-again').textContent=R.next?u.next(u[R.next]):(R.won?u.playagain:u.again);}
+  $('t-privacy2').textContent=u.privacy;
+}
+function confetti(){for(let i=0;i<40;i++)pops.push({x:W*(.2+Math.random()*.6),y:H*.35,vx:(Math.random()-.5)*W*.9,vy:-H*(.4+Math.random()*.7),life:1.6+Math.random()*.6,c:['#FFD84D','#FF9FB0','#7DCB6B','#5FB7F0'][i%4]});}
+
+const portraitPlay=()=>H>W*1.05&&['setup','count','play'].includes(state);
+function stageRect(){const y=58,h=H-y-Math.max(56,H*.11),w=Math.min(W*.3,h*.82);return {x:12,y,w,h};}
+function playRect(){if(mode==='duo')return {x:0,y:0,w:W,h:H};const R=stageRect(),x=R.x+R.w+8;return {x,y:0,w:W-x,h:H};}
+
+let last=performance.now();
+function frame(now){
+  const dt=Math.max(0,Math.min(.05,(now-last)/1000))*SPEED;last=now;tNow+=dt;
+  let fresh=false;if(camOK)fresh=track(now);
+  if(portraitPlay()){render(dt);requestAnimationFrame(frame);return;}   // waits until the phone is turned sideways
+  if(state==='setup'){
+    if(guide){const p=people[0];if(guide.update(dt,p?{x:p.nose.x,y:p.nose.y,size:p.sw}:null,playRect())==='done'){state='count';countT=tNow;lastCount=9;}}
+    else{ if(people.length>=2&&people.every(feetSeen)){setupT+=dt;if(setupT>1){state='count';countT=tNow;}}else setupT=Math.max(0,setupT-dt); }
+  }
+  else if(state==='count'){
+    const n=3-Math.floor(tNow-countT);if(n!==lastCount){lastCount=n;if(n>0)SFX.tick();}
+    if(tNow-countT>=3){state='play';elapsed=0;SFX.boing();dets.forEach(d=>{d.n=0;d.base=null;});}
+    else if(camOK&&fresh)people.forEach(p=>stepDet(dets[mode==='duo'?slotOf(p):0],p,now,null));   // learn the standing level
+  }
+  else if(state==='play'){
+    elapsed+=dt;
+    if(camOK&&fresh)people.forEach(p=>{const k=mode==='duo'?slotOf(p):0;if(k>=0)stepDet(dets[k],p,now,()=>jumpFx(k));});
+    if(mode==='vs'){const n=jumpsAt(animal,elapsed);if(n>aCount){aCount=n;({panda:FX.thud,duck:FX.quack,rabbit:FX.hop})[animal]();}
+      if(animal==='duck'){const p=elapsed%2;if(p>=1&&p-dt<1)FX.flutter();}}
+    const left=Math.ceil(ROUND-elapsed);if(left<=5&&left<lastSec&&left>0)SFX.tick();lastSec=left;
+    if(elapsed>=ROUND)endGame(false);
+  }
+  render(dt);
+  requestAnimationFrame(frame);
+}
+
+/* ================= DRAWING ================= */
+function drawMirrored(){const m=vmap();ctx.save();ctx.translate(W,0);ctx.scale(-1,1);ctx.drawImage(video,W-m.ox-m.vw*m.s,m.oy,m.vw*m.s,m.vh*m.s);ctx.restore();}
+function bubble(txt,x,y,fs,fill='#fff'){
+  ctx.save();ctx.font=`700 ${fs}px Fredoka,sans-serif`;ctx.direction=lang==='he'?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';
+  const w=ctx.measureText(txt).width+fs*1.4,h=fs*1.9;
+  ctx.fillStyle=INK;ctx.beginPath();ctx.roundRect(x-w/2,y-h/2+4,w,h,h/2);ctx.fill();
+  ctx.fillStyle=fill;ctx.strokeStyle=INK;ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,h/2);ctx.fill();ctx.stroke();
+  ctx.fillStyle=INK;ctx.fillText(txt,x,y+1);ctx.restore();
+}
+function bigText(txt,x,y,fs,col='#FFD84D',sc=1){
+  ctx.save();ctx.translate(x,y);ctx.scale(sc,sc);ctx.font=`900 ${fs}px Grandstander,Fredoka,sans-serif`;ctx.direction=lang==='he'?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.lineJoin='round';ctx.lineWidth=fs*.14;ctx.strokeStyle=INK;ctx.fillStyle=INK;ctx.fillText(txt,0,fs*.08);ctx.strokeText(txt,0,0);ctx.fillStyle=col;ctx.fillText(txt,0,0);ctx.restore();
+}
+function drawTurnPhone(){
+  ctx.fillStyle='rgba(255,248,236,.92)';ctx.fillRect(0,0,W,H);
+  const cx=W/2,cy=H*.42,s=Math.min(W,H)*.22,k=(tNow%2.4)/2.4,rot=-Math.PI/2*Math.min(1,Math.max(0,(k-.3)*3));
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(rot);const p=new Path2D();p.roundRect(-s*.32,-s*.58,s*.64,s*1.16,s*.12);sticker(ctx,p,'#fff',5);
+  ctx.fillStyle='#DDF3FF';ctx.fillRect(-s*.24,-s*.46,s*.48,s*.92);ctx.restore();
+  ctx.strokeStyle=INK;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.arc(cx,cy,s*.85,-Math.PI*.9,-Math.PI*.55);ctx.stroke();
+  bubble(UI[lang].turn,W/2,H*.72,Math.max(18,Math.min(26,W*.05)));
+}
+/* soft outdoor scene the animal plays in: sky, a hill, grass, a few flowers */
+function scene(x,y,w,h,gy){
+  const g=ctx.createLinearGradient(0,y,0,y+h);g.addColorStop(0,'#CDEEFF');g.addColorStop(1,'#EAF8FF');ctx.fillStyle=g;ctx.fillRect(x,y,w,h);
+  ctx.fillStyle='rgba(255,255,255,.85)';const cr=w*.08;ctx.beginPath();ctx.arc(x+w*.25,y+h*.14,cr,0,7);ctx.arc(x+w*.25+cr,y+h*.14-cr*.4,cr*1.2,0,7);ctx.arc(x+w*.25+cr*2.1,y+h*.14,cr*.9,0,7);ctx.fill();
+  ctx.fillStyle='#B9E39A';ctx.beginPath();ctx.ellipse(x+w*.8,gy+h*.02,w*.55,h*.16,0,Math.PI,0);ctx.fill();
+  ctx.fillStyle='#8DD06E';ctx.fillRect(x,gy,w,y+h-gy);
+  ctx.fillStyle='#A3DB82';ctx.beginPath();ctx.ellipse(x+w*.3,gy+(y+h-gy)*.55,w*.4,(y+h-gy)*.25,0,0,7);ctx.fill();
+  for(const [fx,fy,c] of [[.12,.3,'#FFD84D'],[.86,.55,'#FF9FB0'],[.66,.25,'#FFFFFF']]){const px=x+w*fx,py=gy+(y+h-gy)*fy,r=Math.max(3,w*.018);
+    ctx.fillStyle=c;for(let i=0;i<5;i++){const a=i*1.257;ctx.beginPath();ctx.arc(px+Math.cos(a)*r,py+Math.sin(a)*r,r*.8,0,7);ctx.fill();}ctx.fillStyle='#F2A33A';ctx.beginPath();ctx.arc(px,py,r*.6,0,7);ctx.fill();}
+}
+function drawStage(){
+  const R=stageRect(),u=UI[lang];
+  ctx.save();const clip=new Path2D();clip.roundRect(R.x,R.y,R.w,R.h,24);
+  ctx.save();ctx.clip(clip);const gy=R.y+R.h*.8;scene(R.x,R.y,R.w,R.h,gy);
+  const s=Math.min(R.w*(animal==='panda'?.4:.5),R.h*.42/({panda:2,duck:1.7,rabbit:1.65})[animal]),ta=state==='play'?elapsed:-1-(tNow%40);
+  DRAW[animal](ctx,R.x+R.w/2,gy,s,ta);
+  ctx.restore();ctx.lineWidth=4;ctx.strokeStyle=INK;ctx.stroke(clip);ctx.restore();
+  // name + count
+  const fs=Math.max(15,Math.min(22,R.w*.09));bubble(u[animal],R.x+R.w/2,R.y+fs*1.4,fs,'#FFF8EC');
+  const n=state==='play'||state==='over'?aCount:0,ph=state==='play'?Math.max(0,1-(elapsed-(RACERS[animal].land+(aCount-1)*RACERS[animal].P))*4):0;
+  bigText(String(n),R.x+R.w/2,R.y+fs*1.4+Math.min(R.w*.35,R.h*.16)*.95,Math.min(R.w*.35,R.h*.16),'#fff',1+.3*(aCount?ph:0));
+}
+function headPoint(p){const lm=p.lm;return {x:p.nose.x,y:p.nose.y-Math.max(p.sw*.9,40)};}
+function render(dt){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  const u=UI[lang],live=camOK&&video.readyState>=2&&state!=='menu'&&!(state==='over'&&!camOK);
+  if(live&&state!=='menu'){drawMirrored();ctx.fillStyle='rgba(255,248,236,.08)';ctx.fillRect(0,0,W,H);}
+  else drawRoom(ctx,W,H);
+  if(state==='menu'||state==='loading'){drawDemo();drawPops(dt);return;}
+  if(portraitPlay()){drawTurnPhone();return;}
+  const fs=Math.max(18,Math.min(26,W*.04)),PR=playRect(),cx=PR.x+PR.w/2;
+  if(mode==='vs')drawStage();
+  else if(state!=='setup'){ctx.save();ctx.setLineDash([2,14]);ctx.lineCap='round';ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(W/2,90);ctx.lineTo(W/2,H-20);ctx.stroke();ctx.restore();}
+  if(state==='setup'){
+    if(guide)guide.draw(ctx,PR,lang);
+    else{bubble(u.two,W/2,H*.16,fs);
+      if(people.length&&!people.every(feetSeen))bubble(u.feet,W/2,H*.16+fs*2.4,fs*.8,'#FFF3C4');
+      people.forEach(p=>{const h=headPoint(p);sticker(ctx,ell(h.x,h.y,fs*.9,fs*.9),feetSeen(p)?'#8BD16B':'#fff',3);
+        ctx.strokeStyle=INK;ctx.lineWidth=4;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(h.x-fs*.4,h.y);ctx.lineTo(h.x-fs*.1,h.y+fs*.3);ctx.lineTo(h.x+fs*.45,h.y-fs*.35);ctx.stroke();});
+      if(setupT>0){ctx.fillStyle='rgba(125,203,107,.9)';ctx.fillRect(W*.3,H-26,W*.4*Math.min(1,setupT),10);}}
+    if(mode==='vs')bubble(u.beat(u[animal]),cx,H-fs*1.6,fs*.85,'#FFF8EC');
+  }
+  else if(state==='count'){const n=3-Math.floor(tNow-countT),k=(tNow-countT)%1;
+    if(n>0)bigText(String(n),cx,H*.42,Math.min(150,H*.22),'#fff',1+.25*Math.max(0,1-k*4));
+    if(mode==='vs')bubble(u.beat(u[animal]),cx,H*.18,fs,'#FFF8EC');}
+  else if(state==='play'||state==='over'){
+    if(state==='play'&&elapsed<.9)bigText(u.go,cx,H*.3,Math.min(110,H*.17),'#FFD84D',1+.3*Math.max(0,1-elapsed*4));
+    const left=Math.max(0,Math.ceil(ROUND-elapsed));
+    if(state==='play')bubble('⏱ '+left,cx,64+fs*.2,fs,left<=10?'#FFE3E8':'#fff');
+    // counts: big number over each player's head, plus a corner bubble in case the head is near the top
+    const cols=mode==='duo'?['#5FB7F0','#FF9FB0']:['#7DCB6B'];
+    for(let k=0;k<cols.length;k++){
+      const d=dets[k],pp=mode==='duo'?people.find(p=>slotOf(p)===k):people[0],pk=Math.max(0,1-(tNow-d.pop)*3.5);
+      if(pp&&camOK){const h=headPoint(pp);bigText(String(d.n),h.x,Math.max(110,h.y),Math.min(90,H*.13),cols[k],1+.4*pk);}
+      else bigText(String(d.n),mode==='duo'?(k?W*.75:W*.25):cx,H*.45,Math.min(120,H*.2),cols[k],1+.4*pk);
+    }
+    if(mode==='duo'){bubble(String(dets[0].n),40,64+fs*.2,fs,'#DDF3FF');bubble(String(dets[1].n),W-40,64+fs*.2,fs,'#FFE3E8');}
+  }
+  drawPops(dt);
+}
+function drawPops(dt){
+  pops=pops.filter(p=>(p.life-=dt)>0);
+  for(const p of pops){p.vy+=H*1.2*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.life*5);ctx.globalAlpha=Math.min(1,p.life*2);sticker(ctx,starPath(12),p.c||'#FFD84D',2.5);ctx.restore();}
+}
+/* menu: the three animals jump in a row on the grass */
+function drawDemo(){
+  const card=$('start').hidden?$('end'):$('start'),ct=card&&!card.hidden?card.getBoundingClientRect().top:H;
+  const gy=Math.min(H*.62,ct-10),s=Math.max(30,Math.min(W*.13,(gy-80)/1.9));
+  if(gy-80<40)return;
+  ctx.fillStyle='rgba(141,208,110,.55)';ctx.beginPath();ctx.ellipse(W/2,gy+s*.08,Math.min(W*.48,s*5),s*.22,0,0,7);ctx.fill();
+  ORDER.forEach((a,i)=>DRAW[a](ctx,W/2+(i-1)*s*1.7,gy,a==='panda'?s*.8:s,tNow+i*.37));
+}
+/* card icons */
+function icons(){
+  document.querySelectorAll('#animals .lv canvas').forEach(c=>{const g=c.getContext('2d'),a=c.parentNode.dataset.a;g.clearRect(0,0,128,128);DRAW[a](g,64,118,a==='panda'?72:88,-1);});
+  const [vsC,duoC]=[...document.querySelectorAll('#modes canvas')].map(c=>c.getContext('2d'));
+  vsC.clearRect(0,0,220,128);drawBean(vsC,62,118,'#7DCB6B',.9);DRAW.panda(vsC,160,118,64,-1);
+  duoC.clearRect(0,0,220,128);drawBean(duoC,72,118,'#5FB7F0',.9);drawBean(duoC,148,118,'#FF9FB0',.9,true);
+}
+function drawBean(c,x,gy,col,k,flip){   // a little jumping-bean player for the icons
+  c.save();c.translate(x,gy);c.scale(flip?-k:k,k);
+  sticker(c,ell(0,-48,30,42),col,4);c.fillStyle='rgba(255,255,255,.4)';c.fill(ell(-12,-70,8,5,-.5));
+  for(const sd of [-1,1]){c.fillStyle=INK;c.fill(ell(sd*10,-56,5,6));c.fillStyle='#fff';c.fill(ell(sd*10+2,-58,2,2));}
+  c.fillStyle='rgba(255,130,150,.65)';c.fill(ell(-18,-46,6,4));c.fill(ell(18,-46,6,4));
+  c.strokeStyle=INK;c.lineWidth=3;c.lineCap='round';c.beginPath();c.arc(0,-46,7,.15*Math.PI,.85*Math.PI);c.stroke();
+  c.lineWidth=5;c.beginPath();c.moveTo(-24,-56);c.lineTo(-40,-82);c.moveTo(24,-56);c.lineTo(40,-82);c.stroke();   // arms up: yay
+  c.restore();
+}
+
+if(FAKE){mode=LS.get('jr-mode','vs');}
+setLang(lang);icons();
+document.fonts&&document.fonts.ready.then(icons);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
