@@ -25,10 +25,10 @@ export const TARGET = {
   face: { x: .5, y: .5, size: r => Math.min(r.h * .2, r.w * .42), sizeMin: .6, sizeMax: 1.65, dx: .17, dy: .14 },
   full: { x: .5, y: .17, foot: .96, size: r => Math.min(r.h * .15, r.w * .3), sizeMin: .6, sizeMax: 1.7, dx: .2, dy: .1 },   // standing, head to toe; 14 Nov: feet near the bottom edge (was too high)
   body: { x: .5, y: .45, size: r => Math.min(r.w * .22, r.h * .2), sizeMin: .58, sizeMax: 1.75, dx: .18, dy: .15 },
-  // 15 Nov (Edgar's sketch): close to the phone, big; head a little below the middle with room above it,
-  // trunk running off the bottom edge, both arms held out and down to the sides so the hands show.
+  // 15 Nov (Edgar): from the belt up — whole torso and both hands in the picture, arms about 30° out from the body,
+  // room above the head (for jumps).
   // Spider Swat, Copy the Sprout, Jump Race. obs.arms === false (hands not seen) -> "Show me both hands".
-  reach: { x: .5, y: .47, size: r => Math.min(r.w * .3, r.h * .34), sizeMin: .7, sizeMax: 1.45, dx: .18, dy: .14 }
+  reach: { x: .5, y: .36, size: r => Math.min(r.w * .26, r.h * .3), sizeMin: .7, sizeMax: 1.45, dx: .18, dy: .14 }
 };
 const HOLD = 1.5;        // seconds to hold the pose
 const POP = .7;          // seconds of the "done" animation
@@ -36,9 +36,9 @@ const SKIP_AFTER = 8;    // "start anyway" button appears after this many second
 
 const TXT = {
   en: { find: 'Sit in front of the camera', fit: 'Fit into the shape', closer: 'Come a little closer', back: 'Move back a little',
-        middle: 'Move to the middle', raise: 'Raise the phone a little', lower: 'Lower the phone a little', hold: 'Hold still…', great: 'Great!', skip: 'Start anyway', arms: 'Arms out — show me both hands' },
+        middle: 'Move to the middle', raise: 'Raise the phone a little', lower: 'Lower the phone a little', hold: 'Hold still…', great: 'Great!', skip: 'Start anyway', arms: 'Show me both hands' },
   he: { find: 'שבו מול המצלמה', fit: 'היכנסו לתוך הצורה', closer: 'התקרבו קצת', back: 'התרחקו קצת',
-        middle: 'זוזו לאמצע', raise: 'הרימו קצת את הטלפון', lower: 'הנמיכו קצת את הטלפון', hold: 'להחזיק ככה…', great: 'מעולה!', skip: 'להתחיל בכל זאת', arms: 'ידיים לצדדים — תראו לי את שתי הידיים' }
+        middle: 'זוזו לאמצע', raise: 'הרימו קצת את הטלפון', lower: 'הנמיכו קצת את הטלפון', hold: 'להחזיק ככה…', great: 'מעולה!', skip: 'להתחיל בכל זאת', arms: 'תראו לי את שתי הידיים' }
 };
 
 export function makeGuide(kind, snd = {}, over = {}) {   // txt: optional per-language text overrides, e.g. {en:{find:'…'},he:{find:'…'}}
@@ -138,15 +138,16 @@ export function makeGuide(kind, snd = {}, over = {}) {   // txt: optional per-la
       return { top: y - hr * 1.5, bot: footY + s * .12 };
     }
     if (kind === 'reach' || kind === 'jump') {
+      const belt = shy + s * 1.45;
       blob(x, y - hr * .2, hr, hr * 1.22);                                      // head
-      bust(s * .13, y + hr * .7, hw, shy, bottom, hw * 1.12);                   // neck, shoulders, egg-shaped trunk off the bottom edge
+      bust(s * .13, y + hr * .7, hw, shy, belt, hw * .86);                     // neck, shoulders, torso down to the belt
       c.lineCap = 'round'; c.lineJoin = 'round';
-      for (const d of [-1, 1]) {                                                // arms out and down, hands well away from the body
-        const hx = x + d * hw * 2.2, hy = shy + s * .6;
-        c.lineWidth = s * .26; c.beginPath(); c.moveTo(x + d * hw * .9, shy + s * .18); c.quadraticCurveTo(x + d * hw * 1.75, shy + s * .12, hx, hy); c.stroke();
-        blob(hx + d * s * .02, hy + s * .05, s * .15, s * .16);                // hand
+      for (const d of [-1, 1]) {                                                // arms about 30° out from the body, hands fully in view
+        const sx = x + d * hw * .86, sy = shy + s * .2, hx = x + d * s * 1.2, hy = shy + s * 1.24;
+        c.lineWidth = s * .24; c.beginPath(); c.moveTo(sx, sy); c.quadraticCurveTo(x + d * s * 1.0, shy + s * .62, hx, hy); c.stroke();
+        blob(hx + d * s * .02, hy + s * .07, s * .13, s * .15);                // hand
       }
-      return { top: y - hr * 1.5, bot: Math.min(bottom, r.y + r.h) };
+      return { top: y - hr * 1.5, bot: belt + s * .2 };
     }
     blob(x, y - hr * .2, hr, hr * 1.22);                                        // head
     bust(s * .13, y + hr * .7, hw, shy, low, hw * .78);                         // neck, shoulders, trunk to the hips
