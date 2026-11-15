@@ -82,11 +82,11 @@ const UI={
  en:{title:"Freeze & Copy",sub:"Spin the animal wheel, watch it freeze — and copy the statue!",play:"Play",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
   g1:"Raise a hand to spin the wheel. The animal dances, freezes into a funny pose, and you copy it — hold the copy until the jar fills. After a few spins come mix-ups: half one animal, half another. 8 spins a game. One player plays against the clock; two players race to copy first.",
-  body:"Body",full:"Standing",seated:"Seated",who:"Players",solo:"👤 1 player",duo:"👥 2-player race",strict:"Copy",easy:"Easy",medium:"Medium",hard:"Hard",
+  body:"Body",full:"Standing",seated:"Seated",who:"Players",solo:"👤 1 player",duo:"👥 2-player race",strict:"Copy",easy:"Easy",medium:"Medium",hard:"Hard",feet:"Step back — show me your feet!",
   music:"Music",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
   g2:"★ Turn the phone sideways. Standing: about 2.5–3 m away, so the whole body is seen. Seated: arms and trunk only; the phone can be closer, about 1–1.5 m.",
   g3:"★ Two players: stand side by side, both in the picture — best on a big screen (📺) with the phone farther back and sideways.",
-  g4:"★ Copy sets how close the copy must be. Start with Medium. Time to copy gets shorter and holds get longer as the game goes on.",
+  g4:"★ Copy sets how close the copy must be: Easy (31°, one leg part may be off), Medium (23°, one leg part may be off), Hard (16°, every part exact). Every part of the body must be seen — standing, that includes both feet. Start with Easy. Time to copy gets shorter and holds get longer as the game goes on.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
   sec2:"copies",of:" of ",over:["Nice try!","Well done!","Great copying!","Statue masters!"],again:"Play again",newbest:"New record!",bestis:"Best: ",
   ready:"Getting ready…",two:"Two players, side by side!",raise:"Raise a hand to spin!",mix:"MIX-UP!",freeze:"Freeze!",copy:"Copy me!",
@@ -96,11 +96,11 @@ const UI={
  he:{title:"קופאים ומעתיקים",sub:"מסובבים את גלגל החיות, החיה קופאת — ומעתיקים את הפסל!",play:"שחקו",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
   g1:"מרימים יד כדי לסובב את הגלגל. החיה רוקדת, קופאת בתנוחה מצחיקה, ומעתיקים אותה — מחזיקים עד שהצנצנת מתמלאת. אחרי כמה סיבובים מגיעים ערבובים: חצי חיה אחת וחצי חיה אחרת. 8 סיבובים במשחק. שחקן אחד משחק נגד השעון; שני שחקנים מתחרים מי מעתיק ראשון.",
-  body:"גוף",full:"עמידה",seated:"ישיבה",who:"שחקנים",solo:"👤 שחקן אחד",duo:"👥 מרוץ לשניים",strict:"העתקה",easy:"קל",medium:"בינוני",hard:"קשה",
+  body:"גוף",full:"עמידה",seated:"ישיבה",who:"שחקנים",solo:"👤 שחקן אחד",duo:"👥 מרוץ לשניים",strict:"העתקה",easy:"קל",medium:"בינוני",hard:"קשה",feet:"זוזו אחורה — תראו לי את הרגליים!",
   music:"מוזיקה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
   g2:"★ מסובבים את הטלפון לרוחב. עמידה: במרחק של בערך 2.5–3 מ׳, כך שכל הגוף נראה. ישיבה: רק ידיים וגו; אפשר לקרב את הטלפון, בערך מטר עד מטר וחצי.",
   g3:"★ שני שחקנים: עומדים זה לצד זה, שניהם בתמונה — הכי טוב על מסך גדול (📺) כשהטלפון רחוק יותר ולרוחב.",
-  g4:"★ ״העתקה״ קובע כמה מדויקת צריכה להיות ההעתקה. מתחילים ב״בינוני״. הזמן להעתקה מתקצר וההחזקה מתארכת ככל שהמשחק מתקדם.",
+  g4:"★ ״העתקה״ קובע כמה מדויקת צריכה להיות ההעתקה: קל (31°, חלק אחד ברגליים יכול לסטות), בינוני (23°, חלק אחד ברגליים יכול לסטות), קשה (16°, כל חלק מדויק). כל חלקי הגוף צריכים להיראות — בעמידה גם שתי כפות הרגליים. מתחילים ב״קל״. הזמן להעתקה מתקצר וההחזקה מתארכת ככל שהמשחק מתקדם.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
   sec2:"העתקות",of:" מתוך ",over:["ניסיון יפה!","כל הכבוד!","העתקות מעולות!","אלופי הפסלים!"],again:"עוד פעם",newbest:"שיא חדש!",bestis:"השיא: ",
   ready:"מתכוננים…",two:"שני שחקנים, זה לצד זה!",raise:"הרימו יד כדי לסובב!",mix:"ערבוב!",freeze:"קופאים!",copy:"תעתיקו אותי!",
@@ -109,12 +109,14 @@ const UI={
   nocam:"אין כאן מצלמה — המשחק הזה צריך מצלמה.",aria:"אזור המשחק"}
 };
 
-const SPINS=8,TOL={easy:40,medium:31,hard:23};
+// 15 Nov (Edgar: "too forgiving"): one notch up — old Medium is the new Easy, old Hard the new Medium, and a new Hard
+// ~30% tighter than the old Hard. MISS = how many leg/trunk segments may be off (arms must always match).
+const SPINS=8,TOL={easy:31,medium:23,hard:16},MISS={easy:1,medium:1,hard:0};
 let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
 let bodyMode=LS.get('fc-body','full'); if(!['full','seated'].includes(bodyMode))bodyMode='full';
 let who=LS.get('fc-who3','solo'); if(!['solo','duo'].includes(who))who='solo';
 let strict=LS.get('fc-strict','medium'); if(!TOL[strict])strict='medium';
-let best=0; const bestKey=()=>'fc2-best-'+bodyMode+strict; const loadBest=()=>{best=+LS.get(bestKey(),'0')||0;};
+let best=0; const bestKey=()=>'fc3-best-'+bodyMode+strict;   /* new tiers -> new records */ const loadBest=()=>{best=+LS.get(bestKey(),'0')||0;};
 S.track='dance'; S.amb='none'; S.ambOn=false;
 const syncSound=bindSound(()=>UI[lang]);
 setupCast({canvas:$('c'),button:$('cast'),lang:()=>lang,sound:()=>(audio(),S),onChange:()=>{}});
@@ -200,11 +202,17 @@ function poseOf(p){
   return o;
 }
 const dAng=(a,b)=>Math.abs(((a-b+540)%360)-180);
-// ONE tolerance for every segment; every visible arm segment must match, and at least 75% of all visible segments
+// ONE tolerance for every segment. 15 Nov (Edgar: "barely saw my legs and accepted almost every pose"):
+// every segment the pose uses must be SEEN (standing: both legs too) — an unseen part no longer counts as a pass;
+// every arm segment must match, a leaning pose must be leaned, and only MISS[strict] other segments may be off.
 function compare(T,P,tol){
-  const keys=bodyMode==='full'?[...ARMS,...LEGS,'tr']:[...ARMS,'tr'];let n=0,good=0,armsOk=true;const by={};
-  for(const k of keys){if(T[k]==null||P[k]==null)continue;n++;const ok=dAng(T[k],P[k])<tol;by[k]=ok;if(ok)good++;else if(ARMS.includes(k)||(k==='tr'&&Math.abs(T.tr+90)>8))armsOk=false;  /* a leaning pose must be leaned */}
-  return {ok:n>=3&&armsOk&&good>=Math.ceil(n*.75),by,n};
+  const keys=bodyMode==='full'?[...ARMS,...LEGS,'tr']:[...ARMS,'tr'];let n=0,bad=0,unseen=0,armsOk=true,legsUnseen=false;const by={};
+  for(const k of keys){if(T[k]==null)continue;
+    const lean=k==='tr'&&Math.abs(T.tr+90)>8;
+    if(P[k]==null){if(k==='tr'&&!lean)continue;unseen++;by[k]=false;if(LEGS.includes(k))legsUnseen=true;continue;}   // straight trunk may go unseen (seated)
+    n++;const ok=dAng(T[k],P[k])<tol;by[k]=ok;
+    if(!ok){if(ARMS.includes(k)||lean)armsOk=false;else bad++;}}
+  return {ok:unseen===0&&n>=4&&armsOk&&bad<=MISS[strict],by,n,legsUnseen};
 }
 
 /* ================= THE ANIMALS ================= */
@@ -345,8 +353,13 @@ function drawHead(a,x,y,r,lw,t,o,skin=SKIN[0]){
 }
 
 /* ================= GAME ================= */
-let state='menu',phase='',phaseT=0,tNow=0,countT=0,spinN=0,score=[0,0],target=null,lastPicks=[],meters=[0,0],winner=-1,bigMsg='',bigMsgT=0,pops=[],frost=[],fillTick=0,lastMatch=[];
-let guide=null,awayT=0;
+let feetHintT=-9,state='menu',phase='',phaseT=0,tNow=0,countT=0,spinN=0,score=[0,0],target=null,lastPicks=[],meters=[0,0],winner=-1,bigMsg='',bigMsgT=0,pops=[],frost=[],fillTick=0,lastMatch=[];
+let guide=null,guides=[],awayT=0;
+// what the setup avatar needs to see: head + shoulders, both hands, and (standing) both feet
+const seen=(p,i)=>p.lm[i].v>.5;
+const obsOf=p=>p?{x:p.nose.x,y:p.nose.y,size:p.sw,arms:seen(p,15)&&seen(p,16),feet:bodyMode==='full'?seen(p,27)&&seen(p,28)&&seen(p,25)&&seen(p,26):true}:null;
+const halves=()=>{const R=playRect();return [{x:R.x,y:R.y,w:R.w/2,h:R.h},{x:R.x+R.w/2,y:R.y,w:R.w/2,h:R.h}];};
+function duoSlots(){const R=playRect(),mid=R.x+R.w/2,s=[null,null];if(people.length>=2){s[0]=people[0];s[1]=people[people.length-1];}else if(people.length===1)s[people[0].nose.x<mid?0:1]=people[0];return s;}
 function say(t,dur=1.6){bigMsg=t;bigMsgT=tNow+dur;}
 function setPhase(p){phase=p;phaseT=0;}
 const pick=a=>a[Math.floor(Math.random()*a.length)];
@@ -377,13 +390,15 @@ async function play(){
     try{await startCam();}catch(e){console.warn(e);state='menu';bigMsg='';$('start').hidden=false;toast(UI[lang].nocam,6000);return;}}
   bigMsg='';score=[0,0];spinN=0;lastPicks=[];target=null;pops=[];loadBest();
   $('stopx').classList.add('on');musicStart();
-  guide=who==='duo'?null:makeGuide(bodyMode==='full'?'full':'body');if(guide)guide.reset();
+  const gk=bodyMode==='full'?'full':'body',gt={en:{find:'Stand in front of the camera'},he:{find:'עמדו מול המצלמה'}};
+  guide=who==='duo'?null:makeGuide(gk,{},bodyMode==='full'?gt:{});if(guide)guide.reset();
+  guides=who==='duo'?[makeGuide(gk,{},bodyMode==='full'?gt:{}),makeGuide(gk,{},bodyMode==='full'?gt:{})]:[];guides.forEach(g=>g.reset());
   state='setup';
 }
 $('play').onclick=play;$('again').onclick=play;
 $('stopx').onclick=()=>endGame(true);
 function endGame(quit){
-  state='over';musicStop();$('stopx').classList.remove('on');if(guide)guide.hide();target=null;
+  state='over';musicStop();$('stopx').classList.remove('on');if(guide)guide.hide();guides.forEach(g=>g.hide());target=null;
   if(quit){state='menu';$('start').hidden=false;return;}
   const sc=who==='duo'?Math.max(score[0],score[1]):score[0];
   lastNew=who==='solo'&&sc>best;if(lastNew){best=sc;LS.set(bestKey(),String(sc));}
@@ -402,8 +417,8 @@ function frame(now){
   const u=UI[lang];
   if(portraitPlay()){render(dt);requestAnimationFrame(frame);return;}   // the game waits until the phone is turned sideways
   if(state==='setup'){
-    if(guide){const p=people[0];if(guide.update(dt,p?{x:p.nose.x,y:p.nose.y,size:p.sw}:null,playRect())==='done'){state='count';countT=tNow;}}
-    else{ if(people.length>=2){awayT+=dt;if(awayT>1){state='count';countT=tNow;awayT=0;}}else awayT=0; }
+    if(guide){if(guide.update(dt,obsOf(people[0]),playRect())==='done'){state='count';countT=tNow;}}
+    else{const sl=duoSlots(),hv=halves(),d=guides.map((g,k)=>g.update(dt,obsOf(sl[k]),hv[k])==='done');if(d[0]&&d[1]){state='count';countT=tNow;}}
   }
   else if(state==='count'){ if(tNow-countT>=3)nextSpin(); }
   else if(state==='play'){
@@ -420,7 +435,7 @@ function frame(now){
     else if(phase==='copy'){
       const n=who==='duo'?2:1;lastMatch=[];
       for(let i=0;i<n;i++){const p=who==='duo'?people[i]:people[0];
-        if(p){const r=compare(target.pose,poseOf(p),TOL[strict]);lastMatch[i]={r,p};
+        if(p){const r=compare(target.pose,poseOf(p),TOL[strict]);lastMatch[i]={r,p};if(r.legsUnseen&&tNow-feetHintT>3){feetHintT=tNow;say(u.feet,1.4);}
           if(r.ok){meters[i]=Math.min(1,meters[i]+dt/holdTime());fillTick+=dt;if(fillTick>.2){fillTick=0;FX.fill(meters[i]);}}
           else meters[i]=Math.max(0,meters[i]-dt*.4);}
         else meters[i]=Math.max(0,meters[i]-dt*.4);
@@ -528,7 +543,7 @@ function render(dt){
   if(state==='menu'||state==='over'){drawDemo();return;}
   const fs=Math.max(18,Math.min(26,W*.045));
   if(portraitPlay()){drawTurnPhone();return;}
-  if(state==='setup'){ if(guide)guide.draw(ctx,playRect(),lang); else bubble(u.two,W/2,H*.16,fs); }
+  if(state==='setup'){ if(guide)guide.draw(ctx,playRect(),lang); else{const hv=halves();guides.forEach((g,k)=>g.draw(ctx,hv[k],lang));} }
   else if(state==='count'){const n=3-Math.floor(tNow-countT),k=(tNow-countT)%1;if(n>0)bigText(String(n),W/2,H*.42,Math.min(150,H*.22),'#fff',1+.25*Math.max(0,1-k*4));}
   else if(state==='play'){
     if(phase==='spin'||phase==='mix')drawWheel();

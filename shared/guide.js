@@ -39,9 +39,9 @@ const SKIP_AFTER = 8;    // "start anyway" button appears after this many second
 
 const TXT = {
   en: { find: 'Sit in front of the camera', fit: 'Fit into the shape', closer: 'Come a little closer', back: 'Move back a little',
-        middle: 'Move to the middle', raise: 'Raise the phone a little', lower: 'Lower the phone a little', hold: 'Hold still…', great: 'Great!', skip: 'Start anyway', arms: 'Show me both hands' },
+        middle: 'Move to the middle', raise: 'Raise the phone a little', lower: 'Lower the phone a little', hold: 'Hold still…', great: 'Great!', skip: 'Start anyway', arms: 'Show me both hands', feet: 'Show me your feet' },
   he: { find: 'שבו מול המצלמה', fit: 'היכנסו לתוך הצורה', closer: 'התקרבו קצת', back: 'התרחקו קצת',
-        middle: 'זוזו לאמצע', raise: 'הרימו קצת את הטלפון', lower: 'הנמיכו קצת את הטלפון', hold: 'להחזיק ככה…', great: 'מעולה!', skip: 'להתחיל בכל זאת', arms: 'תראו לי את שתי הידיים' }
+        middle: 'זוזו לאמצע', raise: 'הרימו קצת את הטלפון', lower: 'הנמיכו קצת את הטלפון', hold: 'להחזיק ככה…', great: 'מעולה!', skip: 'להתחיל בכל זאת', arms: 'תראו לי את שתי הידיים', feet: 'תראו לי את כפות הרגליים' }
 };
 
 export function makeGuide(kind, snd = {}, over = {}) {   // txt: optional per-language text overrides, e.g. {en:{find:'…'},he:{find:'…'}}
@@ -95,6 +95,7 @@ export function makeGuide(kind, snd = {}, over = {}) {   // txt: optional per-la
     else if (dy > ty) key = 'lower';          // head too low on the screen -> the phone is aimed too high
     else if (dy < -ty) key = 'raise';
     else if (obs.arms === false) key = 'arms';
+    else if (obs.feet === false) key = 'feet';   // 15 Nov (Freeze & Copy standing): both feet must be in the picture
     g.inside = !key;
     if (g.inside) {
       g.prog += dt / HOLD; g.hintKey = 'hold';
