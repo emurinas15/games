@@ -99,6 +99,7 @@ body.casting .toast{visibility:hidden}
 import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
 import {setupCast} from '../shared/cast.js';
+import {setupHowTo,seg,bigStar} from '../shared/howto.js';
 import {DRAW,RACERS,jumpsAt} from './animals.js';
 
 const ROUND=60,ORDER=['panda','duck','rabbit'];
@@ -431,6 +432,29 @@ function drawBean(c,x,gy,col,k,flip){   // a little jumping-bean player for the 
   c.strokeStyle=INK;c.lineWidth=3;c.lineCap='round';c.beginPath();c.arc(0,-46,7,.15*Math.PI,.85*Math.PI);c.stroke();
   c.lineWidth=5;c.beginPath();c.moveTo(-24,-56);c.lineTo(-40,-82);c.moveTo(24,-56);c.lineTo(40,-82);c.stroke();   // arms up: yay
   c.restore();
+}
+
+/* ================= HOW TO PLAY (cartoon for a 5-year-old) ================= */
+{
+  const P=.75;   // the cartoon kid jumps every 0.75 s
+  const hopY=(t,s)=>{const k=(t%P)/P;return k<.6?Math.sin(k/.6*Math.PI)*s*.55:0;};
+  function ground(c,w,h){c.fillStyle='rgba(141,208,110,.6)';c.beginPath();c.ellipse(w/2,h*.88,w*.44,h*.06,0,0,7);c.fill();}
+  function count(c,x,y,n,fs,col){c.save();c.font=`900 ${fs}px Grandstander,Fredoka,sans-serif`;c.textAlign='center';c.textBaseline='middle';c.lineJoin='round';
+    c.lineWidth=fs*.16;c.strokeStyle=INK;c.strokeText(String(n),x,y);c.fillStyle=col;c.fillText(String(n),x,y);c.restore();}
+  const S=(w,h)=>Math.min(w*.16,h*.3);
+  setupHowTo({lang:()=>lang,play:()=>play(),steps:[
+    {dur:3,cap:{en:'Jump, jump, jump! 🦘',he:'קופצים, קופצים, קופצים! 🦘'},draw(c,w,h,t,k){const s=S(w,h),gy=h*.88;ground(c,w,h);
+      drawBean(c,w/2,gy-hopY(t,s),'#7DCB6B',s/90);count(c,w/2,h*.4,Math.floor(t/P)+1,s*.55,'#FFD84D');}},
+    {dur:3.4,cap:{en:'Race the animals 🐼',he:'מתחרים בחיות 🐼'},draw(c,w,h,t,k){const s=S(w,h),gy=h*.88;ground(c,w,h);
+      drawBean(c,w*.33,gy-hopY(t,s),'#7DCB6B',s/90);DRAW.panda(c,w*.67,gy,s*.85,t+2);
+      count(c,w*.33,h*.4,Math.floor(t/P)+1,s*.5,'#FFD84D');count(c,w*.67,h*.4,jumpsAt('panda',t+2),s*.5,'#FFFFFF');}},
+    {dur:2.8,cap:{en:'…or race a friend 👫',he:'…או מתחרים בחבר 👫'},draw(c,w,h,t,k){const s=S(w,h),gy=h*.88;ground(c,w,h);
+      drawBean(c,w*.33,gy-hopY(t,s),'#5FB7F0',s/90);drawBean(c,w*.67,gy-hopY(t+.3,s),'#FF9FB0',s/90,true);
+      count(c,w*.33,h*.4,Math.floor(t/P)+1,s*.5,'#5FB7F0');count(c,w*.67,h*.4,Math.floor((t+.3)/P)+1,s*.5,'#FF9FB0');}},
+    {dur:2.2,cap:{en:'Most jumps in 1 minute wins! ⭐',he:'מי שקופץ הכי הרבה בדקה מנצח! ⭐'},draw(c,w,h,t,k){const s=S(w,h),gy=h*.88;ground(c,w,h);
+      drawBean(c,w/2,gy-hopY(t*1.4,s),'#7DCB6B',s/90);
+      for(let i=0;i<8;i++){const a=i/8*6.3,r=h*(.08+k*.3);bigStar(c,w/2+Math.cos(a)*r*1.6,h*.5+Math.sin(a)*r,15*(1.2-k*.6),a+k*3);}}}
+  ]});
 }
 
 if(FAKE){mode=LS.get('jr-mode','vs');}
