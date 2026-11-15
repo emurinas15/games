@@ -94,9 +94,8 @@ body.casting .toast{visibility:hidden}
    · Beat the animals: race the Panda (jumps every 3 s: all fours → two legs → jump → wobbly landing),
      then the Duck (every 2 s, flaps its wings in the air), then the Rabbit (every 1 s, ears flap at random).
      Beat an animal = more jumps than it when the minute ends.
-   A jump = both ankles rise clearly above their standing level (hips as a fallback when the feet are not seen),
-   measured relative to the child's own trunk length, so it works near or far, big or small. Counting jumps from
-   body landmarks only (no audio, no rope); see project doc IP-CHECK.md. Nothing is recorded or sent. */
+   A jump is read from the upper body only (head + both shoulders), so the child can stand close and watch the
+   screen; see the JUMP COUNTER notes. Body landmarks only (no audio, no rope); see project doc IP-CHECK.md. Nothing is recorded or sent. */
 import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
 import {setupCast} from '../shared/cast.js';
@@ -107,24 +106,24 @@ const UI={
  en:{title:"Jump Race",sub:"Jump as many times as you can in one minute!",play:"Play",vs:"Beat the animals",duo:"2 players",
   panda:"Panda",duck:"Duck",rabbit:"Rabbit",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
-  g1:"Jump as many times as you can in one minute. 2 players: race each other, standing side by side. Beat the animals: race the Panda (it jumps every 3 seconds), then the Duck (every 2 seconds), then the Rabbit (every second). Jump more times than the animal before the minute ends to beat it. A jump counts when both feet leave the floor.",
+  g1:"Jump as many times as you can in one minute. 2 players: race each other, standing side by side. Beat the animals: race the Panda (it jumps every 3 seconds), then the Duck (every 2 seconds), then the Rabbit (every second). Jump more times than the animal before the minute ends to beat it. The camera only needs to see from the belly button up: a jump counts when the head and both shoulders go up together and come back down quickly. Waving the arms, shrugging, nodding or standing up on the toes doesn't count.",
   sens:"Jump size",small:"Small jumps",normal:"Normal",music:"Music",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
-  g2:"★ Turn the phone sideways and stand it on the floor or a low shelf, about 2.5–3 m away, so the whole body shows, feet included. 2 players: stand side by side with space between you; best on a big screen (📺).",
+  g2:"★ Turn the phone sideways and stand it at about chest height (a table or shelf), about 1–1.5 m away, so the child sees the screen and the camera sees the head, shoulders and belly. Leave room above the head for the jumps. 2 players: stand side by side, a little farther back.",
   g3:"★ Small jumps also counts little hops, for young children or children who find jumping hard.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
-  ready:"Getting ready…",two:"Two players, side by side!",feet:"Step back so I can see your feet!",go:"Jump!",beat:a=>"Beat the "+a+"!",
+  ready:"Getting ready…",two:"Two players, side by side!",closer:"Come a little closer",back:"Move back a little",lower:"Lower the phone a little",go:"Jump!",beat:a=>"Beat the "+a+"!",
   turn:"Turn the phone sideways to play",nocam:"No camera here. Tap the screen to jump.",aria:"Game area",
   you:"You",blue:"Blue",pink:"Pink",winL:"Blue wins!",winR:"Pink wins!",tie:"A tie!",won:a=>"You beat the "+a+"!",lost:"Almost!",tieA:"A tie! So close!",champ:"Animal champion!",
   next:a=>"Next: "+a,again:"Try again",playagain:"Play again",menu:"Menu",left:"s"},
  he:{title:"מירוץ קפיצות",sub:"קופצים הכי הרבה שאפשר בדקה אחת!",play:"שחקו",vs:"נגד החיות",duo:"2 שחקנים",
   panda:"פנדה",duck:"ברווז",rabbit:"ארנב",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
-  g1:"קופצים כמה שיותר פעמים בדקה אחת. 2 שחקנים: מתחרים זה בזה, עומדים זה לצד זה. נגד החיות: מתחרים בפנדה (קופצת כל 3 שניות), אחר כך בברווז (כל 2 שניות) ואחר כך בארנב (כל שנייה). כדי לנצח חיה צריך לקפוץ יותר ממנה עד סוף הדקה. קפיצה נספרת כששתי הרגליים עוזבות את הרצפה.",
+  g1:"קופצים כמה שיותר פעמים בדקה אחת. 2 שחקנים: מתחרים זה בזה, עומדים זה לצד זה. נגד החיות: מתחרים בפנדה (קופצת כל 3 שניות), אחר כך בברווז (כל 2 שניות) ואחר כך בארנב (כל שנייה). כדי לנצח חיה צריך לקפוץ יותר ממנה עד סוף הדקה. המצלמה צריכה לראות רק מהטבור ומעלה: קפיצה נספרת כשהראש ושתי הכתפיים עולים יחד ויורדים מהר. נפנוף ידיים, משיכת כתפיים, הנהון או עלייה על קצות האצבעות לא נספרים.",
   sens:"גודל קפיצה",small:"קפיצות קטנות",normal:"רגיל",music:"מוזיקה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
-  g2:"★ סובבו את הטלפון לרוחב והעמידו אותו על הרצפה או על מדף נמוך, בערך 2.5–3 מטר מהשחקנים, כך שכל הגוף נראה כולל הרגליים. 2 שחקנים: עומדים זה לצד זה עם רווח ביניהם — הכי טוב על מסך גדול (📺).",
+  g2:"★ סובבו את הטלפון לרוחב והעמידו אותו בגובה החזה (על שולחן או מדף), בערך מטר עד מטר וחצי מהילד, כך שהילד רואה את המסך והמצלמה רואה את הראש, הכתפיים והבטן. השאירו מקום מעל הראש לקפיצות. 2 שחקנים: עומדים זה לצד זה, קצת יותר רחוק.",
   g3:"★ ״קפיצות קטנות״ סופר גם ניתורים קטנים, לילדים צעירים או לילדים שקשה להם לקפוץ.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
-  ready:"מתכוננים…",two:"שני שחקנים, זה לצד זה!",feet:"התרחקו קצת כדי שאראה את הרגליים!",go:"קופצים!",beat:a=>"נצחו את ה"+a+"!",
+  ready:"מתכוננים…",two:"שני שחקנים, זה לצד זה!",closer:"התקרבו קצת",back:"התרחקו קצת",lower:"הנמיכו קצת את הטלפון",go:"קופצים!",beat:a=>"נצחו את ה"+a+"!",
   turn:"סובבו את הטלפון לרוחב כדי לשחק",nocam:"אין כאן מצלמה. הקישו על המסך כדי לקפוץ.",aria:"אזור המשחק",
   you:"אתם",blue:"כחול",pink:"ורוד",winL:"הכחול ניצח!",winR:"הוורוד ניצח!",tie:"תיקו!",won:a=>"ניצחתם את ה"+a+"!",lost:"כמעט!",tieA:"תיקו! ממש קרוב!",champ:"אלופי החיות!",
   next:a=>"הבא: "+a,again:"עוד ניסיון",playagain:"עוד פעם",menu:"תפריט",left:"שנ׳"}
@@ -211,28 +210,38 @@ function track(now){
   people=mode==='vs'&&ps.length>1?[ps.reduce((a,b)=>b.sw>a.sw?b:a)]:ps;   // vs: the closest person
   return true;
 }
-const feetSeen=p=>p&&p.lm[27].v>.5&&p.lm[28].v>.5;
 
-/* ================= JUMP COUNTER ================= */
-/* Each player has their own detector. rise = how far both ankles (and the hips) are above their standing level,
-   in trunk lengths. A jump counts once when the rise passes the threshold; it re-arms after landing. */
-const TH={normal:{feet:.1,hip:.13},small:{feet:.065,hip:.09}};
-function makeDet(){return {n:0,armed:true,last:-9e9,seen:-9e9,base:null,pop:-9};}
+/* ================= JUMP COUNTER (upper body only) ================= */
+/* 15 Nov (Edgar): the child stands close enough to see the screen, so the camera sees only belly button and up.
+   A jump is read from the head (nose + ears) and both shoulders — never the arms:
+   · the head AND both shoulders must rise together, above the child's standing level (a shrug moves only the
+     shoulders, a nod only the head → no jump);
+   · the rise must be quick (from standing level to the threshold in under 0.35 s) and the child must come back
+     down within 0.9 s (getting up from a squat or rising on the toes and staying there → no jump);
+   · sizes are in shoulder widths, so it works for small and big children, near or far.
+   The jump is counted when the child lands. Waving or raising the arms does nothing. */
+const TH={normal:.22,small:.13};
+function makeDet(){return {n:0,last:-9e9,seen:-9e9,B:null,u:0,up:false,upT:0,lowT:0,pop:-9};}
 function stepDet(d,p,now,onJump){
-  const lm=p.lm;if(lm[23].v<.4||lm[24].v<.4)return;
-  const sh={x:(lm[11].x+lm[12].x)/2,y:(lm[11].y+lm[12].y)/2},hp={x:(lm[23].x+lm[24].x)/2,y:(lm[23].y+lm[24].y)/2};
-  const torso=Math.max(20,Math.hypot(sh.x-hp.x,sh.y-hp.y)),dt=Math.min(.2,(now-d.seen)/1000);
-  if(!d.base||now-d.seen>600)d.base={hip:hp.y,a0:lm[27].y,a1:lm[28].y};   // (re)start after being out of view
+  const lm=p.lm;if(lm[0].v<.5)return;
+  const hs=[0,7,8].filter(i=>lm[i].v>.4),yh=hs.reduce((a,i)=>a+lm[i].y,0)/hs.length,ys=(lm[11].y+lm[12].y)/2;
+  const dt=Math.min(.2,(now-d.seen)/1000);
+  if(!d.B||now-d.seen>600){d.B={s:ys,h:yh};d.u=p.sw;d.up=false;d.lowT=now;}
   d.seen=now;
-  const B=d.base,feet=lm[27].v>.5&&lm[28].v>.5;
-  const rh=(B.hip-hp.y)/torso,r0=(B.a0-lm[27].y)/torso,r1=(B.a1-lm[28].y)/torso;
-  const rise=feet?Math.min(r0,r1,rh+.04):rh,th=feet?TH[sens].feet:TH[sens].hip;
-  // standing level follows the child slowly whenever they're on the ground (crouching is followed more slowly)
-  if(rise<.04){const k=Math.min(1,dt*4),kd=Math.min(1,dt*1.5);
-    B.hip+=(hp.y-B.hip)*(hp.y>B.hip?kd:k);if(feet){B.a0+=(lm[27].y-B.a0)*k;B.a1+=(lm[28].y-B.a1)*k;}}
-  if(d.armed&&rise>th&&now-d.last>250){d.armed=false;d.last=now;d.n++;d.pop=tNow;onJump&&onJump();}
-  else if(!d.armed&&rise<th*.4)d.armed=true;
+  const B=d.B,rs=(B.s-ys)/d.u,rh=(B.h-yh)/d.u,rise=Math.min(rs,rh),th=TH[sens];
+  if(!d.up){
+    if(rise<.06){   // on the ground: the standing level follows the child (going down, e.g. a squat, is followed slowly)
+      const k=Math.min(1,dt*3),kd=Math.min(1,dt*1.2);
+      B.s+=(ys-B.s)*(ys>B.s?kd:k);B.h+=(yh-B.h)*(yh>B.h?kd:k);d.u+=(p.sw-d.u)*Math.min(1,dt*1.5);d.lowT=now;
+    }
+    if(rise>th&&Math.abs(rs-rh)<Math.max(.12,rise*.5)&&now-d.lowT<350){d.up=true;d.upT=now;}
+  } else if(rise<th*.4){
+    d.up=false;d.lowT=now;
+    if(now-d.upT<900&&now-d.last>250){d.last=now;d.n++;d.pop=tNow;onJump&&onJump();}
+  } else if(now-d.upT>1200){ d.up=false;B.s=ys;B.h=yh;d.lowT=now; }   // stayed up: not a jump; this is the new standing level
 }
+/* setup check for 2 players: each one close enough to see the screen, head with room above it */
+function fit(p){ if(p.lm[0].v<.5)return 'find'; if(p.sw<W*.07)return 'closer'; if(p.sw>W*.3)return 'back'; if(p.nose.y<H*.25)return 'lower'; return ''; }
 
 /* ================= GAME ================= */
 let state='menu',tNow=0,countT=0,lastCount=9,elapsed=0,dets=[makeDet(),makeDet()],aCount=0,guide=null,setupT=0,pops=[],animSide=0,lastSec=99;
@@ -247,7 +256,7 @@ async function play(){
   dets=[makeDet(),makeDet()];aCount=0;elapsed=0;pops=[];lastRes=null;lastSec=99;
   $('stopx').classList.add('on');musicStart();
   guide=null;
-  if(camOK&&mode==='vs'){guide=makeGuide('full');guide.reset();}
+  if(camOK&&mode==='vs'){guide=makeGuide('jump',{},{en:{find:'Stand in front of the camera'},he:{find:'עמדו מול המצלמה'}});guide.reset();}
   state=camOK?'setup':'count';countT=tNow;setupT=0;lastCount=9;
 }
 $('play').onclick=play;$('again').onclick=()=>{if(lastRes&&lastRes.next){animal=lastRes.next;LS.set('jr-animal',animal);segs();}play();};
@@ -292,11 +301,11 @@ function frame(now){
   if(portraitPlay()){render(dt);requestAnimationFrame(frame);return;}   // waits until the phone is turned sideways
   if(state==='setup'){
     if(guide){const p=people[0];if(guide.update(dt,p?{x:p.nose.x,y:p.nose.y,size:p.sw}:null,playRect())==='done'){state='count';countT=tNow;lastCount=9;}}
-    else{ if(people.length>=2&&people.every(feetSeen)){setupT+=dt;if(setupT>1){state='count';countT=tNow;}}else setupT=Math.max(0,setupT-dt); }
+    else{ if(people.length>=2&&people.every(p=>!fit(p))){setupT+=dt;if(setupT>1){state='count';countT=tNow;}}else setupT=Math.max(0,setupT-dt); }
   }
   else if(state==='count'){
     const n=3-Math.floor(tNow-countT);if(n!==lastCount){lastCount=n;if(n>0)SFX.tick();}
-    if(tNow-countT>=3){state='play';elapsed=0;SFX.boing();dets.forEach(d=>{d.n=0;d.base=null;});}
+    if(tNow-countT>=3){state='play';elapsed=0;SFX.boing();dets.forEach(d=>{d.n=0;d.up=false;});}
     else if(camOK&&fresh)people.forEach(p=>stepDet(dets[mode==='duo'?slotOf(p):0],p,now,null));   // learn the standing level
   }
   else if(state==='play'){
@@ -368,9 +377,9 @@ function render(dt){
   if(state==='setup'){
     if(guide)guide.draw(ctx,PR,lang);
     else{bubble(u.two,W/2,H*.16,fs);
-      if(people.length&&!people.every(feetSeen))bubble(u.feet,W/2,H*.16+fs*2.4,fs*.8,'#FFF3C4');
-      people.forEach(p=>{const h=headPoint(p);sticker(ctx,ell(h.x,h.y,fs*.9,fs*.9),feetSeen(p)?'#8BD16B':'#fff',3);
-        ctx.strokeStyle=INK;ctx.lineWidth=4;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(h.x-fs*.4,h.y);ctx.lineTo(h.x-fs*.1,h.y+fs*.3);ctx.lineTo(h.x+fs*.45,h.y-fs*.35);ctx.stroke();});
+      const bad=people.map(fit).find(x=>x);if(bad&&bad!=='find')bubble(u[bad],W/2,H*.16+fs*2.4,fs*.8,'#FFF3C4');
+      people.forEach(p=>{const h=headPoint(p);sticker(ctx,ell(h.x,Math.max(fs,h.y),fs*.9,fs*.9),!fit(p)?'#8BD16B':'#fff',3);
+        ctx.strokeStyle=INK;ctx.lineWidth=4;ctx.lineCap='round';ctx.lineJoin='round';const hy=Math.max(fs,h.y);if(!fit(p)){ctx.beginPath();ctx.moveTo(h.x-fs*.4,hy);ctx.lineTo(h.x-fs*.1,hy+fs*.3);ctx.lineTo(h.x+fs*.45,hy-fs*.35);ctx.stroke();}});
       if(setupT>0){ctx.fillStyle='rgba(125,203,107,.9)';ctx.fillRect(W*.3,H-26,W*.4*Math.min(1,setupT),10);}}
     if(mode==='vs')bubble(u.beat(u[animal]),cx,H-fs*1.6,fs*.85,'#FFF8EC');
   }

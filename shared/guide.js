@@ -24,7 +24,8 @@ import { tone, SFX } from './kit.js';
 export const TARGET = {
   face: { x: .5, y: .5, size: r => Math.min(r.h * .2, r.w * .42), sizeMin: .6, sizeMax: 1.65, dx: .17, dy: .14 },
   full: { x: .5, y: .17, foot: .96, size: r => Math.min(r.h * .15, r.w * .3), sizeMin: .6, sizeMax: 1.7, dx: .2, dy: .1 },   // standing, head to toe; 14 Nov: feet near the bottom edge (was too high)
-  body: { x: .5, y: .45, size: r => Math.min(r.w * .22, r.h * .2), sizeMin: .58, sizeMax: 1.75, dx: .18, dy: .15 }
+  body: { x: .5, y: .45, size: r => Math.min(r.w * .22, r.h * .2), sizeMin: .58, sizeMax: 1.75, dx: .18, dy: .15 },
+  jump: { x: .5, y: .5, size: r => Math.min(r.w * .22, r.h * .2), sizeMin: .58, sizeMax: 1.75, dx: .18, dy: .15 }   // Jump Race: standing, belly button up, room above the head
 };
 const HOLD = 1.5;        // seconds to hold the pose
 const POP = .7;          // seconds of the "done" animation
@@ -37,7 +38,7 @@ const TXT = {
         middle: 'זוזו לאמצע', raise: 'הרימו קצת את הטלפון', lower: 'הנמיכו קצת את הטלפון', hold: 'להחזיק ככה…', great: 'מעולה!', skip: 'להתחיל בכל זאת' }
 };
 
-export function makeGuide(kind, snd = {}) {
+export function makeGuide(kind, snd = {}, over = {}) {   // txt: optional per-language text overrides, e.g. {en:{find:'…'},he:{find:'…'}}
   // games with their own sound engine can pass {tick(p), done()}
   const tick = snd.tick || (p => tone({ f0: 520 + p * 500, dur: .08, type: 'sine', vol: .08 }));
   const doneSnd = snd.done || (() => SFX.chime());
@@ -56,7 +57,7 @@ export function makeGuide(kind, snd = {}) {
       b.onclick = () => { if (!g.done && g.popT < 0) { g.popT = 0; g.hide(); doneSnd(); } };
       document.body.appendChild(b); g.btn = b;
     }
-    g.btn.textContent = (TXT[g.lang] || TXT.en).skip; g.btn.style.display = 'block';
+    g.btn.textContent = ((over[g.lang] || {}).skip) || (TXT[g.lang] || TXT.en).skip; g.btn.style.display = 'block';
   }
 
   /* where the avatar sits in this rect */
@@ -194,7 +195,7 @@ export function makeGuide(kind, snd = {}) {
     }
 
     // hint bubble near the top of the picture
-    const txt = (TXT[g.lang] || TXT.en)[g.hintKey];
+    const txt = ((over[g.lang] || {})[g.hintKey]) || (TXT[g.lang] || TXT.en)[g.hintKey];
     if (txt) {
       ctx.save();
       const fs = Math.max(17, Math.min(26, r.w * .05));
