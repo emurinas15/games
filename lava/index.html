@@ -352,7 +352,7 @@ let players=[];   // {id,color,u,v,feet:[{x,y,ok}],head:{x,y},status,statusT,sco
 let nextColor=0;
 const steam=[],sparks=[],labels=[];
 function judge(p,kind){
-  if(p.status===kind)return;p.status=kind;p.statusT=tNow;
+  if(p.judgedLv===levelNo)return;p.judgedLv=levelNo;p.status=kind;p.statusT=tNow;   // once per level
   const at=p.headPt||{x:p.sx,y:p.sy-80},px=p.px||60;
   if(kind==='toast'){p.lives=Math.max(0,p.lives-1);FX.toast();const L=UI[lang].toast;labels.push({x:at.x,y:at.y-px*.2,txt:L[Math.floor(Math.random()*L.length)],t:tNow,color:'#FF6A3D'});
     if(p.lives<=0){p.outT=tNow+2.6;setTimeout(()=>{p.out=true;FX.outS();labels.push({x:(p.headPt||at).x,y:(p.headPt||at).y-px*.2,txt:UI[lang].outlbl,t:tNow,color:'#C9C9C9'});},2600);}
@@ -544,7 +544,7 @@ function startRound(){
   for(const c of cells){c.type='lava';c.sink=0;}
   const order=cells.slice().sort(()=>Math.random()-.5).slice(0,L.q);
   order.forEach((c,i)=>{c.type='q';c.t0=tNow+i*.04;setTimeout(()=>FX.pop(i%6),i*40);});
-  for(const p of players){p.status='';p.planned=p.planned2=false;}
+  for(const p of players){p.planned=p.planned2=false;}   // status kept so the red glow finishes while the next level pops in
   banner(levelNo===10?UI[lang].lastlv:UI[lang].level+' '+levelNo);
   const tr=tierOf(levelNo);tierMsg=(levelNo===startLv||tr!==tierOf(levelNo-1))?UI[lang].tiers[tr]:'';if(tierMsg)setTimeout(()=>FX.crack(tr),400);
   quizN=-1;setPhase('quiz');FX.whoosh();
@@ -555,12 +555,15 @@ function reveal(){
   qs.forEach((c,i)=>{c.type=i<rocks?'rock':'glass';c.t0=tNow;});
   FX.rock();setTimeout(FX.glass,60);setTimeout(FX.sizzle,350);
   msg(UI[lang].melt);setPhase('melt');
-  for(const p of alive()){const s=standing(p);if(s.on&&!s.rock&&!s.glass&&s.lava===s.on)judge(p,'toast');}   // straight on the lava
+  // 15 Nov (Edgar): no strike at the reveal. From the moment the ice appears every child has until it has fully melted
+  // to get onto a rock; only then is anyone judged.
+  for(const p of players)p.rockT=-9;
 }
 function finishRound(){
   for(const c of cells)if(c.type==='glass'){c.type='lava';}
   FX.melt();
-  for(const p of alive()){if(p.status)continue;const s=standing(p);if(s.rock)judge(p,'safe');else if(s.on)judge(p,'toast');}
+  // safe if on a rock now, or a moment ago (a foot that flickers out of tracking at the last instant doesn't cost a life)
+  for(const p of alive()){if(p.judgedLv===levelNo)continue;const s=standing(p);if(s.rock||tNow-(p.rockT??-9)<.4)judge(p,'safe');else if(s.on)judge(p,'toast');}
   reached=Math.max(reached,levelNo);
   msg('');setPhase('result');
 }
@@ -587,7 +590,7 @@ async function play(wantDemo,again){
 }
 function begin(){
   $('toast').classList.remove('on');musicStart();
-  score=0;levelNo=startLv-1;reached=0;$('round').textContent=startLv+'/10';loadBest();$('hud').classList.add('on');$('stopx').classList.add('on');
+  score=0;levelNo=startLv-1;for(const p of players)p.judgedLv=0;reached=0;$('round').textContent=startLv+'/10';loadBest();$('hud').classList.add('on');$('stopx').classList.add('on');
   for(const c of cells){c.type='lava';c.sink=0;}
   if(mode==='demo'){makeBots();$('demotip').classList.add('on');state='count';countT=tNow;}
   else{players=[];nextColor=0;state='ready';msg(UI[lang].feet);if(H>W)toast(UI[lang].turn,6000);}
@@ -669,7 +672,7 @@ cv.addEventListener('pointerdown',e=>{
   if(setupMode){let bd=60;drag=-1;for(let i=0;i<4;i++){const h=handlePos(i),d=Math.hypot(h.x-x,h.y-y);if(d<bd){bd=d;drag=i;}}
     if(drag<0){const g=toGrid(x,y);if(g.x>0&&g.x<N&&g.y>0&&g.y<N){drag=4;dragFrom={x,y,c:corners.map(c=>c.slice())};}}
     if(drag>=0){cv.setPointerCapture(e.pointerId);touchedStone=true;}return;}
-  if(mode==='demo'&&state==='play'){const you=players.find(p=>p.you),c=cellOf(x,y);if(you&&!you.out&&!you.outT&&c&&you.hop>=1&&!(you.status==='toast'&&phase!=='quiz'))hopTo(you,c);}
+  if(mode==='demo'&&state==='play'){const you=players.find(p=>p.you),c=cellOf(x,y);if(you&&!you.out&&!you.outT&&c&&you.hop>=1&&!(you.status==='toast'&&tNow-you.statusT<1&&phase!=='quiz'))hopTo(you,c);}
 });
 let dragFrom=null;
 cv.addEventListener('pointermove',e=>{if(!setupMode||drag<0)return;
@@ -701,8 +704,11 @@ function frame(now){
     const el=$('count');
     if(phase==='quiz'){const n=phaseT<ASK?0:Math.ceil((QUIZ-phaseT)/STEP);if(quizN!==n){if(quizN===-1)msg(tierMsg||UI[lang].q);if(n>0){SFX.tick();numPopT=tNow;}quizN=n;}
       if(phaseT>=QUIZ){quizN=-1;reveal();}}
-    else if(phase==='melt'){if(phaseT>=FLIP+MELT)finishRound();}
-    else if(phase==='result'){if(phaseT>=RESULT){for(const c of cells)if(c.type==='rock')c.sinkT=tNow;resetFloor();}}
+    else if(phase==='melt'){for(const p of alive())if(standing(p).rock)p.rockT=tNow;if(phaseT>=FLIP+MELT)finishRound();}
+    else if(phase==='result'){   // 15 Nov (Edgar): straight into the next level, no rocks sinking / waiting
+      if(!alive().length){if(!players.some(p=>p.outT>tNow))endGame('out');}
+      else if(levelNo>=10){if(phaseT>=1.2)endGame('win');}
+      else startRound();}
     else if(phase==='reset'){for(const c of cells)if(c.type==='rock')c.sink=Math.min(1,phaseT/RESET);
       if(phaseT>=RESET){if(!alive().length&&!players.some(p=>p.outT>tNow))endGame('out');else if(levelNo>=10)endGame('win');else startRound();}}
   }

@@ -36,6 +36,7 @@ const SECTIONS = PLAN.map(section);
 const minor = m => { const pc = ((m % 12) + 12) % 12; return (pc === 4 || pc === 9 || pc === 11) ? m - 1 : m; }; // C major -> C minor
 
 /* styles: tempo + how each step is played. Events: [instrument, midi, volume, length(s), reverb] */
+const DRUMS_TEEN = 1.25;
 export const STYLES = {
   /* Marble Plate: elegant baroque — harpsichord melody over a mellow cello */
   baroque: { bpm: 92, play(s) {
@@ -179,18 +180,18 @@ export const STYLES = {
      power chords double-tracked left/right — palm-muted 8ths in the verses, open ringing strums in the choruses —
      picked bass on 8ths, a lead guitar on the tune in the verses, a "whoa-oh" gang choir on the tune in the choruses,
      a skate-punk beat (kick on the beat, snare on the 'and') in the choruses, snare fill into each section. Major key. */
-  lavaTeen: { bpm: 170, play(s) {
+  lavaTeen: { bpm: 130, play(s) {   // 15 Nov 22:53 (Edgar): slower (130), short punchy guitar, louder drums, softer lead
     const { mel, root, i, sec } = at(s), ev = [], k = ((s % STEPS) + STEPS) % STEPS % 32, fillIn = k >= 28;
     const chorus = sec === 'B' || sec === 'B2', r = root > 52 ? root - 12 : root < 40 ? root + 12 : root, pc = [r, r + 7, r + 12];
     const gtr = (v, len, d = 0) => { for (const n of pc) { ev.push(['overdriven_guitar', n, v, len, .04, d, -.7]); ev.push(['overdriven_guitar', n, v * .95, len, .04, d + .012, .7]); } };
     if (sec === 'end' && k >= 24) return k === 24 ? [...pc.flatMap(n => [['overdriven_guitar', n, .4, 2, .2, 0, -.7], ['overdriven_guitar', n, .4, 2, .2, .012, .7]]),
       ['electric_bass_pick', root, .3, 1.5, .02], ['~crash', 0, .8, 0, 0], ['~kick', 0, .5, 0, 0]].map(e => (e[2] *= e[0][0] === '~' ? .5 : 1, e)) : [];
-    if (chorus) gtr(i % 2 ? .3 : .36, .24);                       // open strums
-    else if (i === 0) gtr(.38, .5);                               // ringing chord on the bar
-    else gtr(.3, .09);                                            // palm-muted chug
+    if (chorus) { if (i !== 2 && i !== 6) gtr(i % 2 ? .3 : .36, .1); }   // short stabs, gaps on the snare
+    else if (i === 0) gtr(.36, .14);                              // short accent on the bar
+    else if (i % 2 === 0) gtr(.28, .06);                          // tight palm-muted chug on the beats
     if (mel != null) {
-      if (chorus) { ev.push(['choir_aahs', mel - 12, .5, .3, .3]); ev.push(['overdriven_guitar', mel, .16, .3, .2]); }   // whoa-oh
-      else ev.push(['overdriven_guitar', mel - 12, .42, .3, .18]);                                                       // lead guitar
+      if (chorus) ev.push(['choir_aahs', mel - 12, .28, .3, .3]);   // whoa-oh
+      else ev.push(['overdriven_guitar', mel - 12, .2, .22, .18]);  // lead guitar, further back
     }
     ev.push(['electric_bass_pick', root, i % 2 ? .22 : .28, .18, .02]);
     if (!fillIn) {
@@ -198,7 +199,7 @@ export const STYLES = {
       else { if (i === 0 || i === 3 || i === 4) ev.push(['~kick', 0, i === 3 ? .7 : 1, 0, 0]); if (i === 2 || i === 6) ev.push(['~snare80', 0, 1.4, 0, 0]); ev.push(['~hat', 0, i % 2 ? .3 : .45, 0, 0]); }
     } else { ev.push(['~snare80', 0, .8 + (k - 28) * .15, 0, 0]); ev.push(['~snare80', 0, .7 + (k - 28) * .15, 0, 0, 60 / 170 / 4]); if (k === 28 || k === 30) ev.push(['~kick', 0, 1, 0, 0]); }
     if (k === 0) ev.push(['~crash', 0, .8, 0, 0]);
-    return ev.map(e => (e[0].includes('guitar') || (e[2] *= (e[0] === '~kick' ? .42 : .5) * .75), e)); } },   // level-matched (offline RMS, amp modelled)
+    return ev.map(e => (e[0].includes('guitar') || (e[2] *= (e[0] === '~kick' ? .42 : .5) * DRUMS_TEEN), e)); } },   // level-matched (offline RMS, amp modelled)
   /* Copy the Sprout (13 Nov, v2): a cappella in Edgar's own voice at the centre — 'doo'/'dah' scat melody with a
      chromatic scoop, 'bom' bass, a soft 'aah' choir harmony and a recorder third below in the B sections, gentle
      fingerpicked nylon guitar; mouth drums only a whisper; a bubble pop now and then */
