@@ -181,7 +181,7 @@ let AC=null;
 function audio(){AC=kitAudio();return AC;}   // shared audio: mute button and sound switches apply
 let LOUD=null;   // 14 Nov: louder bloom goes through a limiter so it doesn't crackle
 function loudBus(){if(!LOUD&&AC&&S.BUS.sfx){const c=AC.createDynamicsCompressor();c.threshold.value=-8;c.knee.value=4;c.ratio.value=12;c.attack.value=.003;c.release.value=.15;c.connect(S.BUS.sfx);LOUD=c;}return LOUD||S.BUS.sfx;}
-function duckMusic(sec){const a=AC,m=S.BUS.music;if(!a||!m||!S.musicOn)return;const t=a.currentTime;m.gain.cancelScheduledValues(t);m.gain.setTargetAtTime(.1,t,.03);m.gain.setTargetAtTime(.256,t+sec,.25);}
+function duckMusic(sec){const a=AC,m=S.BUS.music;if(!a||!m||!S.musicOn)return;const t=a.currentTime;m.gain.cancelScheduledValues(t);m.gain.setTargetAtTime(.1,t,.03);m.gain.setTargetAtTime(.205,t+sec,.25);}
 function tone({f0=440,f1=f0,dur=.15,type='sine',vol=.22,at=0,loud=false}){const a=AC;if(!a)return;const t=a.currentTime+at;const o=a.createOscillator(),g=a.createGain();o.type=type;
   o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(30,f1),t+dur);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
   o.connect(g);g.connect(loud?loudBus():S.BUS.sfx);o.start(t);o.stop(t+dur+.02);}

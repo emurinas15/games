@@ -50,11 +50,14 @@
     <summary id="t-grown">For grown-ups</summary>
     <div class="g-body">
       <p id="t-g1"></p>
+      <div class="g-row"><span id="t-add">Extra marble every 10 s</span>
+        <div class="seg" id="add-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
       <div class="g-row"><span id="t-music">Music</span>
         <div class="seg" id="music-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
       <div class="g-row"><span id="t-sfx">Sound effects</span>
         <div class="seg" id="sfx-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
       <p id="t-g4"></p>
+      <p id="t-g5"></p>
       <p id="t-g2"></p>
       <p id="t-g3"></p>
       <p class="mini" id="t-legal"></p>
@@ -84,6 +87,7 @@ const UI={
   size:"Plate",count:"Marbles",wide:"Wide",medium:"Medium",narrow:"Narrow",
   music:"Music",amb:"Pond sounds",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
   g4:"★ Two choices: the plate size and the number of marbles. A wide plate forgives small movements; a narrow one needs a steadier head. The raised rim gives one last chance: a marble that reaches it can still be saved by levelling the head. 3, 5 or 7 marbles. Each combination keeps its own record.",
+  add:"Extra marble every 10 s",g5:"★ Extra marble every 10 s: a new marble drops onto the plate with each star, into the biggest free space (never shoved into the others). A child who keeps the head steady gets a fuller, busier plate that is harder to keep level; a child who loses marbles gets new ones, so the game goes on longer. The game still ends when the plate is empty. It keeps its own records.",
   g2:"★ Make it harder: sit on a therapy ball or a balance cushion, then stand, then stand on one leg.",
   g3:"★ Stand the phone upright at eye level, with room above the head for the plate.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
@@ -97,6 +101,7 @@ const UI={
   size:"צלחת",count:"גולות",wide:"רחבה",medium:"בינונית",narrow:"צרה",
   music:"מוזיקה",amb:"צלילי בריכה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
   g4:"★ שתי בחירות: גודל הצלחת ומספר הגולות. צלחת רחבה סולחת על תנועות קטנות, וצלחת צרה דורשת ראש יציב יותר. השפה המוגבהת נותנת הזדמנות אחרונה: גולה שהגיעה אליה עוד אפשר להציל אם מיישרים את הראש. 3, 5 או 7 גולות. לכל שילוב יש שיא משלו.",
+  add:"גולה נוספת כל 10 שניות",g5:"★ גולה נוספת כל 10 שניות: עם כל כוכב נופלת גולה חדשה לצלחת, למקום הפנוי הגדול ביותר (בלי לדחוף את האחרות). ילד ששומר על ראש יציב מקבל צלחת מלאה ועמוסה יותר שקשה יותר לאזן; ילד שמאבד גולות מקבל חדשות, כך שהמשחק נמשך יותר. המשחק עדיין נגמר כשהצלחת ריקה. יש לו שיאים משלו.",
   g2:"★ להקשות: ישיבה על כדור טיפולי או כרית איזון, אחר כך עמידה, ואז עמידה על רגל אחת.",
   g3:"★ העמידו את הטלפון ישר בגובה העיניים, עם מקום מעל הראש בשביל הצלחת.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
@@ -117,7 +122,10 @@ let count=+LS.get('mp-count','3'); if(![3,5,7].includes(count))count=3;
 const dish='plate';
 function cfg(){return {n:count,rad:.095/WIDTH[size],G:6.5,curve:.9,damp:2.0,dead:.055,bee:[8,12],kick:.65,rim:.8,rimK:2.0};}   // 12 Nov: marbles roll 30% faster (G, bee kick and rim scaled together). 13 Nov: rim 30% less steep (rimK 2.86 -> 2.0)
 const STEADY={g:1,d:1};
-let best=0; const loadBest=()=>{best=+LS.get('mp-best-'+size+'-'+count,'0')||0;}; loadBest();
+// 16 Nov (Edgar): a new marble drops onto the plate every 10 s (with each star). Own records.
+let addOn=LS.get('mp-add','1')==='1';const MAX_ON=12;
+const bestKey=()=>'mp-best-'+size+'-'+count+(addOn?'-add':'');
+let best=0; const loadBest=()=>{best=+LS.get(bestKey(),'0')||0;}; loadBest();
 
 S.track='baroque'; S.amb='none'; S.ambOn=false;   // 13 Nov: no pond/water sounds in this game S.bpm=()=>BPM[size]; S.bpmFixed=true;
 const syncSound=bindSound(()=>UI[lang]);
@@ -125,11 +133,12 @@ const syncSound=bindSound(()=>UI[lang]);
 function setLang(l){
   lang=l;LS.set('bamboo-lang',l);const u=UI[l];
   document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
-  for(const k of ['title','sub','play','privacy','grown','g1','size','count','music','sfx','g2','g3','g4','legal','sec','best','sec2','over','again'])
+  for(const k of ['title','sub','play','privacy','grown','g1','size','count','add','music','sfx','g2','g3','g4','g5','legal','sec','best','sec2','over','again'])
     {const e=$('t-'+k);if(e)e.textContent=u[k];}
   $('t-privacy2').textContent=u.privacy;
   document.querySelectorAll('#size-seg button').forEach(b=>{b.textContent=u[b.dataset.v];b.setAttribute('aria-pressed',b.dataset.v===size)});
   document.querySelectorAll('#count-seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===String(count)));
+  document.querySelectorAll('#add-seg button').forEach(b=>{b.textContent=u[b.dataset.v==='1'?'on':'off']||(b.dataset.v==='1'?'On':'Off');b.setAttribute('aria-pressed',b.dataset.v===(addOn?'1':'0'))});
   $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
   $('c').setAttribute('aria-label',u.aria);
   syncSound();
@@ -139,6 +148,7 @@ $('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
 const pick=()=>{loadBest();$('best').textContent=Math.floor(best);audio();SFX.tink();resetMarbles();setLang(lang);};
 document.querySelectorAll('#size-seg button').forEach(b=>b.onclick=()=>{size=b.dataset.v;LS.set('mp-size',size);pick();});
 document.querySelectorAll('#count-seg button').forEach(b=>b.onclick=()=>{count=+b.dataset.v;LS.set('mp-count',count);pick();});
+document.querySelectorAll('#add-seg button').forEach(b=>b.onclick=()=>{addOn=b.dataset.v==='1';LS.set('mp-add',b.dataset.v);pick();});
 
 /* ================= CANVAS + ART ================= */
 const cv=$('c'),ctx=cv.getContext('2d');
@@ -224,13 +234,25 @@ let state='menu',score=0,starsGiven=0,tNow=0,countT=0,lastNew=false,demoRoll=0,k
 let marbles=[],fallers=[],stars=[],wob=0;
 const bee={on:false,phase:'',t0:0,side:1,next:0,x:0,y:0};
 
+let nextId=0;
+/* a new marble drops into the biggest free space on the plate (so it never shoves the others off) */
+function addMarble(){
+  const D=cfg();if(marbles.length>=MAX_ON)return false;
+  const xs=[-.72,...marbles.map(m=>m.x).sort((a,b)=>a-b),.72];let bx=0,bg=0;
+  for(let i=0;i<xs.length-1;i++){const a=i===0?xs[0]:xs[i]+D.rad,b=i===xs.length-2?xs[i+1]:xs[i+1]-D.rad,g=b-a;if(g>bg){bg=g;bx=(a+b)/2;}}
+  if(bg<D.rad*2.2)return false;
+  const id=nextId++;marbles.push({x:bx,v:0,col:COLORS[id%7],spin:0,id,drop:1});
+  tone({f0:900,f1:1500,dur:.12,type:'sine',vol:.12});setTimeout(()=>SFX.tink(.8),300);buildLives();return true;
+}
 function resetMarbles(){
-  const D=cfg();marbles=[];
+  const D=cfg();marbles=[];nextId=D.n;
   for(let i=0;i<D.n;i++){const x=D.n===1?0:(-.5+i/(D.n-1))*Math.min(1.45,D.n*D.rad*2.3);marbles.push({x,v:0,col:COLORS[i%7],spin:0,id:i});}
   bee.on=false;bee.next=tNow+D.bee[0]*.7;
 }
 function buildLives(){
   const box=$('lives');box.innerHTML='';const D=cfg();
+  if(addOn&&state!=='menu'){ // marbles now on the plate (new ones join in)
+    for(const m of [...marbles].sort((a,b)=>a.id-b.id)){const c=document.createElement('canvas');c.width=60;c.height=60;drawMarble(c.getContext('2d'),30,30,24,m.col);box.appendChild(c);}return;}
   for(let i=0;i<D.n;i++){const c=document.createElement('canvas');c.width=60;c.height=60;const x=c.getContext('2d');drawMarble(x,30,30,24,COLORS[i%7]);
     if(!marbles.find(m=>m.id===i))c.className='lost';box.appendChild(c);}
 }
@@ -291,7 +313,7 @@ function fallOff(m,s){
 }
 function endGame(){
   state='over';musicStop();$('hud').classList.remove('on');msg('');
-  lastNew=score>best&&score>=1;if(lastNew){best=score;LS.set('mp-best-'+size+'-'+count,best.toFixed(1));SFX.star();}
+  lastNew=score>best&&score>=1;if(lastNew){best=score;LS.set(bestKey(),best.toFixed(1));SFX.star();}
   fillEnd(lastNew);$('end').hidden=false;
 }
 function fillEnd(nb){const u=UI[lang];$('final').textContent=Math.floor(score);$('newbest').hidden=!nb;$('newbest').textContent=u.newbest;
@@ -344,7 +366,7 @@ function frame(now){
       physics(dt,s.roll,true);
       updateBee(dt,s);
       if(marbles.length){score+=dt;$('score').textContent=Math.floor(score);
-        if(Math.floor(score/10)>starsGiven){starsGiven++;SFX.star();stars.push({t:tNow});}}
+        if(Math.floor(score/10)>starsGiven){starsGiven++;SFX.star();stars.push({t:tNow});if(addOn)addMarble();}}
       for(const m of [...marbles])if(Math.abs(m.x)>1.02)fallOff(m,s);
     }
   }
@@ -365,7 +387,9 @@ function render(s,dt){
     ctx.save();ctx.translate(s.x,s.y);ctx.rotate(s.roll+Math.sin(tNow*28)*.05*wob);
     drawDishBack(ctx,dish,h);
     const order=[...marbles].sort((a,b)=>a.id-b.id);
-    for(const m of order){const cx=Math.max(-1,Math.min(1,m.x));const lift=Math.max(0,Math.abs(cx)-cfg().rim)/(1-cfg().rim)*h*.049;drawMarble(ctx,m.x*h,sh.dip(Math.abs(cx))-r-lift,r,m.col,m.spin);}
+    for(const m of order){const cx=Math.max(-1,Math.min(1,m.x));let lift=Math.max(0,Math.abs(cx)-cfg().rim)/(1-cfg().rim)*h*.049;
+      if(m.drop>0){m.drop=Math.max(0,m.drop-dt*2.8);lift+=m.drop*m.drop*h*.9;}   // new marble falling in
+      drawMarble(ctx,m.x*h,sh.dip(Math.abs(cx))-r-lift,r,m.col,m.spin);}
     drawDishFront(ctx,dish,h);
     if(state==='ready'||state==='count'){ctx.globalAlpha=.9;}
     ctx.restore();

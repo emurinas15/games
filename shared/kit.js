@@ -40,7 +40,7 @@ function makeBuses(a) {
 export function applyGains(now) {
   const a = S.AC, B = S.BUS; if (!a || !B.master) return; const t = a.currentTime;
   const set = (n, v) => { n.gain.cancelScheduledValues(t); if (now) n.gain.setValueAtTime(v, t); else n.gain.setTargetAtTime(v, t, .08); };
-  set(B.master, S.soundOn ? 1 : 0); set(B.sfx, S.sfxOn ? 1 : 0); set(B.music, S.musicOn ? .256 : 0); set(B.amb, S.ambOn ? .6 * (S.ambVol ?? 1) : 0);
+  set(B.master, S.soundOn ? 1 : 0); set(B.sfx, S.sfxOn ? 1 : 0); set(B.music, S.musicOn ? .205 : 0); set(B.amb, S.ambOn ? .6 * (S.ambVol ?? 1) : 0);
 }
 document.addEventListener('visibilitychange', () => { if (!S.AC) return; if (document.hidden) S.AC.suspend(); else if (S.mu.on) S.AC.resume(); });
 
@@ -450,15 +450,21 @@ export function drawMirroredVideo(c, video, W, H) {
 }
 
 /* ======================= CAMERA / BODY (POSE) TRACKING ======================= */
-export async function startPoseTracker(video) {
+export async function startPoseTracker(video, opt = {}) {   // opt.numPoses: 2 for side-by-side games (Spider Swat 2 players)
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('nocam');
   const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
   video.srcObject = stream; await video.play();
   const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
   const files = await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
-  const opts = d => ({ baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task', delegate: d }, runningMode: 'VIDEO', numPoses: 1 });
+  const opts = d => ({ baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task', delegate: d }, runningMode: 'VIDEO', numPoses: opt.numPoses || 1 });
   try { return await vision.PoseLandmarker.createFromOptions(files, opts('GPU')); }
   catch (e) { return await vision.PoseLandmarker.createFromOptions(files, opts('CPU')); }
+}
+/* every person the tracker sees -> an array of point functions like poseFrame's (null if the frame failed) */
+export function poseFrames(tracker, video, now, W, H) {
+  let res; try { res = tracker.detectForVideo(video, now); } catch (e) { return null; }
+  const L = (res && res.landmarks) || [], m = coverMap(video, W, H);
+  return L.map(lm => i => ({ x: m.ox + (1 - lm[i].x) * m.vw * m.s, y: m.oy + lm[i].y * m.vh * m.s, v: lm[i].visibility ?? 1 }));
 }
 /* pose landmarks -> mirrored screen points with visibility (v) */
 export function poseFrame(tracker, video, now, W, H) {
