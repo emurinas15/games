@@ -25,7 +25,7 @@ export const TARGET = {
   face: { x: .5, y: .5, size: r => Math.min(r.h * .2, r.w * .42), sizeMin: .6, sizeMax: 1.65, dx: .17, dy: .14 },
   full: { x: .5, y: .17, foot: .96, size: r => Math.min(r.h * .15, r.w * .3), sizeMin: .6, sizeMax: 1.7, dx: .2, dy: .1 },   // standing, head to toe; 14 Nov: feet near the bottom edge (was too high)
   body: { x: .5, y: .45, size: r => Math.min(r.w * .22, r.h * .2), sizeMin: .58, sizeMax: 1.75, dx: .18, dy: .15 },
-  jump: { x: .5, y: .5, size: r => Math.min(r.w * .22, r.h * .2), sizeMin: .58, sizeMax: 1.75, dx: .18, dy: .15 }   // Jump Race: standing, belly button up, room above the head
+  jump: { x: .5, y: .55, size: r => Math.min(r.w * .32, r.h * .4), sizeMin: .7, sizeMax: 1.45, dx: .18, dy: .14 }   // Jump Race: standing close to the phone (head + chest fill the picture), room above the head
 };
 const HOLD = 1.5;        // seconds to hold the pose
 const POP = .7;          // seconds of the "done" animation

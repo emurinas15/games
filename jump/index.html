@@ -108,7 +108,7 @@ const UI={
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
   g1:"Jump as many times as you can in one minute. 2 players: race each other, standing side by side. Beat the animals: race the Panda (it jumps every 3 seconds), then the Duck (every 2 seconds), then the Rabbit (every second). Jump more times than the animal before the minute ends to beat it. The camera only needs to see from the belly button up: a jump counts when the head and both shoulders go up together and come back down quickly. Waving the arms, shrugging, nodding or standing up on the toes doesn't count.",
   sens:"Jump size",small:"Small jumps",normal:"Normal",music:"Music",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
-  g2:"★ Turn the phone sideways and stand it at about chest height (a table or shelf), about 1–1.5 m away, so the child sees the screen and the camera sees the head, shoulders and belly. Leave room above the head for the jumps. 2 players: stand side by side, a little farther back.",
+  g2:"★ Turn the phone sideways and stand it at about chest height (a table or shelf), about 1 m away, so the child sees the screen and the camera sees the head, shoulders and belly. Leave room above the head for the jumps. 2 players: stand side by side, a little farther back.",
   g3:"★ Small jumps also counts little hops, for young children or children who find jumping hard.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
   ready:"Getting ready…",two:"Two players, side by side!",closer:"Come a little closer",back:"Move back a little",lower:"Lower the phone a little",go:"Jump!",beat:a=>"Beat the "+a+"!",
@@ -120,7 +120,7 @@ const UI={
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
   g1:"קופצים כמה שיותר פעמים בדקה אחת. 2 שחקנים: מתחרים זה בזה, עומדים זה לצד זה. נגד החיות: מתחרים בפנדה (קופצת כל 3 שניות), אחר כך בברווז (כל 2 שניות) ואחר כך בארנב (כל שנייה). כדי לנצח חיה צריך לקפוץ יותר ממנה עד סוף הדקה. המצלמה צריכה לראות רק מהטבור ומעלה: קפיצה נספרת כשהראש ושתי הכתפיים עולים יחד ויורדים מהר. נפנוף ידיים, משיכת כתפיים, הנהון או עלייה על קצות האצבעות לא נספרים.",
   sens:"גודל קפיצה",small:"קפיצות קטנות",normal:"רגיל",music:"מוזיקה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
-  g2:"★ סובבו את הטלפון לרוחב והעמידו אותו בגובה החזה (על שולחן או מדף), בערך מטר עד מטר וחצי מהילד, כך שהילד רואה את המסך והמצלמה רואה את הראש, הכתפיים והבטן. השאירו מקום מעל הראש לקפיצות. 2 שחקנים: עומדים זה לצד זה, קצת יותר רחוק.",
+  g2:"★ סובבו את הטלפון לרוחב והעמידו אותו בגובה החזה (על שולחן או מדף), בערך מטר מהילד, כך שהילד רואה את המסך והמצלמה רואה את הראש, הכתפיים והבטן. השאירו מקום מעל הראש לקפיצות. 2 שחקנים: עומדים זה לצד זה, קצת יותר רחוק.",
   g3:"★ ״קפיצות קטנות״ סופר גם ניתורים קטנים, לילדים צעירים או לילדים שקשה להם לקפוץ.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
   ready:"מתכוננים…",two:"שני שחקנים, זה לצד זה!",closer:"התקרבו קצת",back:"התרחקו קצת",lower:"הנמיכו קצת את הטלפון",go:"קופצים!",beat:a=>"נצחו את ה"+a+"!",
@@ -221,27 +221,30 @@ function track(now){
    · sizes are in shoulder widths, so it works for small and big children, near or far.
    The jump is counted when the child lands. Waving or raising the arms does nothing. */
 const TH={normal:.22,small:.13};
-function makeDet(){return {n:0,last:-9e9,seen:-9e9,B:null,u:0,up:false,upT:0,lowT:0,pop:-9};}
+function makeDet(){return {n:0,last:-9e9,seen:-9e9,B:null,u:0,up:false,upT:0,lowT:0,belowT:0,hiT:0,pop:-9};}
 function stepDet(d,p,now,onJump){
   const lm=p.lm;if(lm[0].v<.5)return;
   const hs=[0,7,8].filter(i=>lm[i].v>.4),yh=hs.reduce((a,i)=>a+lm[i].y,0)/hs.length,ys=(lm[11].y+lm[12].y)/2;
   const dt=Math.min(.2,(now-d.seen)/1000);
-  if(!d.B||now-d.seen>600){d.B={s:ys,h:yh};d.u=p.sw;d.up=false;d.lowT=now;}
+  if(!d.B||now-d.seen>600){d.B={s:ys,h:yh};d.u=p.sw;d.up=false;d.lowT=now;d.belowT=0;d.hiT=0;}
   d.seen=now;
   const B=d.B,rs=(B.s-ys)/d.u,rh=(B.h-yh)/d.u,rise=Math.min(rs,rh),th=TH[sens];
   if(!d.up){
-    if(rise<.06){   // on the ground: the standing level follows the child (going down, e.g. a squat, is followed slowly)
-      const k=Math.min(1,dt*3),kd=Math.min(1,dt*1.2);
-      B.s+=(ys-B.s)*(ys>B.s?kd:k);B.h+=(yh-B.h)*(yh>B.h?kd:k);d.u+=(p.sw-d.u)*Math.min(1,dt*1.5);d.lowT=now;
-    }
-    if(rise>th&&Math.abs(rs-rh)<Math.max(.12,rise*.5)&&now-d.lowT<350){d.up=true;d.upT=now;}
+    // 15 Nov (Edgar found a cheat: quick dips counted). The standing height is LOCKED during dips and squats:
+    // it only follows the child while they stand at about that height, and moves down only after 1.5 s down low.
+    if(Math.abs(rise)<.06){const k=Math.min(1,dt*3);B.s+=(ys-B.s)*k;B.h+=(yh-B.h)*k;d.u+=(p.sw-d.u)*Math.min(1,dt*1.5);d.lowT=now;d.belowT=0;}
+    else if(rise<0){d.lowT=now;d.belowT+=dt;if(d.belowT>1.5){const k=Math.min(1,dt*2);B.s+=(ys-B.s)*k;B.h+=(yh-B.h)*k;}}
+    else d.belowT=0;
+    // up: clearly ABOVE standing height, head and shoulders together, reached quickly, and held for at least 2 frames
+    if(rise>th&&Math.abs(rs-rh)<Math.max(.12,rise*.5)&&now-d.lowT<400){d.hiT+=dt;if(d.hiT>=.06){d.up=true;d.upT=now;d.hiT=0;}}
+    else d.hiT=0;
   } else if(rise<th*.4){
     d.up=false;d.lowT=now;
-    if(now-d.upT<900&&now-d.last>250){d.last=now;d.n++;d.pop=tNow;onJump&&onJump();}
-  } else if(now-d.upT>1200){ d.up=false;B.s=ys;B.h=yh;d.lowT=now; }   // stayed up: not a jump; this is the new standing level
+    if(now-d.upT<900&&now-d.last>250){d.last=now;d.n++;d.pop=tNow;onJump&&onJump();}   // counted on landing
+  } else if(now-d.upT>1200){ d.up=false;B.s=ys;B.h=yh;d.lowT=now; }   // stayed up: not a jump; this is the new standing height
 }
 /* setup check for 2 players: each one close enough to see the screen, head with room above it */
-function fit(p){ if(p.lm[0].v<.5)return 'find'; if(p.sw<W*.07)return 'closer'; if(p.sw>W*.3)return 'back'; if(p.nose.y<H*.25)return 'lower'; return ''; }
+function fit(p){ if(p.lm[0].v<.5)return 'find'; if(p.sw<W*.1)return 'closer'; if(p.sw>W*.32)return 'back'; if(p.nose.y<H*.25)return 'lower'; return ''; }
 
 /* ================= GAME ================= */
 let state='menu',tNow=0,countT=0,lastCount=9,elapsed=0,dets=[makeDet(),makeDet()],aCount=0,guide=null,setupT=0,pops=[],animSide=0,lastSec=99;
