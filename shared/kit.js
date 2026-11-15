@@ -281,7 +281,8 @@ function musicTick() {
     while (M.next < a.currentTime + .15) { if (S.musicOn && S.soundOn) for (const e of style.play(M.step)) playEvent(e, M.next); M.step++; M.next += sd; }
     return;
   }
-  const tr = TRACKS[S.track], sd = 60 / S.bpm() / tr.spb;
+  const tr = TRACKS[S.track]; if (!tr) return;   // S.track = 'none': no music, the clock still runs so ambience can play
+  const sd = 60 / S.bpm() / tr.spb;
   if (M.next < a.currentTime - .5) M.next = a.currentTime + .05;
   while (M.next < a.currentTime + .15) { if (S.musicOn && S.soundOn) tr.play(M.step % tr.len, M.next); M.step++; M.next += sd; }
 }
@@ -359,7 +360,7 @@ function cricket(t, B) { const f = 4200 + Math.random() * 500, n = 3;
 function owl(t, B) { [0, .45].forEach((d, k) => { const tt = t + d, o = S.AC.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(420 - k * 20, tt); o.frequency.exponentialRampToValueAtTime(380 - k * 20, tt + .35); const g = mEnv(tt, .06, .3, .05); o.connect(g); g.connect(B); o.start(tt); o.stop(tt + .45); }); }
 
 /* ---- sound controls: speaker button #snd + grown-ups segs #music-seg #amb-seg #sfx-seg ---- */
-export function bindSound(getText) {
+export function bindSound(getText, opt = {}) {   // opt.ambKey: this game keeps its own ambience on/off (e.g. Spider Swat night sounds, on by default)
   const segSet = (id, val) => document.querySelectorAll('#' + id + ' button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === String(val)));
   function sync() {
     const u = getText(), b = $('snd');
@@ -370,7 +371,7 @@ export function bindSound(getText) {
   const after = () => { audio(); applyGains(); syncAmb(); sync(); };
   $('snd').onclick = () => { S.soundOn = !S.soundOn; LS.set('bp-sound', S.soundOn ? '1' : '0'); after(); };
   const bind = (id, key, ls) => document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => { S[key] = b.dataset.v === '1'; LS.set(ls, b.dataset.v); after(); });
-  bind('music-seg', 'musicOn', 'bp-music'); bind('amb-seg', 'ambOn', 'bp-amb'); bind('sfx-seg', 'sfxOn', 'bp-sfx');
+  bind('music-seg', 'musicOn', 'bp-music'); bind('amb-seg', 'ambOn', opt.ambKey || 'bp-amb'); bind('sfx-seg', 'sfxOn', 'bp-sfx');
   return sync;
 }
 

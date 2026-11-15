@@ -51,9 +51,7 @@
         <div class="seg" id="reach-seg"><button data-v="near"></button><button data-v="far"></button></div></div>
       <div class="g-row"><span id="t-two">Two-hand racket</span>
         <div class="seg" id="two-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
-      <div class="g-row"><span id="t-music">Music</span>
-        <div class="seg" id="music-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
-      <div class="g-row"><span id="t-amb">Garden sounds</span>
+      <div class="g-row"><span id="t-amb">Night sounds</span>
         <div class="seg" id="amb-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
       <div class="g-row"><span id="t-sfx">Sound effects</span>
         <div class="seg" id="sfx-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
@@ -84,7 +82,7 @@ const UI={
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
   g1:"Made for children who play sitting down. Each hand becomes a paddle racket. Spiders drop on their threads all around the child: high up, out to the sides and on the diagonals, so the arms reach in every direction. Put both hands together to make one big racket that swats several spiders at once and hits twice as hard. Every 10 seconds more spiders come. From 30 seconds there are red spiders (2 hits, or 1 big-racket hit), and from 45 seconds red spiders with knight helmets (4 hits, or 2 big-racket hits). All spiders watch the rackets. Purple spiders pull themselves up out of the way when a hand comes slowly, then drop back; after a minute come blue spiders, which dodge twice as fast, so the child has to reach quickly. Red spiders never dodge: they rely on being tough. Spiders come in three sizes (small ones are harder to hit) and each hangs for about 3 seconds, up to 5 at a time.",
   round:"Round",reach:"Reach",near:"Near",far:"Far",two:"Two-hand racket",
-  music:"Music",amb:"Garden sounds",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
+  music:"Music",amb:"Night sounds (crickets)",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
   g2:"★ Sit the child so the whole upper body shows: head, both shoulders and both hands. About 1–1.5 m from the phone, phone standing upright.",
   g3:"★ Near keeps the spiders within easy reach; Far makes the child stretch the arms all the way.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
@@ -96,7 +94,7 @@ const UI={
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
   g1:"מיועד לילדים שמשחקים בישיבה. כל יד הופכת למחבט. עכבישים יורדים על חוטים מסביב לילד: גבוה למעלה, לצדדים ובאלכסונים, כך שהידיים מגיעות לכל הכיוונים. מחברים את שתי הידיים יחד ומקבלים מחבט ענק שמעיף כמה עכבישים בבת אחת ומכה פי שניים. כל 10 שניות מגיעים עוד עכבישים. מ־30 שניות מופיעים עכבישים אדומים (2 מכות, או מכה אחת במחבט הענק), ומ־45 שניות עכבישים אדומים עם קסדת אביר (4 מכות, או 2 מכות במחבט הענק). כל העכבישים מסתכלים על המחבטים. העכבישים הסגולים מושכים את עצמם למעלה כשיד מתקרבת לאט, ואז חוזרים למטה; אחרי דקה מגיעים עכבישים כחולים שמתחמקים מהר פי שניים, כך שהילד צריך להושיט יד מהר. העכבישים האדומים אף פעם לא מתחמקים: הם סומכים על הקשיחות שלהם. העכבישים מגיעים בשלושה גדלים (הקטנים קשים יותר לפגיעה), כל אחד תלוי בערך 3 שניות, ועד 5 בבת אחת.",
   round:"סבב",reach:"טווח",near:"קרוב",far:"רחוק",two:"מחבט שתי ידיים",
-  music:"מוזיקה",amb:"צלילי גינה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
+  music:"מוזיקה",amb:"צלילי לילה (צרצרים)",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
   g2:"★ הושיבו את הילד כך שכל פלג הגוף העליון נראה: הראש, שתי הכתפיים ושתי הידיים. בערך מטר עד מטר וחצי מהטלפון, כשהטלפון עומד ישר.",
   g3:"★ ״קרוב״ משאיר את העכבישים בהישג יד; ״רחוק״ דורש מתיחה מלאה של הידיים.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
@@ -111,8 +109,10 @@ let roundLen=+LS.get('sw-round','90'); if(![60,90,120].includes(roundLen))roundL
 let reach=LS.get('sw-reach','near'); if(!['near','far'].includes(reach))reach='near';
 let twoOn=LS.get('sw-two','1')==='1';
 let best=0; const loadBest=()=>{best=+LS.get('sw-best-'+roundLen+reach,'0')||0;$('best').textContent=best;};
-S.track='spiderTiptoe'; S.amb='pond';   // Edgar's pick (12 Nov): option A 'Sneaky tiptoe' - staccato bassoon, pizzicato tiptoes, spider skitter
-const syncSound=bindSound(()=>UI[lang]);
+// 15 Nov (Edgar): no music in this game — just crickets and night sounds, on by default (own setting 'sw-amb').
+// The old 'spiderTiptoe' music stays in songs.js unused.
+S.track='none'; S.amb='night'; S.ambOn=LS.get('sw-amb','1')==='1';
+const syncSound=bindSound(()=>UI[lang],{ambKey:'sw-amb'});
 
 function segs(){
   const u=UI[lang],mark=(id,v)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===String(v)));
@@ -124,7 +124,7 @@ function segs(){
 function setLang(l){
   lang=l;LS.set('bamboo-lang',l);const u=UI[l];
   document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
-  for(const k of ['title','sub','play','privacy','grown','g1','round','reach','two','music','amb','sfx','g2','g3','legal','left','best','sec2','over','again'])
+  for(const k of ['title','sub','play','privacy','grown','g1','round','reach','two','amb','sfx','g2','g3','legal','left','best','sec2','over','again'])
     {const e=$('t-'+k);if(e)e.textContent=u[k];}
   $('t-privacy2').textContent=u.privacy;
   $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
