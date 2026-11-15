@@ -99,6 +99,8 @@ summary::after{content:" ▾"}details[open] summary::after{content:" ▴"}
 <script type="module">
 import {S,audio as kitAudio,musicStart,musicStop,bindSound} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
+import {setupHowTo,seg,bigStar} from '../shared/howto.js';
+import {drawKid as kitKid,sticker as kitStk,ell as kitEll} from '../shared/kit.js';
 const guide=makeGuide('reach');   // 15 Nov (Edgar's sketch): big, close, arms out
 S.track='folk';S.amb='pond';S.ambVol=.5;   // 14 Nov: folk acoustic guitar; garden sounds at half volume
 const SOUND_TXT={en:{music:"Music",amb:"Garden sounds",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off"},
@@ -194,7 +196,7 @@ const SFX={
 };
 
 /* ============ CANVAS + ART ============ */
-const cv=$('c'),ctx=cv.getContext('2d');let W=0,H=0,DPR=1;
+const cv=$('c');let ctx=cv.getContext('2d');let W=0,H=0,DPR=1;   // let: the How-to-play cartoon borrows the drawing code
 function resize(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;}
 addEventListener('resize',resize);resize();
 const INK='#2b2118';
@@ -490,6 +492,32 @@ function render(now,dt){
   for(const l of leaves){l.x+=l.vx*dt+Math.sin(tNow*2+l.r)*20*dt;l.y+=l.vy*dt;l.r+=l.vr*dt;ctx.save();ctx.translate(l.x,l.y);ctx.rotate(l.r);stk(leafPath(l.s,l.s*.45),l.c,2);ctx.restore();}
 }
 
+/* ================= HOW TO PLAY (cartoon for a 5-year-old) ================= */
+{
+  const REST=[-80,-85],POSE=POSES.sunshine;
+  const lerpA=(a,b,k)=>[angLerp(a[0],b[0],k),angLerp(a[1],b[1],k)];
+  function sprout(c,w,h,x,by,size,t,L,R,bloom,hop=0){const keep=JSON.stringify(sp),k=[ctx,W,H];ctx=c;W=w;H=h;
+    try{sp.L=L;sp.R=R;sp.bloom=bloom;sp.hop=hop;sp.squash=0;sp.deco=[];drawSprout(x,by,size,t);}finally{[ctx,W,H]=k;Object.assign(sp,JSON.parse(keep));}}
+  // the child (head + shoulders from the kit) with simple arms in the same angles as the sprout's
+  function kid(c,w,h,x,L,R,t,ok){const hw=Math.min(w*.14,h*.24),neck=h*.62;kitKid(c,w,h,x,neck,hw,0,t);
+    for(const [side,a] of [[-1,L],[1,R]]){const sx=x+side*hw*.78,sy=neck+hw*.28,ua=hw*.95,fa=hw*.85;
+      const v1=armVec(side,a[0]),e={x:sx+v1.x*ua,y:sy+v1.y*ua},v2=armVec(side,a[1]),hd={x:e.x+v2.x*fa,y:e.y+v2.y*fa};
+      c.lineCap='round';c.lineJoin='round';c.strokeStyle=INK;c.lineWidth=hw*.3+6;c.beginPath();c.moveTo(sx,sy);c.lineTo(e.x,e.y);c.lineTo(hd.x,hd.y);c.stroke();
+      c.strokeStyle='#4FB3A9';c.lineWidth=hw*.3;c.stroke();kitStk(c,kitEll(hd.x,hd.y,hw*.16,hw*.16),ok?'#8BD16B':'#F6C9A0',3);}
+    kitKid(c,w,h,x,neck,hw,0,t);}   // head drawn again on top of the arms
+  const SZ=(w,h)=>Math.min(w*.2,h*.36);
+  setupHowTo({lang:()=>lang,play:()=>play(),steps:[
+    {dur:2.6,cap:{en:'The sprout strikes a pose 🌱',he:'הנבט עושה תנוחה 🌱'},draw(c,w,h,t,k){const m=seg(k,.2,.6);
+      sprout(c,w,h,w*.7,h*.95,SZ(w,h),t,lerpA(REST,POSE.L,m),lerpA(REST,POSE.R,m),0,Math.max(0,Math.sin(k*Math.PI*2))*.3);kid(c,w,h,w*.28,REST,REST,t,false);}},
+    {dur:2.8,cap:{en:'Copy it with your arms!',he:'מעתיקים עם הידיים!'},draw(c,w,h,t,k){const m=seg(k,.1,.7);
+      sprout(c,w,h,w*.7,h*.95,SZ(w,h),t,POSE.L,POSE.R,0);kid(c,w,h,w*.28,lerpA(REST,POSE.L,m),lerpA(REST,POSE.R,m),t,k>.75);}},
+    {dur:3,cap:{en:'Hold it — the flowers open 🌸',he:'מחזיקים — הפרחים נפתחים 🌸'},draw(c,w,h,t,k){
+      sprout(c,w,h,w*.7,h*.95,SZ(w,h),t,POSE.L,POSE.R,seg(k,.05,.9));kid(c,w,h,w*.28,POSE.L,POSE.R,t,true);}},
+    {dur:2.2,cap:{en:'Yay! Next pose ⭐',he:'יש! תנוחה הבאה ⭐'},draw(c,w,h,t,k){
+      sprout(c,w,h,w*.7,h*.95,SZ(w,h),t,POSE.L,POSE.R,1,Math.abs(Math.sin(t*7))*.6);kid(c,w,h,w*.28,POSE.L,POSE.R,t,true);
+      for(let i=0;i<8;i++){const a=i/8*6.3,r=h*(.08+k*.3);bigStar(c,w*.7+Math.cos(a)*r,h*.45+Math.sin(a)*r*.7,15*(1.2-k*.6),a+k*3);}}}
+  ]});
+}
 setLang(lang);
 requestAnimationFrame(frame);
 </script>

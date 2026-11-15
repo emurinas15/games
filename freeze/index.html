@@ -68,6 +68,7 @@
 import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
 import {setupCast} from '../shared/cast.js';
+import {setupHowTo,seg,bigStar} from '../shared/howto.js';
 
 /* Freeze & Copy — v2 "animal statues" (14 Nov 2026, Edgar).
    Raise a hand to spin the animal wheel. The animal it lands on dances, shouts "Freeze!" and turns into a statue
@@ -144,7 +145,7 @@ segBind('who-seg',v=>{who=v;LS.set('fc-who3',v);});
 segBind('strict-seg',v=>{strict=v;LS.set('fc-strict',v);});
 
 /* ================= CANVAS ================= */
-const cv=$('c'),ctx=cv.getContext('2d');
+const cv=$('c');let ctx=cv.getContext('2d');   // let: the How-to-play cartoon borrows the drawing code with its own canvas
 let W=0,H=0,DPR=1;
 function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;}
 addEventListener('resize',resize);resize();
@@ -287,7 +288,7 @@ function makeTarget(a,b,pa,pb){
 /* draw a kid in an animal costume, frozen in the pose. (x,y) = centre of the body, s = size (about the body height) */
 const SKIN=['#F6D3B0','#E8B48A','#C68B5E','#8D5B3A','#F2C9A0'];
 function drawAnimal(T,x,y,s,t,o={}){
-  const top=ANIMALS[T.a],bot=ANIMALS[T.b],pose=o.pose||T.pose,lw=Math.max(2.5,s*.03),skin=SKIN[T.a%SKIN.length];
+  const top=o.top||ANIMALS[T.a],bot=o.top||ANIMALS[T.b],pose=o.pose||T.pose,lw=Math.max(2.5,s*.03),skin=SKIN[T.a%SKIN.length];
   const legC=bodyMode==='full'?bot:top,armR=(bodyMode!=='full'&&T.mix)?bot:top;
   ctx.save();ctx.translate(x,y+(o.hop||0));
   const R=a=>a*Math.PI/180,tilt=R((pose.tr??-90)+90),pv={x:0,y:s*.3};
@@ -567,6 +568,51 @@ function drawDemo(){
   const i=Math.floor(tNow/2.4)%NS,j=(i+4)%NS,k=(tNow%2.4)/2.4,s=Math.max(40,Math.min(W*.26,H*.2,(ct-120)/1.75)),y=Math.min(H*.6,ct-s*1.05);
   const n=Math.floor(tNow/2.4),pi=n%3,ta=makeTarget(i,null,pi),tb=makeTarget(j,null,(pi+1)%3),pop=Math.min(1,k*5);
   for(const [T,x] of [[ta,W/2-s*.75],[tb,W/2+s*.75]]){ctx.save();ctx.translate(x,y+s);ctx.scale(pop,pop);ctx.translate(-x,-y-s);drawAnimal(T,x,y,s,tNow,{});ctx.restore();}
+}
+
+/* ================= HOW TO PLAY (cartoon for a 5-year-old) ================= */
+{
+  const KID={id:'kid',body:'#5FB7F0',light:'#BFE6FF',feet:'#FFFFFF'};
+  const FL=ANIMALS.findIndex(a=>a.id==='flamingo'),FPOSE=ANIMALS[FL].poses[0].pose;
+  const STAND={uaL:105,faL:95,uaR:75,faR:85,thL:95,shL:90,thR:85,shR:90,tr:-90},HAND={...STAND,uaR:-55,faR:-80};
+  const lerp=(A,B,k)=>{const o={};for(const key in B){const a=A[key]??B[key],d=((B[key]-a+540)%360)-180;o[key]=a+d*k;}return o;};
+  const withCtx=(c,fn)=>{const keep=ctx,bm=bodyMode;ctx=c;bodyMode='full';try{fn();}finally{ctx=keep;bodyMode=bm;}};
+  const kid=(c,x,y,s,pose,t,o={})=>withCtx(c,()=>drawAnimal({a:1,b:1,pose},x,y,s,t,{top:KID,pose,...o}));
+  const statue=(c,x,ped,s,t,k)=>withCtx(c,()=>{const T=makeTarget(FL,null,0),pop=Math.min(1,k*4)*(1+.15*Math.sin(Math.min(1,k*4)*Math.PI));
+    sticker(c,(()=>{const p=new Path2D();p.roundRect(x-s*.55,ped,s*1.1,s*.13,8);return p;})(),'#E9DCC6',3);
+    c.save();c.translate(x,ped);c.scale(pop,pop);c.translate(-x,-ped);drawAnimal(T,x,ped-.98*s*.8,s*.8,tNow,{});c.restore();
+    c.fillStyle='rgba(190,230,255,.35)';c.fill(ell(x,ped-s*.45,s*.6,s*.62));});
+  const wheel=(c,x,y,r,ang)=>withCtx(c,()=>{const n=NS,sg=Math.PI*2/n,cols=['#FFF1B8','#D8F2B8','#FFD3DC','#DDF3FF','#F3EEE4'];
+    c.save();c.translate(x,y);c.fillStyle=INK;c.beginPath();c.arc(0,5,r+6,0,7);c.fill();
+    for(let j=0;j<n;j++){const a0=ang+j*sg;c.save();c.beginPath();c.moveTo(0,0);c.arc(0,0,r,a0,a0+sg);c.closePath();c.fillStyle=cols[j%5];c.fill();c.clip();
+      const am=a0+sg/2;c.translate(Math.cos(am)*r*.66,Math.sin(am)*r*.66);c.rotate(am+Math.PI/2);drawHead(ANIMALS[j],0,0,r*.13,2,tNow,{});c.restore();
+      c.lineWidth=2.5;c.strokeStyle=INK;c.beginPath();c.moveTo(0,0);c.lineTo(Math.cos(a0)*r,Math.sin(a0)*r);c.stroke();}
+    c.lineWidth=4;c.strokeStyle=INK;c.beginPath();c.arc(0,0,r,0,7);c.stroke();sticker(c,ell(0,0,r*.12,r*.12),'#FFD84D',3);
+    c.fillStyle='#FFD84D';c.lineWidth=3;c.beginPath();c.moveTo(-r*.12,-r*1.17);c.lineTo(r*.12,-r*1.17);c.lineTo(0,-r*.9);c.closePath();c.fill();c.stroke();c.restore();});
+  // the wheel angle that puts the flamingo under the pointer
+  const stopAng=-Math.PI/2-(FL+.5)*Math.PI*2/NS;
+  const jar=(c,x,y,h,m)=>{const w=h*.36;const p=new Path2D();p.roundRect(x-w/2,y-h,w,h,w*.3);sticker(c,p,'#fff',3);
+    c.save();c.clip(p);c.fillStyle='#8BD16B';c.fillRect(x-w/2,y-h*m,w,h*m);c.restore();c.lineWidth=3;c.strokeStyle=INK;c.stroke(p);};
+  const dots=(c,x,y,s,pose,on)=>{ // green dots on hands and feet when the copy matches
+    const R=a=>a*Math.PI/180,sgm=(p,a,l)=>({x:p.x+Math.cos(R(a))*l,y:p.y+Math.sin(R(a))*l});
+    const sh={L:{x:x-s*.25,y:y-s*.2},R:{x:x+s*.25,y:y-s*.2}},hp={L:{x:x-s*.15,y:y+s*.3},R:{x:x+s*.15,y:y+s*.3}};
+    const pts=[sgm(sgm(sh.L,pose.uaL,s*.3),pose.faL,s*.27),sgm(sgm(sh.R,pose.uaR,s*.3),pose.faR,s*.27),sgm(sgm(hp.L,pose.thL,s*.34),pose.shL,s*.32),sgm(sgm(hp.R,pose.thR,s*.34),pose.shR,s*.32)];
+    pts.forEach((p,i)=>{if(on>i/4)sticker(c,ell(p.x,p.y,s*.06,s*.06),'#8BD16B',2.5);});};
+  const lay=(w,h)=>({s:Math.min(h*.36,w*.2),gy:h*.9});
+  setupHowTo({lang:()=>lang,play:()=>play(),steps:[
+    {dur:3.4,cap:{en:'Raise a hand ✋',he:'מרימים יד ✋'},draw(c,w,h,t,k){const L=lay(w,h);
+      kid(c,w*.3,L.gy-L.s*.98,L.s,lerp(STAND,HAND,seg(k,.1,.3)),t);
+      const spin=k<.35?t*6:(()=>{const u=seg(k,.35,.9);return 3.4*.35*6+u*4;})(),ang=k<.9?spin:spin;
+      const base=stopAng-(3.4*.35*6+4);wheel(c,w*.68,h*.52,Math.min(h*.3,w*.17),base+ang);}},
+    {dur:2.6,cap:{en:'The animal freezes ❄️',he:'החיה קופאת ❄️'},draw(c,w,h,t,k){const L=lay(w,h);
+      kid(c,w*.3,L.gy-L.s*.98,L.s,STAND,t);statue(c,w*.7,L.gy,L.s*1.15,t,k);
+      for(let i=0;i<8;i++){const a=i/8*6.3+k*2,r=L.s*(.3+k*.9);bigStar(c,w*.7+Math.cos(a)*r,L.gy-L.s*.6+Math.sin(a)*r*.7,6,a,'#DDF3FF');}}},
+    {dur:3.4,cap:{en:'Copy it!',he:'מעתיקים!'},draw(c,w,h,t,k){const L=lay(w,h),pose=lerp(STAND,FPOSE,seg(k,.05,.55)),x=w*.3,y=L.gy-L.s*.98;
+      kid(c,x,y,L.s,pose,t);statue(c,w*.7,L.gy,L.s*1.15,t,1);dots(c,x,y,L.s,pose,seg(k,.5,.75));jar(c,w*.5,L.gy-L.s*.2,L.s*.8,seg(k,.6,1));}},
+    {dur:2.4,cap:{en:'Hold it… yay! ⭐',he:'מחזיקים… יש! ⭐'},draw(c,w,h,t,k){const L=lay(w,h),hop=-Math.abs(Math.sin(t*8))*L.s*.08;
+      kid(c,w*.3,L.gy-L.s*.98+hop,L.s,lerp(FPOSE,HAND,seg(k,.2,.4)),t,{happy:true});statue(c,w*.7,L.gy,L.s*1.15,t,1);jar(c,w*.5,L.gy-L.s*.2,L.s*.8,1);
+      for(let i=0;i<10;i++){const a=i/10*6.3,r=L.s*(.2+k*1.6);bigStar(c,w*.3+Math.cos(a)*r,L.gy-L.s*1.4+Math.sin(a)*r*.6,10*(1-k*.5),a+k*3);}}}
+  ]});
 }
 
 setLang(lang);loadBest();

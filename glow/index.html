@@ -86,6 +86,7 @@ html,body{background:#4A3E78}
 <script type="module">
 import {INK,$,LS,S,audio,tone,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom,drawKid,startFaceTracker,faceFrame,drawMirroredVideo,coverMap,playSample,loadSamples} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
+import {setupHowTo,seg,bigStar} from '../shared/howto.js';
 const guide=makeGuide('face');
 
 /* ================= TEXT ================= */
@@ -382,6 +383,29 @@ function render(dt){
   for(const s of sparks){s.vy+=120*dt;s.x+=s.vx*dt;s.y+=s.vy*dt;glow(ctx,s.x,s.y,10,s.life);ctx.save();ctx.translate(s.x,s.y);ctx.globalAlpha=s.life;sticker(ctx,starPath(5),'#FFF07A',1.5);ctx.restore();}
 }
 
+/* ================= HOW TO PLAY (cartoon for a 5-year-old) ================= */
+{
+  const nosePos=(cx,neck,hw,roll,yaw,pitch)=>{const r=hw*.5,lx=yaw*r*.45*1.15,ly=-r*.93+pitch*r*.35*1.1;return {x:cx+Math.cos(roll)*lx-Math.sin(roll)*ly,y:neck+Math.sin(roll)*lx+Math.cos(roll)*ly};};
+  // the flower waits out in the night; the child moves (leans) the head to bring the firefly on the nose to it
+  function scene(c,w,h,t,m,ff,open,o={}){
+    const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,'#2E3A6E');g.addColorStop(1,'#5A5F9E');c.fillStyle=g;c.fillRect(0,0,w,h);
+    for(let i=0;i<14;i++){c.fillStyle=`rgba(255,255,220,${.4+.4*Math.sin(t*2+i)})`;c.fill(ell((i*97)%w,(i*53)%(h*.5)+8,1.6,1.6));}
+    const hw=Math.min(w*.2,h*.32),cx0=w*.36,neck0=h*1.0,F={x:w*.58,y:h*.52},roll=.28*m,yaw=.5*m,pitch=-.4*m;
+    const e=nosePos(cx0,neck0,hw,.28,.5,-.4),cx=cx0+(F.x-e.x)*m,neck=neck0+(F.y-e.y)*m;
+    drawKid(c,w,h,cx,neck,hw,roll,t,yaw,pitch);
+    const nose=nosePos(cx,neck,hw,roll,yaw,pitch),r=hw*.5;
+    drawFlower(c,F.x,F.y,r*.5,open,t);
+    const p=ff(nose);drawFirefly(c,p.x,p.y,r*.22,t,1);
+    if(o.stars)for(let i=0;i<8;i++){const a=i/8*6.3,rr=r*(.4+o.stars*1.6);bigStar(c,F.x+Math.cos(a)*rr,F.y+Math.sin(a)*rr*.7,15*(1.2-o.stars*.6),a+o.stars*3);}
+  }
+  setupHowTo({lang:()=>lang,play:()=>play(),steps:[
+    {dur:2.6,cap:{en:'A firefly lands on your nose ✨',he:'גחלילית נוחתת לכם על האף ✨'},draw(c,w,h,t,k){const m=seg(k,0,.7);
+      scene(c,w,h,t,0,n=>({x:n.x-(1-m)*w*.25,y:n.y-(1-m)*h*.5+Math.sin(t*5)*(1-m)*10}),0);}},
+    {dur:3,cap:{en:'Move your head to the flower',he:'מזיזים את הראש אל הפרח'},draw(c,w,h,t,k){scene(c,w,h,t,seg(k,.1,.8),n=>n,0);}},
+    {dur:3,cap:{en:'Hold still — it opens! 🌸',he:'מחזיקים — והוא נפתח! 🌸'},draw(c,w,h,t,k){scene(c,w,h,t,1,n=>n,seg(k,.05,.85));}},
+    {dur:2.2,cap:{en:'Great! Next firefly ⭐',he:'מעולה! עוד גחלילית ⭐'},draw(c,w,h,t,k){scene(c,w,h,t,1-seg(k,.4,1),n=>n,1,{stars:seg(k,0,.7)});}}
+  ]});
+}
 setLang(lang);
 loadBest();
 requestAnimationFrame(frame);

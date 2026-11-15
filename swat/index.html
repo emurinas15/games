@@ -84,6 +84,8 @@
 <script type="module">
 import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom,startPoseTracker,poseFrames,drawMirroredVideo} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
+import {setupHowTo,seg,bigStar} from '../shared/howto.js';
+import {drawKid} from '../shared/kit.js';
 const guide=makeGuide('reach');   // 15 Nov (Edgar's sketch): big, close, arms out
 const guides=[makeGuide('reach'),makeGuide('reach')];   // 2 players: one see-through outline on each half
 
@@ -503,6 +505,40 @@ function drawTurnPhone(){
   const fs=Math.max(18,Math.min(26,W*.055));ctx.font=`700 ${fs}px Fredoka,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.direction=lang==='he'?'rtl':'ltr';
   const t=UI[lang].turn,tw=Math.min(W*.92,ctx.measureText(t).width+fs*1.4),bp=new Path2D();bp.roundRect(cx-tw/2,H*.74-fs*1.1,tw,fs*2.2,fs);sticker(ctx,bp,'#FFF6D6',4);
   ctx.fillStyle=INK;ctx.fillText(t,cx,H*.74,W*.88);
+}
+/* ================= HOW TO PLAY (cartoon for a 5-year-old) ================= */
+{
+  const lerpP=(a,b,k)=>({x:a.x+(b.x-a.x)*k,y:a.y+(b.y-a.y)*k});
+  // the seated child: head + shoulders, two arms reaching to hands hL / hR (screen px); racket on each hand, or one big one
+  function kid(c,w,h,hL,hR,t,big){const hw=Math.min(w*.15,h*.24),x=w*.5,neck=h*.72;drawKid(c,w,h,x,neck,hw,0,t);
+    const rr=hw*.42;
+    for(const [side,hd] of [[-1,hL],[1,hR]]){const sx=x+side*hw*.78,sy=neck+hw*.28,mx=(sx+hd.x)/2+side*hw*.25,my=(sy+hd.y)/2+hw*.25;
+      c.lineCap='round';c.lineJoin='round';c.strokeStyle=INK;c.lineWidth=hw*.28+6;c.beginPath();c.moveTo(sx,sy);c.lineTo(mx,my);c.lineTo(hd.x,hd.y);c.stroke();
+      c.strokeStyle='#4FB3A9';c.lineWidth=hw*.28;c.stroke();
+      if(!big)drawRacket(c,hd.x+(hd.x-mx)*.35,hd.y+(hd.y-my)*.35,rr,Math.atan2(hd.y-my,hd.x-mx)+Math.PI/2,side<0?'#FF7A66':'#5FB7F0',false,t);}
+    if(big){const m=lerpP(hL,hR,.5);drawRacket(c,m.x,m.y-rr*.6,rr*1.4,0,'#8BD16B',true,t);}
+    drawKid(c,w,h,x,neck,hw,0,t);
+    return {hw,neck};}
+  function spider(c,x,y,s,t,o={}){
+    if(!o.fly){c.strokeStyle='rgba(255,255,255,.95)';c.lineWidth=2.5;c.beginPath();c.moveTo(x,-5);c.lineTo(x,y-s*.4);c.stroke();drawSpider(c,x,y,s,o.type||'n',o.face||'happy',t,1);}
+    else{c.save();c.translate(x,y);c.rotate(o.fly*8);c.scale(1-o.fly*.6,1-o.fly*.6);drawSpider(c,0,0,s,o.type||'n','dizzy',t,1);c.restore();
+      for(let i=0;i<6;i++){const a=i/6*6.3;c.globalAlpha=Math.max(0,1-o.fly*1.5);sticker(c,ell(x+Math.cos(a)*s*(.4+o.fly*2),y+Math.sin(a)*s*(.4+o.fly*2),s*.3,s*.25),'#fff',3);c.globalAlpha=1;}}
+  }
+  const night=(c,w,h)=>{const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,'#BFE6FF');g.addColorStop(1,'#E8F7FF');c.fillStyle=g;c.fillRect(0,0,w,h);};
+  setupHowTo({lang:()=>lang,play:()=>play(),steps:[
+    {dur:2.4,cap:{en:'Your hands are rackets 🏓',he:'הידיים שלכם הן מחבטים 🏓'},draw(c,w,h,t,k){night(c,w,h);c.translate(0,h*.14);const hw=Math.min(w*.15,h*.24),wv=Math.sin(t*4)*hw*.2;
+      kid(c,w,h,{x:w*.5-hw*1.6,y:h*.62+wv},{x:w*.5+hw*1.6,y:h*.62-wv},t,false);}},
+    {dur:3,cap:{en:'Swat the spiders! 🕷️',he:'מעיפים את העכבישים! 🕷️'},draw(c,w,h,t,k){night(c,w,h);c.translate(0,h*.14);const hw=Math.min(w*.15,h*.24),sp={x:w*.5+hw*2.4,y:h*.3};
+      const drop=seg(k,0,.25),reach=seg(k,.3,.6),fly=k>.6?seg(k,.6,1):0;
+      kid(c,w,h,{x:w*.5-hw*1.6,y:h*.62},lerpP({x:w*.5+hw*1.6,y:h*.62},{x:sp.x-hw*.25,y:sp.y+hw*.45},reach),t,false);
+      if(!fly)spider(c,sp.x,sp.y*drop,hw*.35,t,{face:reach>.6?'oops':'happy'});else spider(c,sp.x+fly*w*.3,sp.y-fly*h*.6,hw*.35,t,{fly});}},
+    {dur:3,cap:{en:'Hands together = BIG racket!',he:'ידיים ביחד = מחבט ענק!'},draw(c,w,h,t,k){night(c,w,h);c.translate(0,h*.14);const hw=Math.min(w*.15,h*.24),up=seg(k,.1,.5),fly=k>.55?seg(k,.55,1):0,top={x:w*.5,y:h*.22};
+      kid(c,w,h,lerpP({x:w*.5-hw*1.6,y:h*.62},{x:w*.5-hw*.15,y:h*.33},up),lerpP({x:w*.5+hw*1.6,y:h*.62},{x:w*.5+hw*.15,y:h*.33},up),t,up>.8);
+      for(const d of [-1,1]){const x=top.x+d*hw*.5;if(!fly)spider(c,x,top.y,hw*.3,t,{type:'r',face:up>.6?'oops':'happy'});else spider(c,x+d*fly*w*.3,top.y-fly*h*.5,hw*.3,t,{type:'r',fly});}}},
+    {dur:2.2,cap:{en:'Swat as many as you can ⭐',he:'מעיפים כמה שיותר ⭐'},draw(c,w,h,t,k){night(c,w,h);c.translate(0,h*.14);const hw=Math.min(w*.15,h*.24),wv=Math.abs(Math.sin(t*6))*hw*.4;
+      kid(c,w,h,{x:w*.5-hw*1.7,y:h*.5-wv},{x:w*.5+hw*1.7,y:h*.5-wv},t,false);
+      for(let i=0;i<8;i++){const a=i/8*6.3,r=h*(.08+k*.3);bigStar(c,w*.5+Math.cos(a)*r*1.6,h*.35+Math.sin(a)*r,15*(1.2-k*.6),a+k*3);}}}
+  ]});
 }
 setLang(lang);loadBest();
 requestAnimationFrame(frame);

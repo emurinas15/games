@@ -143,6 +143,7 @@ details[open] summary::after{content:" ▴"}
 <script type="module">
 import {loadSamples,playSample,SONG_NOTES} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
+import {setupHowTo,seg,bigStar} from '../shared/howto.js';
 /* ================= TEXT (EN / HE) ================= */
 const UI={
  en:{title:"Duck on My Head",sub:"Tilt your head to keep the duckling on!",play:"Play",
@@ -351,7 +352,7 @@ segBind('pond-seg',v=>{pondOn=v==='1';LS.set('hb-pond',v);});
 segBind('quack-seg',v=>{quackMode=+v;LS.set('hb-quack',v);});
 
 /* ================= CANVAS ================= */
-const cv=$('c'),ctx=cv.getContext('2d');
+const cv=$('c');let ctx=cv.getContext('2d');   // let: the How-to-play cartoon borrows the drawing code
 let W=0,H=0,DPR=1;
 function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;}
 addEventListener('resize',resize);resize();
@@ -738,6 +739,24 @@ function buildDucks(){
   }
 }
 /* boot */
+/* ================= HOW TO PLAY (cartoon for a 5-year-old) ================= */
+{
+  const withCtx=(c,w,h,fn)=>{const k=[ctx,W,H];ctx=c;W=w;H=h;try{fn();}finally{[ctx,W,H]=k;}};
+  // the kid, the lily pad on the head, the duck at x (-1..1 across the pad), the butterfly at bx
+  function scene(c,w,h,t,roll,dx,walk,bx,o={}){withCtx(c,w,h,()=>{
+    const hw=Math.min(w*.24,h*.38),top=drawKid(w/2,h*1.06,hw,roll,t),half=hw*.95;
+    ctx.save();ctx.translate(top.x,top.y);ctx.rotate(roll);drawPad(half);
+    ctx.save();ctx.translate(dx*half,0);drawDuck(ctx,half*1.05,{kind:'yellow',dir:o.dir??1,phase:walk,wobble:o.wob||0,look:1,t,happy:o.happy||0});ctx.restore();ctx.restore();
+    if(bx!=null){const x=top.x+Math.cos(roll)*bx*half,y=top.y+Math.sin(roll)*bx*half-half*1.15+Math.sin(t*2.3)*half*.08;drawButterfly(x,y,half*.3,t);}
+    if(o.stars)for(let i=0;i<8;i++){const a=i/8*6.3,r=half*(.4+o.stars*1.4);bigStar(c,top.x+Math.cos(a)*r,top.y-half*.6+Math.sin(a)*r*.6,15*(1.2-o.stars*.6),a+o.stars*3);}
+  });}
+  setupHowTo({lang:()=>lang,play:()=>play(),steps:[
+    {dur:2.4,cap:{en:'A duckling sits on your head 🦆',he:'ברווזון יושב לכם על הראש 🦆'},draw(c,w,h,t,k){scene(c,w,h,t,0,0,0,.4,{happy:k>.5?1:0});}},
+    {dur:3,cap:{en:'It follows the butterfly…',he:'הוא הולך אחרי הפרפר…'},draw(c,w,h,t,k){const d=seg(k,.15,.85)*.8;scene(c,w,h,t,0,d,t*9,.4+seg(k,0,.6)*.9,{wob:k>.8?1:0});}},
+    {dur:3.2,cap:{en:'Tilt your head to keep it on!',he:'מטים את הראש כדי שלא ייפול!'},draw(c,w,h,t,k){const r=-seg(k,0,.35)*.22,d=.8-seg(k,.35,1)*1.2,turn=k>.35;scene(c,w,h,t,r,d,t*9,turn?1.3-seg(k,.35,1)*2.2:1.3,{dir:turn?-1:1});}},
+    {dur:2.2,cap:{en:'Keep it on — get stars! ⭐',he:'שומרים עליו — מקבלים כוכבים! ⭐'},draw(c,w,h,t,k){scene(c,w,h,t,0,-.2,0,-.6,{happy:1,stars:k});}}
+  ]});
+}
 setLang(lang);
 $('best').textContent=Math.floor(best);
 resetDuck();duck.dropT=0;
