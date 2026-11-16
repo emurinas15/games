@@ -16,6 +16,14 @@
 .who-row{display:flex;justify-content:center;margin:2px 0 6px}
 .seg.big button{font-size:16px;padding:9px 14px;white-space:nowrap}
 .who-note{margin:0 0 10px;font-size:14px;opacity:.75;text-align:center}
+/* 16 Nov: high-score table (top 5, names) */
+.hs-btn{display:block;margin:10px auto 0;border:3px solid var(--ink);border-radius:999px;background:#FFF1B8;color:var(--ink);font:700 15px Fredoka,sans-serif;padding:4px 14px;cursor:pointer;box-shadow:0 3px 0 var(--ink)}
+.hs{margin:8px auto 0;max-width:300px;font:600 15px Fredoka,sans-serif}.hs[hidden]{display:none}
+.hs h3{margin:0 0 4px;text-align:center;font:700 14px Fredoka,sans-serif;opacity:.7}
+.hs ol{margin:0;padding:0;list-style:none}.hs li{display:flex;justify-content:space-between;gap:10px;padding:3px 10px;border-radius:10px}.hs li:nth-child(odd){background:rgba(255,216,77,.25)}
+.hs .none{text-align:center;opacity:.6;margin:4px 0}
+.hs-in{display:flex;gap:8px;align-items:center;justify-content:center;margin:0 0 10px;font:700 16px Fredoka,sans-serif}
+.hs-in input{font:700 18px Fredoka,sans-serif;border:3px solid var(--ink);border-radius:14px;padding:5px 10px;width:150px;background:#fff;color:var(--ink)}
 #score2{color:#D9467A}#best-pill[hidden],#score2[hidden],#who-note[hidden]{display:none!important}.duo #score{color:#2F7FC0}
 </style>
 </head>
@@ -47,6 +55,8 @@
   <div class="who-row"><div class="seg big" id="who-seg"><button data-v="solo"></button><button data-v="duo"></button></div></div>
   <p class="who-note" id="who-note" hidden></p>
   <button class="btn" id="play"><span id="t-play">Play</span></button>
+  <button class="hs-btn" id="hs-btn">🏆 <span id="t-hs">High scores</span></button>
+  <div class="hs" id="hs" hidden></div>
   <p class="note" id="t-privacy"></p>
   <details id="grown">
     <summary id="t-grown">For grown-ups</summary>
@@ -67,6 +77,8 @@
       <p id="t-g2"></p>
       <p id="t-g3"></p>
       <p id="t-g5"></p>
+      <p id="t-g6"></p>
+      <p id="t-g7"></p>
       <p class="mini" id="t-legal"></p>
     </div>
   </details>
@@ -77,6 +89,7 @@
   <h1 id="t-over"></h1>
   <div class="big-score"><span id="final">0</span><small id="t-sec2"></small></div>
   <p class="best-line" id="best-line"></p>
+  <div id="hs-name"></div>
   <button class="btn" id="again"><span id="t-again">Play again</span></button>
   <p class="note" id="t-privacy2"></p>
 </div>
@@ -99,12 +112,17 @@ const UI={
   g2:"★ Sit the child so the whole upper body shows: head, both shoulders and both hands. About 1–1.5 m from the phone, phone standing upright.",
   g3:"★ Near keeps the spiders within easy reach; Far makes the child stretch the arms all the way.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
-  left:"seconds left",best:"best",sec2:"spiders swatted",over:["Well done!","Great swatting!","Super swats!","Spider champion!"],again:"Play again",newbest:"New record!",bestis:"Best: ",
+  left:"seconds left",best:"best",sec2:"points",over:["Well done!","Great swatting!","Super swats!","Spider champion!"],again:"Play again",newbest:"New record!",bestis:"Best: ",
   ready:"Getting ready…",body:"Show me your arms and shoulders!",back:"Move back a little so I can see your arms",
   nocam:"No camera here. Touch the spiders to swat them (two fingers = two rackets).",aria:"Game area",
   level:"More spiders!",red:"Red spiders!",helmet:"Tough spiders!",blue:"Sneaky blue spiders!",
   solo:"👤 1 player",duo:"👥 2 players",duonote:"Phone sideways · each player swats the spiders on their own side",
   both:"Both players: show me your arms and shoulders!",turn:"Turn the phone sideways for 2 players",
+  pts:"points",hs:"High scores",hsnone:"No scores yet — play a round!",hsnew:"🏆 New high score!",name:"Your name",save:"Save",p1:"1 player",p2:"2 players",
+  out:["Blue is out!","Pink is out!"],ouch:"Ouch! Thorns!",grab:"Copy the pose!",
+  sup:{zap:"⚡ Zap!",ice:"🧊 Ice!",power:"💪 Power rackets!"},supName:{zap:"Y arms",ice:"Ice crown",power:"Strong arms"},
+  g6:"★ Points: purple spider 1 · red 3 · blue (sneaky) 4 · armoured 6. The top 5 scores are kept on this device only, with a first name if you like.",
+  g7:"★ 2-player battle: from 15 s, black thorn balls hang among the spiders — touching one is a strike (−3 points). 3 strikes and that player is out; the other keeps playing to the end. Every 20 s a super pose appears in the middle: the first player to hold it for 2 seconds gets it. ⚡ Y arms (arms up in a Y) zaps every spider on the screen for 2 points each — but every thorn ball on the screen is a strike. 🧊 Ice crown (elbows out, hands together above the head) freezes the other player's spiders for 8 s: they need two hits, or one hit right in the middle. 💪 Strong arms (elbows out at shoulder height, hands up, like a goal post) gives you giant rackets for 6 s: double hits, double points. The poses need about the same accuracy as Medium in Freeze & Copy. One player plays without these.",
   winL:"Blue wins!",winR:"Pink wins!",tie:"It's a tie!",g5:"★ 2 players: sit side by side, one on each half of the screen, phone sideways (landscape), about 2 m away. Each player has their own spiders and their own score; blue on the left, pink on the right."},
  he:{title:"מחבט עכבישים",sub:"הידיים שלכם הן מחבטים. העיפו את העכבישים!",play:"שחקו",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
@@ -114,12 +132,17 @@ const UI={
   g2:"★ הושיבו את הילד כך שכל פלג הגוף העליון נראה: הראש, שתי הכתפיים ושתי הידיים. בערך מטר עד מטר וחצי מהטלפון, כשהטלפון עומד ישר.",
   g3:"★ ״קרוב״ משאיר את העכבישים בהישג יד; ״רחוק״ דורש מתיחה מלאה של הידיים.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
-  left:"שניות נשארו",best:"שיא",sec2:"עכבישים הועפו",over:["כל הכבוד!","חבטות חזקות!","איזה כוח!","אלופי העכבישים!"],again:"עוד פעם",newbest:"שיא חדש!",bestis:"השיא: ",
+  left:"שניות נשארו",best:"שיא",sec2:"נקודות",over:["כל הכבוד!","חבטות חזקות!","איזה כוח!","אלופי העכבישים!"],again:"עוד פעם",newbest:"שיא חדש!",bestis:"השיא: ",
   ready:"מתכוננים…",body:"תראו לי את הידיים והכתפיים!",back:"זוזו קצת אחורה כדי שאראה את הידיים",
   nocam:"אין כאן מצלמה. געו בעכבישים כדי להעיף אותם (שתי אצבעות = שני מחבטים).",aria:"אזור המשחק",
   level:"עוד עכבישים!",red:"עכבישים אדומים!",helmet:"עכבישים קשוחים!",blue:"עכבישים כחולים ערמומיים!",
   solo:"👤 שחקן אחד",duo:"👥 שני שחקנים",duonote:"טלפון לרוחב · כל שחקן מעיף את העכבישים בצד שלו",
   both:"שני השחקנים: תראו לי את הידיים והכתפיים!",turn:"סובבו את הטלפון לרוחב כדי לשחק בשניים",
+  pts:"נקודות",hs:"שיאים",hsnone:"עוד אין שיאים — שחקו סבב!",hsnew:"🏆 שיא חדש!",name:"השם שלך",save:"שמירה",p1:"שחקן אחד",p2:"שני שחקנים",
+  out:["הכחול בחוץ!","הוורוד בחוץ!"],ouch:"אאוץ׳! קוצים!",grab:"העתיקו את התנוחה!",
+  sup:{zap:"⚡ זאפ!",ice:"🧊 קרח!",power:"💪 מחבטי ענק!"},supName:{zap:"ידיים ב־Y",ice:"כתר קרח",power:"ידיים חזקות"},
+  g6:"★ ניקוד: עכביש סגול 1 · אדום 3 · כחול (ערמומי) 4 · משוריין 6. חמשת השיאים נשמרים רק במכשיר הזה, עם שם פרטי אם רוצים.",
+  g7:"★ קרב בשניים: מ־15 שניות תלויים בין העכבישים כדורי קוצים שחורים — נגיעה בכדור היא פסילה (−3 נקודות). 3 פסילות והשחקן בחוץ; השני ממשיך עד הסוף. כל 20 שניות מופיעה באמצע תנוחת־על: מי שמחזיק אותה ראשון 2 שניות — מקבל אותה. ⚡ ידיים ב־Y מחשמלות את כל העכבישים במסך, 2 נקודות לכל אחד — אבל כל כדור קוצים במסך הוא פסילה. 🧊 כתר קרח (מרפקים לצדדים, כפות ידיים צמודות מעל הראש) מקפיא ל־8 שניות את העכבישים של השחקן השני: צריך שתי חבטות, או חבטה אחת בדיוק באמצע. 💪 ידיים חזקות (מרפקים לצדדים בגובה הכתפיים, ידיים למעלה, כמו שער) נותנות מחבטי ענק ל־6 שניות: חבטה כפולה, ניקוד כפול. התנוחות דורשות דיוק בערך כמו ״בינוני״ ב־Freeze & Copy. שחקן יחיד משחק בלי אלה.",
   winL:"הכחול ניצח!",winR:"הוורוד ניצח!",tie:"תיקו!",g5:"★ שני שחקנים: יושבים זה לצד זה, כל אחד בחצי של המסך, הטלפון לרוחב, בערך 2 מטר מהם. לכל שחקן העכבישים שלו והניקוד שלו; כחול משמאל, ורוד מימין."}
 };
 
@@ -127,8 +150,21 @@ let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
 let roundLen=+LS.get('sw-round','90'); if(![60,90,120].includes(roundLen))roundLen=90;
 let reach=LS.get('sw-reach','near'); if(!['near','far'].includes(reach))reach='near';
 let twoOn=LS.get('sw-two','1')==='1';
-let best=0; const loadBest=()=>{best=+LS.get('sw-best-'+roundLen+reach,'0')||0;$('best').textContent=best;};
 let who=LS.get('sw-who','solo'); if(!['solo','duo'].includes(who))who='solo';
+/* 16 Nov (Edgar): points instead of a spider count, and a top-5 high-score table with names, kept on this device only.
+   One table per mode + round (+ reach for 1 player). The old single record is carried in once. */
+const hsKey=()=>who==='duo'?'sw-hs-duo-'+roundLen:'sw-hs-'+roundLen+reach;
+function getHS(){let a=[];try{a=JSON.parse(LS.get(hsKey(),'[]'))||[];}catch(e){a=[];}
+  if(!a.length&&who!=='duo'){const old=+LS.get('sw-best-'+roundLen+reach,'0')||0;if(old>0)a=[{n:'',s:old}];}
+  return a.filter(e=>e&&typeof e.s==='number').slice(0,5);}
+const setHS=a=>LS.set(hsKey(),JSON.stringify(a.slice(0,5)));
+let best=0; const loadBest=()=>{const a=getHS();best=a.length?a[0].s:0;$('best').textContent=best;};
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function showHS(){const u=UI[lang],a=getHS(),el=$('hs');
+  const head=(who==='duo'?u.p2:u.p1)+' · '+roundLen+(lang==='he'?' שנ׳':' s')+(who==='duo'?'':' · '+u[reach]);
+  el.innerHTML='<h3>'+esc(head)+'</h3>'+(a.length?'<ol>'+a.map((e,i)=>'<li><span>'+(i+1)+'. '+(esc(e.n)||'⭐')+'</span><b>'+e.s+'</b></li>').join('')+'</ol>':'<p class="none">'+esc(u.hsnone)+'</p>');}
+$('hs-btn').onclick=()=>{const el=$('hs');el.hidden=!el.hidden;if(!el.hidden)showHS();audio();SFX.tink();};
+let hsEntries=[];   // entries added this game that can still get a name: {id, k}
 // 16 Nov (Edgar): the music is back ('Sneaky tiptoe'), with the crickets / night sounds kept on underneath (own setting 'sw-amb').
 S.track='spiderTiptoe'; S.amb='night'; S.ambOn=LS.get('sw-amb','1')==='1';
 const syncSound=bindSound(()=>UI[lang],{ambKey:'sw-amb'});
@@ -145,18 +181,19 @@ function segs(){
 function setLang(l){
   lang=l;LS.set('bamboo-lang',l);const u=UI[l];
   document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
-  for(const k of ['title','sub','play','privacy','grown','g1','round','reach','two','music','amb','sfx','g2','g3','g5','legal','left','best','sec2','over','again'])
+  for(const k of ['title','sub','play','privacy','grown','g1','round','reach','two','music','amb','sfx','g2','g3','g5','g6','g7','legal','left','best','sec2','over','again','hs'])
     {const e=$('t-'+k);if(e)e.textContent=u[k];}
   $('t-privacy2').textContent=u.privacy;
   $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
   $('c').setAttribute('aria-label',u.aria);
-  segs();syncSound();if(!$('end').hidden)fillEnd(lastNew);
+  segs();syncSound();if(!$('end').hidden)fillEnd(lastNew);if(!$('hs').hidden)showHS();
 }
 $('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
-document.querySelectorAll('#round-seg button').forEach(b=>b.onclick=()=>{roundLen=+b.dataset.v;LS.set('sw-round',roundLen);loadBest();segs();});
-document.querySelectorAll('#reach-seg button').forEach(b=>b.onclick=()=>{reach=b.dataset.v;LS.set('sw-reach',reach);loadBest();segs();});
+const hsRefresh=()=>{if(!$('hs').hidden)showHS();};
+document.querySelectorAll('#round-seg button').forEach(b=>b.onclick=()=>{roundLen=+b.dataset.v;LS.set('sw-round',roundLen);loadBest();segs();hsRefresh();});
+document.querySelectorAll('#reach-seg button').forEach(b=>b.onclick=()=>{reach=b.dataset.v;LS.set('sw-reach',reach);loadBest();segs();hsRefresh();});
 document.querySelectorAll('#two-seg button').forEach(b=>b.onclick=()=>{twoOn=b.dataset.v==='1';LS.set('sw-two',b.dataset.v);segs();});
-document.querySelectorAll('#who-seg button').forEach(b=>b.onclick=()=>{who=b.dataset.v;LS.set('sw-who',who);audio();SFX.tink();segs();});
+document.querySelectorAll('#who-seg button').forEach(b=>b.onclick=()=>{who=b.dataset.v;LS.set('sw-who',who);audio();SFX.tink();segs();loadBest();hsRefresh();});
 
 /* ================= CANVAS + ART ================= */
 const cv=$('c'),ctx=cv.getContext('2d');
@@ -207,6 +244,35 @@ function drawHelmet(c,s,lw,dented){
   sticker(c,pl,'#FF9FC6',lw*.8);                                     // plume
   if(dented){c.strokeStyle=INK;c.lineWidth=lw*.7;c.beginPath();c.moveTo(s*.18,-s*.38);c.lineTo(s*.26,-s*.28);c.lineTo(s*.2,-s*.2);c.stroke();}
 }
+/* 16 Nov (Edgar): the thorn ball — a fake spider: black ball, white thorns, hanging still on a thread. Touching it = a strike. */
+function drawMace(c,x,y,s,t){
+  const lw=Math.max(2,s*.08);c.save();c.translate(x,y);c.rotate(Math.sin(t*1.3+x)*.08);
+  for(let i=0;i<10;i++){const a=i/10*Math.PI*2+.2,p=new Path2D();
+    p.moveTo(Math.cos(a-.22)*s*.42,Math.sin(a-.22)*s*.42);p.lineTo(Math.cos(a)*s*.86,Math.sin(a)*s*.86);p.lineTo(Math.cos(a+.22)*s*.42,Math.sin(a+.22)*s*.42);p.closePath();sticker(c,p,'#FFFFFF',lw*.8);}
+  sticker(c,ell(0,0,s*.5,s*.5),'#2E2A33',lw);
+  c.fillStyle='rgba(255,255,255,.3)';c.fill(ell(-s*.18,-s*.2,s*.13,s*.08,-.6));
+  c.restore();
+}
+function drawIce(c,x,y,s,t){   // a soft ice cube around an iced spider
+  const p=new Path2D();p.roundRect(x-s*1.05,y-s*.85,s*2.1,s*1.75,s*.35);
+  c.save();c.globalAlpha=.78;sticker(c,p,'rgba(200,236,255,.75)',Math.max(2,s*.07));c.globalAlpha=1;
+  c.strokeStyle='rgba(255,255,255,.95)';c.lineWidth=Math.max(2,s*.07);c.lineCap='round';
+  c.beginPath();c.moveTo(x-s*.75,y-s*.45);c.quadraticCurveTo(x-s*.7,y-s*.65,x-s*.45,y-s*.68);c.stroke();
+  c.beginPath();c.moveTo(x+s*.7,y+s*.4);c.lineTo(x+s*.78,y+s*.2);c.stroke();c.restore();
+}
+/* the super poses, as target angles for the arm on the right of the screen (degrees, 0 = out to the side, 90 = straight up);
+   the arm on the left is the mirror image. Shared tolerance = Freeze & Copy "Medium" (23°). */
+const POSE_TOL=23;
+const POSES={zap:{ua:58,fa:58},ice:{ua:35,fa:145,together:true},power:{ua:0,fa:90}};
+function drawPoseKid(c,x,neck,hw,kind,t){
+  const P=POSES[kind],L1=hw*1.0,L2=hw*.92,D=Math.PI/180;
+  drawKid(c,99999,neck+hw*1.6,x,neck,hw,0,t);
+  for(const sd of [-1,1]){const sx=x+sd*hw*.78,sy=neck+hw*.28,ua=sd>0?P.ua:180-P.ua,fa=sd>0?P.fa:180-P.fa;
+    const ex=sx+Math.cos(ua*D)*L1,ey=sy-Math.sin(ua*D)*L1,wx=ex+Math.cos(fa*D)*L2,wy=ey-Math.sin(fa*D)*L2;
+    c.lineCap='round';c.lineJoin='round';c.strokeStyle=INK;c.lineWidth=hw*.28+6;c.beginPath();c.moveTo(sx,sy);c.lineTo(ex,ey);c.lineTo(wx,wy);c.stroke();
+    c.strokeStyle='#4FB3A9';c.lineWidth=hw*.28;c.stroke();sticker(c,ell(wx,wy,hw*.17,hw*.17),'#F6C9A0',3);}
+  drawKid(c,99999,neck+hw*1.6,x,neck,hw,0,t);
+}
 /* ping-pong style paddle racket */
 function drawRacket(c,x,y,r,ang,col,big=false,t=0){
   const lw=Math.max(3,r*.09);
@@ -231,13 +297,20 @@ const FX={
   clang(){[1240,1780,2630].forEach((f,i)=>tone({f0:f,f1:f*.98,dur:.45,type:'triangle',vol:.09/(i+1)}));},
   whee(){tone({f0:500,f1:1500,dur:.5,type:'sine',vol:.13,at:.04});noise({dur:.35,freq:2500,vol:.12,type:'highpass',at:.02});},
   zip(){tone({f0:1400,f1:500,dur:.25,type:'sine',vol:.05});},
-  level(){[784,988,1175].forEach((f,i)=>tone({f0:f,dur:.18,type:'triangle',vol:.14,at:i*.09}));}
+  level(){[784,988,1175].forEach((f,i)=>tone({f0:f,dur:.18,type:'triangle',vol:.14,at:i*.09}));},
+  ouch(){tone({f0:520,f1:180,dur:.3,type:'square',vol:.08});noise({dur:.15,freq:1800,vol:.3,type:'bandpass'});},
+  zap(){for(let i=0;i<5;i++)noise({dur:.08,freq:2500+i*400,vol:.25,type:'bandpass',at:i*.06});tone({f0:90,f1:60,dur:.5,type:'sawtooth',vol:.08});},
+  ice(){[1568,2093,2637,3136].forEach((f,i)=>tone({f0:f,dur:.25,type:'sine',vol:.08,at:i*.06}));},
+  crack(){noise({dur:.12,freq:3000,vol:.35,type:'highpass'});tone({f0:1900,f1:1200,dur:.1,type:'triangle',vol:.08});},
+  power(){[392,523,659,784].forEach((f,i)=>tone({f0:f,dur:.16,type:'square',vol:.06,at:i*.07}));},
+  charge(){tone({f0:660,dur:.06,type:'triangle',vol:.05});}
 };
+const PTS={n:1,r:3,b:4,h:6};   // armoured spiders take the most work, so they give the most
 
 /* ================= TRACKING ================= */
 const video=$('v');
 let mode='demo',tracker=null,camOK=false,camTried=false,lastVT=-1;
-const mkBody=()=>({ok:false,nose:{x:0,y:0},sw:0,shL:{x:0,y:0},shR:{x:0,y:0},hands:[{x:0,y:0,a:0,ok:false},{x:0,y:0,a:0,ok:false}],lastSeen:0,far:false,close:false});
+const mkBody=()=>({ok:false,nose:{x:0,y:0},sw:0,shL:{x:0,y:0},shR:{x:0,y:0},hands:[{x:0,y:0,a:0,ok:false},{x:0,y:0,a:0,ok:false}],arms:[null,null],lastSeen:0,far:false,close:false});
 const bodies=[mkBody(),mkBody()],body=bodies[0];   // 2 players: bodies[0] = left half (blue), bodies[1] = right half (pink)
 const duo=()=>who==='duo';
 const portraitNow=()=>H>W*1.05;
@@ -263,7 +336,20 @@ function updBody(body,P,now,refW){
     if(w.v<.35){h.ok=false;return;}
     const tgt={x:w.x+(w.x-e.x)*.45,y:w.y+(w.y-e.y)*.45};   // racket sits just past the wrist, in line with the forearm
     if(!h.ok){h.x=tgt.x;h.y=tgt.y;}else sm(h,tgt,.65);h.a=Math.atan2(w.y-e.y,w.x-e.x)-Math.PI/2+Math.PI;h.ok=true;});
+  // arms by screen side (0 = left of the screen), for the super poses
+  const chains=[[11,13,15],[12,14,16]].map(([si,ei,wi])=>({s:P(si),e:P(ei),w:P(wi)}));
+  if(chains[0].s.x>chains[1].s.x)chains.reverse();
+  body.arms=chains.map(ch=>ch.e.v>=.4&&ch.w.v>=.35?ch:null);
   body.ok=true;body.lastSeen=now;
+}
+// does this player hold super pose `kind`? both arms, upper arm and forearm each within POSE_TOL of the target
+function poseOk(b,kind){
+  if(!b.ok||!b.arms[0]||!b.arms[1])return false;const P=POSES[kind];
+  const ang=(a,c)=>Math.atan2(-(c.y-a.y),c.x-a.x)*180/Math.PI,dif=(a,c)=>Math.abs(((a-c+540)%360)-180);
+  for(let k=0;k<2;k++){const A=b.arms[k],m=k?0:180,ua=k?P.ua:180-P.ua,fa=k?P.fa:180-P.fa;
+    if(dif(ang(A.s,A.e),ua)>POSE_TOL||dif(ang(A.e,A.w),fa)>POSE_TOL)return false;}
+  if(P.together&&Math.hypot(b.arms[0].w.x-b.arms[1].w.x,b.arms[0].w.y-b.arms[1].w.y)>b.sw*.5)return false;
+  return true;
 }
 /* no camera: touches / mouse are the rackets */
 const touches=new Map();
@@ -275,7 +361,9 @@ addEventListener('pointercancel',e=>touches.delete(e.pointerId));
 /* ================= GAME ================= */
 let pending=[null,null];   // special spider promised after a banner (one per player side)
 let state='menu',tNow=0,elapsed=0,score=0,scores=[0,0],countT=0,lastNew=false,level=0,nextSpawn=[0,0],announced={};
-let spiders=[],helmets=[],pops=[],puffs=[],strands=[];
+let spiders=[],helmets=[],pops=[],puffs=[],strands=[],floaters=[],bolts=[];
+/* 16 Nov (Edgar): 2-player battle — thorn balls + strikes, and super poses (first to hold the pose gets it). One player: none of this. */
+let strikes=[0,0],out=[false,false],strikeT=[-9,-9],flashT=[-9,-9],iceUntil=[0,0],powerUntil=[0,0],nextMace=[0,0],sup=null,nextSup=20,supBag=[];
 const rkPrev=new Map(),rkVel={};   // racket speed, for the blue spiders' dodge
 const prevHit=new Map();   // racket id + spider id -> was overlapping last frame
 
@@ -297,38 +385,48 @@ function spawn(force,own=0){
   for(let a2=ang,k=0;k<12&&(x<xa||x>xb);k++){a2=a2<Math.PI/2?a2+Math.PI/36*2:a2-Math.PI/36*2;x=sh.x+side*Math.cos(a2)*dist;y=sh.y-Math.sin(a2)*dist;}
   x=Math.max(xa,Math.min(xb,x));y=Math.max(H*(H>W?.12:.2),Math.min(H*.78,y));
   if(spiders.some(o=>o.state!=='fly'&&Math.hypot(o.x-x,o.ty-y)<s*2.2))return false;   // don't stack spiders
+  if(force==='m'){spiders.push({id:Math.random(),own,x,ty:y,y:-40,s:Math.max(26,F.sw*.3),type:'m',hp:1,state:'down',t0:tNow,life:7,hangT:0,dodgeReady:1e9,face:'happy',swing:0,sv:0,faceT:0,k:1});FX.zip();return true;}
   let type='n';const r=Math.random();
   if(elapsed>=60){if(r<.2)type='b';else if(r<.36)type='h';else if(r<.58)type='r';}
   else if(elapsed>=45){if(r<.18)type='h';else if(r<.45)type='r';}
   else if(elapsed>=30){if(r<.4)type='r';}
   if(force)type=force;
-  spiders.push({id:Math.random(),own,x,ty:y,y:-40,s,type,hp:SPIDER[type].hp,state:'down',t0:tNow,life:3+(type==='h'?2:type==='r'||type==='b'?1:0),hangT:0,dodgeReady:0,face:'happy',swing:0,sv:0,faceT:0,k:1});
+  const iced=duo()&&tNow<iceUntil[own];
+  spiders.push({id:Math.random(),own,x,ty:y,y:-40,s,type,hp:SPIDER[type].hp,state:'down',t0:tNow,life:3+(type==='h'?2:type==='r'||type==='b'?1:0)+(iced?2:0),hangT:0,dodgeReady:0,face:'happy',swing:0,sv:0,faceT:0,k:1,ice:iced});
   FX.zip();return true;
 }
 const RK_COL=[['#FF7A66','#5FB7F0'],['#5FB7F0','#5FB7F0'],['#FF9FC6','#FF9FC6']];   // one player: red + blue; 2 players: blue (left) / pink (right)
 function rackets(){
-  const out=[],n=duo()?2:1;
+  const res=[],n=duo()?2:1;
   for(let k=0;k<n;k++){
-    const F=frame0(k),r=Math.max(26,F.sw*.27),col=duo()?RK_COL[k+1]:RK_COL[0],bigCol=duo()?col[0]:'#8BD16B';
+    if(duo()&&out[k])continue;
+    const pw=duo()&&tNow<powerUntil[k],F=frame0(k),r=Math.max(26,F.sw*.27)*(pw?1.5:1),col=duo()?RK_COL[k+1]:RK_COL[0],bigCol=duo()?col[0]:'#8BD16B',two=twoOn&&!duo();
     if(mode==='camera'){
       const b=bodies[k],[h0,h1]=b.hands;if(!b.ok)continue;
-      if(twoOn&&h0.ok&&h1.ok&&Math.hypot(h0.x-h1.x,h0.y-h1.y)<F.sw*.55)out.push({id:k+'big',own:k,x:(h0.x+h1.x)/2,y:(h0.y+h1.y)/2,r:r*1.33,a:(h0.a+h1.a)/2,big:true,col:bigCol});
-      else b.hands.forEach((h,j)=>{if(h.ok)out.push({id:k+'h'+j,own:k,x:h.x,y:h.y,r,a:h.a,big:false,col:col[j]});});
+      if(two&&h0.ok&&h1.ok&&Math.hypot(h0.x-h1.x,h0.y-h1.y)<F.sw*.55)res.push({id:k+'big',own:k,x:(h0.x+h1.x)/2,y:(h0.y+h1.y)/2,r:r*1.33,a:(h0.a+h1.a)/2,big:true,col:bigCol});
+      else b.hands.forEach((h,j)=>{if(h.ok)res.push({id:k+'h'+j,own:k,x:h.x,y:h.y,r,a:h.a,big:pw,power:pw,col:col[j]});});
     } else {
       const bx=sideBox(k),pts=[...touches.values()].filter(p=>p.x>=bx.x0&&p.x<bx.x1);
-      if(twoOn&&pts.length>=2&&Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)<F.sw*.55)out.push({id:k+'big',own:k,x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2,r:r*1.33,a:0,big:true,col:bigCol});
-      else pts.slice(0,2).forEach((p,j)=>out.push({id:k+'t'+j,own:k,x:p.x,y:p.y,r,a:0,big:false,col:col[j]}));
+      if(two&&pts.length>=2&&Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)<F.sw*.55)res.push({id:k+'big',own:k,x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2,r:r*1.33,a:0,big:true,col:bigCol});
+      else pts.slice(0,2).forEach((p,j)=>res.push({id:k+'t'+j,own:k,x:p.x,y:p.y,r,a:0,big:pw,power:pw,col:col[j]}));
     }
   }
-  return out;
+  return res;
 }
 function showScore(){$('score').textContent=duo()?'🔵 '+scores[0]:score;$('score2').textContent='🩷 '+scores[1];}
+function addPts(k,n,x,y){
+  if(duo()){scores[k]=Math.max(0,scores[k]+n);score=scores[0];}else score=Math.max(0,score+n);showScore();
+  floaters.push({x,y,txt:(n>0?'+':'')+n,col:n<0?'#F0604D':duo()?(k?'#FF9FC6':'#7FC8F8'):'#FFD84D',life:1});
+}
+function iceBurst(sp){FX.crack();for(let i=0;i<8;i++){const a=Math.random()*6.3;puffs.push({x:sp.x,y:sp.y,vx:Math.cos(a)*sp.s*4,vy:Math.sin(a)*sp.s*4,r:sp.s*.22,life:.5,ice:true});}}
 function hit(sp,rk){
-  sp.hp-=rk.big?2:1;
   const dx=sp.x-rk.x,dy=sp.y-rk.y,d=Math.hypot(dx,dy)||1;
+  if(sp.ice){sp.ice=false;iceBurst(sp);   // iced: the first hit only breaks the ice — unless it lands right in the middle
+    if(d>rk.r*.55+sp.s*.15){sp.face='angry';sp.faceT=tNow+.7;sp.sv+=Math.sign(dx||1)*3;return;}}
+  sp.hp-=rk.big?2:1;
   if(sp.hp<=0){ // flies off the screen
     sp.state='fly';sp.face='dizzy';sp.vx=(dx/d)*W*1.5+(Math.random()-.5)*150;sp.vy=-H*1.3;sp.spin=(Math.random()<.5?-1:1)*10;
-    score++;scores[sp.own||0]++;showScore();FX.whack();FX.poof();FX.whee();
+    addPts(sp.own||0,PTS[sp.type]*(rk.power?2:1),sp.x,sp.y);FX.whack();FX.poof();FX.whee();
     for(let i=0;i<7;i++){const a=i/7*Math.PI*2+Math.random()*.4;puffs.push({x:sp.x+Math.cos(a)*sp.s*.3,y:sp.y+Math.sin(a)*sp.s*.3,vx:Math.cos(a)*sp.s*3.2,vy:Math.sin(a)*sp.s*3.2,r:sp.s*(.35+Math.random()*.25),life:.75});}
     for(let i=0;i<6;i++){const a=Math.random()*Math.PI*2;strands.push({x:sp.x,y:sp.y,vx:Math.cos(a)*sp.s*6,vy:Math.sin(a)*sp.s*6,rot:a,len:sp.s*(.5+Math.random()*.5),life:.6});}
     for(let i=0;i<6;i++)pops.push({x:sp.x,y:sp.y,vx:(Math.random()-.5)*420,vy:(Math.random()-.7)*420,life:.7});
@@ -338,16 +436,38 @@ function hit(sp,rk){
     sp.face='angry';sp.faceT=tNow+.7;sp.sv+=Math.sign(dx||1)*5;
   }
 }
-function showLevel(txt){const el=$('lvl');el.textContent=txt;
+function popMace(sp){sp.state='fly';sp.vx=(Math.random()-.5)*300;sp.vy=-H*.9;sp.spin=8;
+  for(let i=0;i<8;i++)pops.push({x:sp.x,y:sp.y,vx:(Math.random()-.5)*500,vy:(Math.random()-.7)*500,life:.6,dark:true});}
+function strike(k,x,y){
+  if(out[k]||tNow-strikeT[k]<1)return;   // a short grace after each strike
+  strikes[k]++;strikeT[k]=tNow;flashT[k]=tNow;addPts(k,-3,x,y);FX.ouch();
+  if(strikes[k]>=3){out[k]=true;showLevel(UI[lang].out[k]);for(const sp of spiders)if(sp.own===k&&sp.state!=='fly')sp.state='up';
+    if(out[0]&&out[1])setTimeout(()=>{if(state==='play')endGame();},900);}
+  else floaters.push({x,y:y-44,txt:UI[lang].ouch,col:'#FFFFFF',life:1.1,fs:20});
+}
+function newSuper(){if(!supBag.length)supBag=['zap','ice','power'].sort(()=>Math.random()-.5);
+  sup={kind:supBag.pop(),t0:tNow,until:tNow+8,prog:[0,0]};showLevel(UI[lang].grab);}
+function fireSuper(kind,k){
+  const u=UI[lang],o=1-k;showLevel(u.sup[kind]);
+  if(kind==='zap'){FX.zap();
+    for(const sp of spiders){if(sp.state==='fly'||sp.state==='gone'||sp.y<0)continue;
+      bolts.push({x:sp.x,y:sp.y,life:.5,seed:Math.random()*99});
+      if(sp.type==='m'){popMace(sp);strikeT[k]=-9;strike(k,sp.x,sp.y);continue;}   // every thorn ball on the screen = a strike
+      sp.state='fly';sp.face='dizzy';sp.ice=false;sp.vx=(Math.random()-.5)*W;sp.vy=-H*1.2;sp.spin=12;addPts(k,2,sp.x,sp.y);}}
+  else if(kind==='ice'){FX.ice();iceUntil[o]=tNow+8;for(const sp of spiders)if(sp.own===o&&sp.type!=='m'&&sp.state!=='fly'&&sp.state!=='gone'){sp.ice=true;sp.life+=2;if(sp.state==='dodge'){sp.state='hang';sp.y=sp.ty;}}}
+  else {FX.power();powerUntil[k]=tNow+6;}
+}
+function showLevel(txt,ms=1300){const el=$('lvl');el.textContent=txt;
   // one line, shrinking the font until it fits the screen
   let f=46;el.style.fontSize=f+'px';while(el.scrollWidth>W*.92&&f>18){f-=2;el.style.fontSize=f+'px';}
-  el.classList.add('on');FX.level();setTimeout(()=>el.classList.remove('on'),1300);}
+  el.classList.add('on');FX.level();clearTimeout(showLevel.to);showLevel.to=setTimeout(()=>el.classList.remove('on'),ms);}
 let msgNow='';function msg(t){const m=$('msg');if(t){m.textContent=t;m.classList.add('on')}else m.classList.remove('on');msgNow=t;}
 
 async function play(){
   audio();SFX.go();musicStart();
   $('start').hidden=true;$('end').hidden=true;
-  score=0;scores=[0,0];elapsed=0;level=0;pending=[null,null];spiders=[];helmets=[];pops=[];puffs=[];strands=[];announced={};prevHit.clear();
+  score=0;scores=[0,0];elapsed=0;level=0;pending=[null,null];spiders=[];helmets=[];pops=[];puffs=[];strands=[];floaters=[];bolts=[];announced={};prevHit.clear();
+  strikes=[0,0];out=[false,false];strikeT=[-9,-9];flashT=[-9,-9];iceUntil=[0,0];powerUntil=[0,0];nextMace=[0,0];sup=null;nextSup=20;supBag=[];$('hs').hidden=true;
   $('time').textContent=roundLen;loadBest();$('hud').classList.add('on');
   $('hud').classList.toggle('duo',duo());$('score2').hidden=!duo();$('best-pill').hidden=duo();showScore();
   if(!camTried){
@@ -362,13 +482,26 @@ $('play').onclick=play;$('again').onclick=play;
 
 function endGame(){
   state='over';musicStop();$('hud').classList.remove('on');msg('');$('toast').classList.remove('on');
-  lastNew=!duo()&&score>best;if(lastNew){best=score;LS.set('sw-best-'+roundLen+reach,best);SFX.star();}
+  // top-5 table: each player's score may get in; the brief 1.5 s message, then a name box on the end card
+  const a=getHS();hsEntries=[];const cand=duo()?[[0,scores[0]],[1,scores[1]]]:[[0,score]];
+  for(const [k,v] of cand){if(v<=0)continue;const id=Math.random();a.push({n:'',s:v,id});a.sort((x,y)=>y.s-x.s);if(a.slice(0,5).some(e=>e.id===id))hsEntries.push({id,k});}
+  const top=a.slice(0,5);setHS(top.map(e=>({n:e.n,s:e.s,id:e.id})));
+  lastNew=hsEntries.length>0;if(lastNew){SFX.star();setTimeout(()=>showLevel(UI[lang].hsnew,1500),250);}
+  loadBest();
   if(duo()&&scores[0]!==scores[1])SFX.star();
   guide.hide&&guide.hide();guides.forEach(g=>g.hide&&g.hide());
   fillEnd(lastNew);$('end').hidden=false;SFX.chime();
 }
-function fillEnd(nb){const u=UI[lang];$('final').textContent=score;$('newbest').hidden=!nb;$('newbest').textContent=u.newbest;
-  $('best-line').textContent=u.bestis+best;$('t-privacy2').textContent=u.privacy;$('t-over').textContent=u.over[score<10?0:score<25?1:score<40?2:3];$('t-sec2').textContent=u.sec2;
+function fillEnd(nb){const u=UI[lang];$('final').textContent=score;$('newbest').hidden=true;
+  $('best-line').textContent=nb?'':u.bestis+best;
+  const box=$('hs-name');box.innerHTML='';
+  for(const en of hsEntries){const row=document.createElement('div');row.className='hs-in';
+    const lab=document.createElement('span');lab.textContent=duo()?(en.k?'🩷':'🔵'):'🏆';
+    const inp=document.createElement('input');inp.maxLength=12;inp.placeholder=u.name;inp.autocomplete='off';
+    const a0=getHS(),cur=a0.find(e=>e.id===en.id);inp.value=cur?cur.n:'';
+    inp.oninput=()=>{const a=getHS();const e=a.find(x=>x.id===en.id);if(e){e.n=inp.value.trim().slice(0,12);setHS(a);}};
+    inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();};
+    row.append(lab,inp);box.append(row);}$('t-privacy2').textContent=u.privacy;$('t-over').textContent=u.over[score<10?0:score<25?1:score<40?2:3];$('t-sec2').textContent=u.sec2;
   if(duo()){const [a,b]=scores;$('final').textContent='🔵 '+a+' : '+b+' 🩷';$('t-over').textContent=a===b?u.tie:a>b?u.winL:u.winR;$('best-line').textContent='';}}
 
 let last=performance.now(),demoNext=0;
@@ -411,8 +544,21 @@ function frame(now){
       // 2 players: each side gets its own spiders (up to 4 each, on its own half)
       const sides=duo()?[0,1]:[0],maxOn=duo()?Math.min(4,2+level):Math.min(5,2+level),interval=Math.max(.6,2.0-level*.25);
       for(const k of sides){
+        if(duo()&&out[k])continue;
         if(pending[k]&&tNow>=pending[k].at&&spawn(pending[k].type,k))pending[k]=null;
-        if(tNow>nextSpawn[k]&&spiders.filter(s=>s.own===k&&s.state!=='fly'&&s.state!=='gone').length<maxOn){spawn(null,k);nextSpawn[k]=tNow+interval*(.7+Math.random()*.6);}
+        if(tNow>nextSpawn[k]&&spiders.filter(s=>s.own===k&&s.type!=='m'&&s.state!=='fly'&&s.state!=='gone').length<maxOn){spawn(null,k);nextSpawn[k]=tNow+interval*(.7+Math.random()*.6);}
+        // battle: thorn balls from 15 s — one per side, two from 35 s
+        if(duo()&&elapsed>=15&&tNow>nextMace[k]&&spiders.filter(s=>s.own===k&&s.type==='m'&&s.state!=='fly'&&s.state!=='gone').length<(elapsed>=35?2:1)){if(spawn('m',k))nextMace[k]=tNow+3+Math.random()*2;}
+      }
+      // battle: a super pose every 20 s; the first player to hold it for 2 s gets it
+      if(duo()){
+        if(!sup&&elapsed>=nextSup&&elapsed<roundLen-6)newSuper();
+        if(sup){
+          for(const k of [0,1]){const ok=!out[k]&&(mode==='camera'?poseOk(bodies[k],sup.kind):false);
+            const p0=sup.prog[k];sup.prog[k]=Math.max(0,Math.min(1,p0+(ok?dt/2:-dt)));if(ok&&Math.floor(p0*8)!==Math.floor(sup.prog[k]*8))FX.charge();
+            if(sup.prog[k]>=1){const kind=sup.kind;sup=null;nextSup=elapsed+20;fireSuper(kind,k);break;}}
+          if(sup&&tNow>sup.until){sup=null;nextSup=elapsed+12;}
+        }
       }
       // swats: a racket newly touching a spider counts as one hit
       const rks=rackets();
@@ -423,7 +569,7 @@ function frame(now){
         if(sp.state==='hang'&&tNow-sp.hangT>sp.life)sp.state='up';
         // blue spiders: a racket coming slowly toward them makes them pull up for a moment, then drop back
         const F=frame0(sp.own||0);
-        if((sp.type==='b'||sp.type==='n')&&sp.state==='hang'&&tNow>sp.dodgeReady)for(const rk of rks){
+        if((sp.type==='b'||sp.type==='n')&&!sp.ice&&sp.state==='hang'&&tNow>sp.dodgeReady)for(const rk of rks){
           if(rk.own!==(sp.own||0))continue;
           const v=rkVel[rk.id],dx=sp.x-rk.x,dy=sp.y-rk.y,d=Math.hypot(dx,dy);
           if(d<rk.r+sp.s*3.2&&d>rk.r+sp.s*.5){const toward=(v.x*dx+v.y*dy)/d;
@@ -432,7 +578,7 @@ function frame(now){
         for(const rk of rks){
           if(rk.own!==(sp.own||0))continue;   // 2 players: you can only swat your own spiders
           const key=rk.id+sp.id,over=Math.hypot(rk.x-sp.x,rk.y-sp.y)<rk.r+sp.s*.55;
-          if(over&&!prevHit.get(key)&&sp.state!=='fly')hit(sp,rk);
+          if(over&&!prevHit.get(key)&&sp.state!=='fly'){if(sp.type==='m'){if(tNow-strikeT[sp.own]>=1){popMace(sp);strike(sp.own,sp.x,sp.y);}}else hit(sp,rk);}
           prevHit.set(key,over);
         }
       }
@@ -473,8 +619,10 @@ function render(dt){
     const bx=sp.x+Math.sin(sw)*len*.25,by=sp.y;
     if(sp.state!=='fly'){ctx.strokeStyle='rgba(255,255,255,.95)';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(sp.x,-10);ctx.quadraticCurveTo(sp.x,by*.5,bx,by-sp.s*.4);ctx.stroke();
       ctx.strokeStyle='rgba(43,33,24,.35)';ctx.lineWidth=1;ctx.stroke();}
-    else{ctx.save();ctx.translate(sp.x,sp.y);ctx.rotate(sp.rot||0);ctx.scale(sp.k,sp.k);drawSpider(ctx,0,0,sp.s,sp.type,sp.face,tNow,sp.hp,sp.id*10);ctx.restore();continue;}
+    else{ctx.save();ctx.translate(sp.x,sp.y);ctx.rotate(sp.rot||0);ctx.scale(sp.k,sp.k);if(sp.type==='m')drawMace(ctx,0,0,sp.s,tNow);else drawSpider(ctx,0,0,sp.s,sp.type,sp.face,tNow,sp.hp,sp.id*10);ctx.restore();continue;}
+    if(sp.type==='m'){drawMace(ctx,bx,by,sp.s,tNow);continue;}
     ctx.save();ctx.translate(bx,by);ctx.rotate(-sw*.6);drawSpider(ctx,0,0,sp.s,sp.type,sp.face,tNow,sp.hp,sp.id*10,lookAt(bx,by));ctx.restore();
+    if(sp.ice)drawIce(ctx,bx,by+sp.s*.1,sp.s,tNow);
     if(sp.type!=='n'&&sp.hp>0&&state==='play'){ // little hearts show the hits left
       for(let i=0;i<sp.hp;i++){ctx.save();ctx.translate(bx+(i-(sp.hp-1)/2)*sp.s*.32,by+sp.s*.85);sticker(ctx,ell(0,0,sp.s*.09,sp.s*.09),'#FFD84D',2);ctx.restore();}
     }
@@ -483,12 +631,21 @@ function render(dt){
   for(const h of helmets){h.vy+=H*1.6*dt;h.x+=h.vx*dt;h.y+=h.vy*dt;h.rot+=dt*8;ctx.save();ctx.translate(h.x,h.y);ctx.rotate(h.rot);drawHelmet(ctx,h.s,Math.max(2,h.s*.08),true);ctx.restore();}
   puffs=puffs.filter(p=>(p.life-=dt)>0);
   for(const p of puffs){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.pow(.05,dt);p.vy*=Math.pow(.05,dt);const k=1-p.life/.75;
-    ctx.save();ctx.globalAlpha=Math.min(1,p.life*2.5);sticker(ctx,ell(p.x,p.y,p.r*(.6+k*.9),p.r*(.55+k*.8)),'#FFFFFF',3.5);ctx.fillStyle='rgba(200,215,235,.9)';ctx.fill(ell(p.x-p.r*.2,p.y-p.r*.15,p.r*.25,p.r*.18));ctx.restore();}
+    ctx.save();ctx.globalAlpha=Math.min(1,p.life*2.5);sticker(ctx,ell(p.x,p.y,p.r*(.6+k*.9),p.r*(.55+k*.8)),p.ice?'#CDEFFF':'#FFFFFF',3.5);ctx.fillStyle='rgba(200,215,235,.9)';ctx.fill(ell(p.x-p.r*.2,p.y-p.r*.15,p.r*.25,p.r*.18));ctx.restore();}
   strands=strands.filter(p=>(p.life-=dt)>0);
   for(const p of strands){p.x+=p.vx*dt;p.y+=p.vy*dt;ctx.save();ctx.globalAlpha=Math.min(1,p.life*2);ctx.translate(p.x,p.y);ctx.rotate(p.rot);
     ctx.strokeStyle='#FFFFFF';ctx.lineWidth=3;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-p.len/2,0);ctx.quadraticCurveTo(0,-p.len*.3,p.len/2,0);ctx.stroke();ctx.restore();}
   pops=pops.filter(p=>(p.life-=dt)>0);
-  for(const p of pops){p.vy+=500*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;ctx.save();ctx.translate(p.x,p.y);ctx.globalAlpha=Math.min(1,p.life*1.5);sticker(ctx,starPath(9),'#FFD84D',2);ctx.restore();}
+  for(const p of pops){p.vy+=500*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;ctx.save();ctx.translate(p.x,p.y);ctx.globalAlpha=Math.min(1,p.life*1.5);sticker(ctx,starPath(9),p.dark?'#FFFFFF':'#FFD84D',2);ctx.restore();}
+  // zap bolts: soft yellow zig-zags from the top to each zapped spider
+  bolts=bolts.filter(b=>(b.life-=dt)>0);
+  for(const b of bolts){ctx.save();ctx.globalAlpha=Math.min(1,b.life*3);const n=7,pts=[];for(let i=0;i<=n;i++){const k=i/n;pts.push([b.x+(i&&i<n?Math.sin(b.seed+i*2.3+tNow*40)*22:0),b.y*k]);}
+    for(const [w,c] of [[11,INK],[6,'#FFE45C']]){ctx.strokeStyle=c;ctx.lineWidth=w;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();pts.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.stroke();}ctx.restore();}
+  if(duo()&&state==='play')drawBattle();
+  // points floating up
+  floaters=floaters.filter(f=>(f.life-=dt)>0);
+  for(const f of floaters){f.y-=dt*60;const fs=f.fs||26;ctx.save();ctx.globalAlpha=Math.min(1,f.life*2.5);ctx.font=`900 ${fs}px Grandstander,Fredoka,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.direction='ltr';
+    ctx.lineJoin='round';ctx.lineWidth=6;ctx.strokeStyle=INK;ctx.strokeText(f.txt,f.x,f.y);ctx.fillStyle=f.col;ctx.fillText(f.txt,f.x,f.y);ctx.restore();}
   // rackets
   if(state==='play'||state==='count'||(state==='ready'&&!cam)){
     for(const rk of rackets())drawRacket(ctx,rk.x,rk.y,rk.r,rk.a,rk.col,rk.big,tNow);
@@ -496,6 +653,37 @@ function render(dt){
   if(turn)drawTurnPhone();
 }
 
+/* battle layer: strike slots, red flash, "out" halves, the super-pose card and each player's hold star */
+function drawBattle(){
+  const u=UI[lang];
+  for(const k of [0,1]){const x0=k*W/2;
+    if(tNow-flashT[k]<.5){ctx.fillStyle=`rgba(240,96,77,${.35*(1-(tNow-flashT[k])/.5)})`;ctx.fillRect(x0,0,W/2,H);}
+    if(out[k]){ctx.fillStyle='rgba(255,248,236,.6)';ctx.fillRect(x0,0,W/2,H);bubbleC(u.out[k],x0+W/4,H*.5,22,k?'#FFE3E8':'#DDF3FF');}
+    // 3 strike slots in the outer top corner of each half: a little thorn ball fills each one
+    const r=12;for(let i=0;i<3;i++){const x=k?W-26-i*32:26+i*32,y=H-30;
+      if(i<strikes[k])drawMace(ctx,x,y,r*1.1,0);else{ctx.save();ctx.globalAlpha=.85;sticker(ctx,ell(x,y,r*.7,r*.7),'rgba(255,255,255,.8)',2.5);ctx.restore();}}
+    if(tNow<powerUntil[k]){const left=Math.ceil(powerUntil[k]-tNow);bubbleC('💪 '+left,x0+W/4,H-30,18,'#FFF1B8');}
+    if(tNow<iceUntil[k]){const left=Math.ceil(iceUntil[k]-tNow);bubbleC('🧊 '+left,x0+W/4,H-30,18,'#DDF3FF');}
+  }
+  if(!sup)return;
+  // the pose card in the middle
+  const cw=Math.min(W*.2,H*.36),ch=cw*1.25,cx=W/2,cy=H*.22+ch/2,pop=Math.min(1,(tNow-sup.t0)/.25);
+  ctx.save();ctx.translate(cx,cy);ctx.scale(pop,pop);ctx.translate(-cx,-cy);
+  const p=new Path2D();p.roundRect(cx-cw/2,cy-ch/2,cw,ch,20);sticker(ctx,p,'rgba(255,248,236,.95)',4);
+  ctx.save();ctx.clip(p);drawPoseKid(ctx,cx,cy+ch*.18,cw*.19,sup.kind,tNow);ctx.restore();
+  ctx.restore();
+  bubbleC(u.sup[sup.kind].split(' ')[0]+' '+u.supName[sup.kind],cx,cy+ch/2+4,17,'#FFF1B8');
+  bubbleC('⏱ '+Math.max(0,Math.ceil(sup.until-tNow)),cx,cy-ch/2-2,15,'#fff');
+  // each player's hold star, above their head
+  for(const k of [0,1]){if(out[k])continue;const b=bodies[k],x=b.ok?b.nose.x:W*(k?.75:.25),y=b.ok?Math.max(70,b.nose.y-b.sw*1.1):H*.25,R=26,pr=sup.prog[k];
+    const sp=starPath(R);ctx.save();ctx.translate(x,y);sticker(ctx,sp,'rgba(255,255,255,.85)',3);
+    ctx.save();ctx.clip(sp);ctx.fillStyle=k?'#FF9FB0':'#7FC8F8';ctx.fillRect(-R,R-2*R*pr,2*R,2*R*pr);ctx.restore();ctx.lineWidth=3;ctx.strokeStyle=INK;ctx.stroke(sp);ctx.restore();}
+}
+function bubbleC(txt,x,y,fs,fill){
+  ctx.save();ctx.font=`700 ${fs}px Fredoka,sans-serif`;ctx.direction=lang==='he'?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';
+  const w=ctx.measureText(txt).width+fs*1.4,h=fs*1.9,bp=new Path2D();bp.roundRect(x-w/2,y-h/2,w,h,h/2);sticker(ctx,bp,fill,3);
+  ctx.fillStyle=INK;ctx.fillText(txt,x,y+1);ctx.restore();
+}
 function drawTurnPhone(){
   ctx.fillStyle='rgba(255,248,236,.93)';ctx.fillRect(0,0,W,H);
   const cx=W/2,cy=H*.4,s=Math.min(W,H)*.3,k=(tNow%2.4)/2.4,rot=-Math.PI/2*Math.min(1,Math.max(0,(k-.3)*3));
