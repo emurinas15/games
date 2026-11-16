@@ -359,8 +359,9 @@ let guide=null,guides=[],awayT=0;
 // what the setup avatar needs to see: head + shoulders, both hands, and (standing) both feet
 const seen=(p,i)=>p.lm[i].v>.5;
 const obsOf=p=>p?{x:p.nose.x,y:p.nose.y,size:p.sw,arms:seen(p,15)&&seen(p,16),feet:bodyMode==='full'?seen(p,27)&&seen(p,28)&&seen(p,25)&&seen(p,26):true}:null;
-const halves=()=>{const R=playRect();return [{x:R.x,y:R.y,w:R.w/2,h:R.h},{x:R.x+R.w/2,y:R.y,w:R.w/2,h:R.h}];};
-function duoSlots(){const R=playRect(),mid=R.x+R.w/2,s=[null,null];if(people.length>=2){s[0]=people[0];s[1]=people[people.length-1];}else if(people.length===1)s[people[0].nose.x<mid?0:1]=people[0];return s;}
+// 2 players: each child gets one side; the centre card (wheel / statue) is kept free between them
+const halves=()=>{const C=stageRect(),g=8;return [{x:0,y:0,w:C.x-g,h:H},{x:C.x+C.w+g,y:0,w:W-C.x-C.w-g,h:H}];};
+function duoSlots(){const mid=W/2,s=[null,null];if(people.length>=2){s[0]=people[0];s[1]=people[people.length-1];}else if(people.length===1)s[people[0].nose.x<mid?0:1]=people[0];return s;}
 function say(t,dur=1.6){bigMsg=t;bigMsgT=tNow+dur;}
 function setPhase(p){phase=p;phaseT=0;}
 const pick=a=>a[Math.floor(Math.random()*a.length)];
@@ -466,8 +467,13 @@ function bigText(txt,x,y,fs,col='#FFD84D',sc=1){
 /* 14 Nov (Edgar): the game is played with the phone SIDEWAYS. The statue stands on a card on the left;
    the player plays in the rest of the picture, so their face and arms stay visible. */
 const portraitPlay=()=>H>W*1.05&&['setup','count','play'].includes(state);
-function stageRect(){const y=58,h=H-y-Math.max(56,H*.11),w=Math.min(W*.3,h*.82);return {x:12,y,w,h};}
-function playRect(){const R=stageRect(),x=R.x+R.w+8;return {x,y:0,w:W-x,h:H};}
+/* 16 Nov (Edgar): in 2-player mode the players stand on the two sides and the action is in the MIDDLE —
+   the wheel spins in a centre card and, once it picks, the animal statue takes the wheel's place in that same card.
+   One player: the same card sits on the left and the player has the rest of the picture. */
+function stageRect(){const y=58,h=H-y-Math.max(56,H*.11);
+  if(who==='duo'){const w=Math.min(W*.24,h*.75);return {x:(W-w)/2,y,w,h};}
+  const w=Math.min(W*.3,h*.82);return {x:12,y,w,h};}
+function playRect(){if(who==='duo')return {x:0,y:0,w:W,h:H};const R=stageRect(),x=R.x+R.w+8;return {x,y:0,w:W-x,h:H};}
 function animalName(T){if(!T.mix)return ANIMALS[T.a][lang]+' · '+ANIMALS[T.a].poses[T.pa][lang];return mixName(ANIMALS[T.a],ANIMALS[T.b],lang);}
 function drawTurnPhone(){
   ctx.fillStyle='rgba(255,248,236,.92)';ctx.fillRect(0,0,W,H);
@@ -500,7 +506,9 @@ function drawStage(){
   ctx.restore();
 }
 function drawWheel(){
-  const u=UI[lang],cx=W/2,cy=H*.46,Rr=Math.min(W,H)*.28,seg=Math.PI*2/NS,cols=['#FFF1B8','#D8F2B8','#FFD3DC','#DDF3FF','#F3EEE4'];
+  const SR=stageRect();
+  ctx.save();ctx.fillStyle='rgba(255,248,236,.86)';ctx.strokeStyle=INK;ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(SR.x,SR.y,SR.w,SR.h,24);ctx.fill();ctx.stroke();ctx.restore();
+  const u=UI[lang],cx=SR.x+SR.w/2,cy=SR.y+SR.h*.5,Rr=Math.min(SR.w*.46,SR.h*.36),seg=Math.PI*2/NS,cols=['#FFF1B8','#D8F2B8','#FFD3DC','#DDF3FF','#F3EEE4'];
   ctx.save();ctx.translate(cx,cy);
   ctx.fillStyle=INK;ctx.beginPath();ctx.arc(0,6,Rr+8,0,7);ctx.fill();
   for(let j=0;j<NS;j++){const a0=WH.ang+j*seg,a1=a0+seg,res=WH.result>=0&&j===WH.result;
@@ -513,8 +521,9 @@ function drawWheel(){
   ctx.fillStyle='#FFD84D';ctx.strokeStyle=INK;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-Rr*.11,-Rr-Rr*.16);ctx.lineTo(Rr*.11,-Rr-Rr*.16);ctx.lineTo(0,-Rr+Rr*.1);ctx.closePath();ctx.fill();ctx.stroke();
   ctx.restore();
   const fs=Math.max(18,Math.min(26,W*.045));
-  if(phase==='spin'&&WH.stopT<0){bubble('✋ '+u.raise,W/2,Math.min(H*.9,cy+Rr+fs*2.4),fs,WH.up?'#E6F7DE':'#fff');}
-  if(phase==='mix'&&target)bubble(ANIMALS[target.a][lang]+' + ?',W/2,Math.min(H*.9,cy+Rr+fs*2.4),fs,'#FFE3E8');
+  const by=SR.y+SR.h+fs*.2,bx=t=>{ctx.save();ctx.font=`700 ${fs}px Fredoka,sans-serif`;const hw=ctx.measureText(t).width/2+fs*.7+8;ctx.restore();return Math.max(hw,Math.min(W-hw,cx));};
+  if(phase==='spin'&&WH.stopT<0){const t='✋ '+u.raise;bubble(t,bx(t),by,fs,WH.up?'#E6F7DE':'#fff');}
+  if(phase==='mix'&&target){const t=ANIMALS[target.a][lang]+' + ?';bubble(t,bx(t),by,fs,'#FFE3E8');}
 }
 // the copy jar: one per player (blue left, pink right in two-player mode)
 function drawMeter(i,x){
@@ -551,10 +560,10 @@ function render(dt){
     else{drawStage();
       if(phase==='copy'||phase==='cheer'||phase==='laugh'){
         const PR=playRect();if(who==='duo'){drawMeter(0,PR.x+30);drawMeter(1,W-43);}else drawMeter(0,W-43);
-        if(phase==='copy'){drawCopyDots();const left=Math.ceil(copyTime()-phaseT);bubble('⏱ '+left,PR.x+PR.w/2,H-fs*1.6,fs,left<=3?'#FFE3E8':'#fff');}}}
+        if(phase==='copy'){drawCopyDots();const left=Math.ceil(copyTime()-phaseT),duo=who==='duo';bubble('⏱ '+left,duo?W/2:PR.x+PR.w/2,duo?64+fs*.2:H-fs*1.6,fs,left<=3?'#FFE3E8':'#fff');}}}
     // HUD: spin count and score(s)
     const hf=Math.max(16,Math.min(24,W*.042)),hy=H-hf*1.6;
-    if(phase==='spin'||phase==='mix'){bubble(u.spin+' '+Math.min(SPINS,spinN+1)+' / '+SPINS,W*.5,64+hf*.2,hf);}
+    if(phase==='spin'||phase==='mix'){const SR=stageRect();bubble(u.spin+' '+Math.min(SPINS,spinN+1)+' / '+SPINS,who==='duo'?W*.5:SR.x+SR.w+8+(W-SR.x-SR.w-8)/2,64+hf*.2,hf);}
     if(who==='duo'){bubble(String(score[0]),36,64+hf*.2,hf,'#DDF3FF');bubble(String(score[1]),W-36,64+hf*.2,hf,'#FFE3E8');}
     else bubble('★ '+score[0],W-44,64+hf*.2,hf,'#E6F7DE');
   }
