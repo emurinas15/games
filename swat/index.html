@@ -100,7 +100,7 @@ import {makeGuide} from '../shared/guide.js';
 import {setupHowTo,seg,bigStar} from '../shared/howto.js';
 import {drawKid} from '../shared/kit.js';
 const guide=makeGuide('reach');   // 15 Nov (Edgar's sketch): big, close, arms out
-const guides=[makeGuide('reach'),makeGuide('reach')];   // 2 players: one see-through outline on each half
+const guides=[makeGuide('reachLow'),makeGuide('reachLow')];   // 16 Nov: lower + a bit smaller, room above the heads   // 2 players: one see-through outline on each half
 
 /* ================= TEXT ================= */
 const UI={
@@ -247,9 +247,11 @@ function drawHelmet(c,s,lw,dented){
 /* 16 Nov (Edgar): the thorn ball — a fake spider: black ball, white thorns, hanging still on a thread. Touching it = a strike. */
 function drawMace(c,x,y,s,t){
   const lw=Math.max(2,s*.08);c.save();c.translate(x,y);c.rotate(Math.sin(t*1.3+x)*.08);
+  // 16 Nov (Edgar): thorns longer, bright white with a thick dark outline, so they read clearly against the sky
   for(let i=0;i<10;i++){const a=i/10*Math.PI*2+.2,p=new Path2D();
-    p.moveTo(Math.cos(a-.22)*s*.42,Math.sin(a-.22)*s*.42);p.lineTo(Math.cos(a)*s*.86,Math.sin(a)*s*.86);p.lineTo(Math.cos(a+.22)*s*.42,Math.sin(a+.22)*s*.42);p.closePath();sticker(c,p,'#FFFFFF',lw*.8);}
-  sticker(c,ell(0,0,s*.5,s*.5),'#2E2A33',lw);
+    p.moveTo(Math.cos(a-.24)*s*.4,Math.sin(a-.24)*s*.4);p.lineTo(Math.cos(a)*s*1.02,Math.sin(a)*s*1.02);p.lineTo(Math.cos(a+.24)*s*.4,Math.sin(a+.24)*s*.4);p.closePath();
+    c.lineJoin='round';c.lineWidth=lw*2.2;c.strokeStyle='#1A161E';c.stroke(p);c.fillStyle='#FFFFFF';c.fill(p);}
+  sticker(c,ell(0,0,s*.52,s*.52),'#1F1B24',lw);
   c.fillStyle='rgba(255,255,255,.3)';c.fill(ell(-s*.18,-s*.2,s*.13,s*.08,-.6));
   c.restore();
 }
@@ -262,13 +264,14 @@ function drawIce(c,x,y,s,t){   // a soft ice cube around an iced spider
 }
 /* the super poses, as target angles for the arm on the right of the screen (degrees, 0 = out to the side, 90 = straight up);
    the arm on the left is the mirror image. Shared tolerance = Freeze & Copy "Medium" (23°). */
-const POSE_TOL=23;
-const POSES={zap:{ua:58,fa:58},ice:{ua:35,fa:145,together:true},power:{ua:0,fa:90}};
+const POSE_TOL=31;   // 16 Nov (Edgar): Easy, like Freeze & Copy Easy (was Medium 23°)
+const POSES={zap:{ua:58,fa:58},ice:{ua:62,fa:150,together:true},power:{ua:0,fa:90}};   // ice: real arms need the elbows fairly high for the hands to meet above the head
 function drawPoseKid(c,x,neck,hw,kind,t){
   const P=POSES[kind],L1=hw*1.0,L2=hw*.92,D=Math.PI/180;
   drawKid(c,99999,neck+hw*1.6,x,neck,hw,0,t);
   for(const sd of [-1,1]){const sx=x+sd*hw*.78,sy=neck+hw*.28,ua=sd>0?P.ua:180-P.ua,fa=sd>0?P.fa:180-P.fa;
-    const ex=sx+Math.cos(ua*D)*L1,ey=sy-Math.sin(ua*D)*L1,wx=ex+Math.cos(fa*D)*L2,wy=ey-Math.sin(fa*D)*L2;
+    let ex=sx+Math.cos(ua*D)*L1,ey=sy-Math.sin(ua*D)*L1,wx=ex+Math.cos(fa*D)*L2,wy=ey-Math.sin(fa*D)*L2;
+    if(P.together){ex=sx+sd*hw*.62;ey=sy-hw*.95;wx=x+sd*hw*.13;wy=neck-hw*2.15;}   // the cartoon: elbows out, palms together on top of the head
     c.lineCap='round';c.lineJoin='round';c.strokeStyle=INK;c.lineWidth=hw*.28+6;c.beginPath();c.moveTo(sx,sy);c.lineTo(ex,ey);c.lineTo(wx,wy);c.stroke();
     c.strokeStyle='#4FB3A9';c.lineWidth=hw*.28;c.stroke();sticker(c,ell(wx,wy,hw*.17,hw*.17),'#F6C9A0',3);}
   drawKid(c,99999,neck+hw*1.6,x,neck,hw,0,t);
@@ -367,11 +370,11 @@ let strikes=[0,0],out=[false,false],strikeT=[-9,-9],flashT=[-9,-9],iceUntil=[0,0
 const rkPrev=new Map(),rkVel={};   // racket speed, for the blue spiders' dodge
 const prevHit=new Map();   // racket id + spider id -> was overlapping last frame
 
-const sideBox=k=>duo()&&state!=='menu'?{x0:k*W/2,x1:(k+1)*W/2}:{x0:0,x1:W};   // 2 players: each has their own half
+const sideBox=k=>{if(!(duo()&&state!=='menu'))return {x0:0,x1:W};if(cards.length){const L=cardLayout();return k?{x0:L.x1+4,x1:W}:{x0:0,x1:L.x0-4};}return {x0:k*W/2,x1:(k+1)*W/2};};   // 2 players: own half (minus the super cards in the middle)   // 2 players: each has their own half
 function frame0(k=0){ // shoulders and size used to place the spiders
   const b=bodies[k];
   if(mode==='camera'&&b.ok)return {shL:b.shL,shR:b.shR,sw:b.sw};
-  const bx=sideBox(k),cx=(bx.x0+bx.x1)/2,sw=Math.min((bx.x1-bx.x0)*.36,H*.2);return {shL:{x:cx-sw/2,y:H*.66},shR:{x:cx+sw/2,y:H*.66},sw};
+  const bx=sideBox(k),cx=(bx.x0+bx.x1)/2,sw=Math.min((bx.x1-bx.x0)*.36,H*.2),sy=duo()?H*.97-sw*1.45:H*.66;return {shL:{x:cx-sw/2,y:sy},shR:{x:cx+sw/2,y:sy},sw};
 }
 function spawn(force,own=0){
   const F=frame0(own),bx=sideBox(own),side=Math.random()<.5?-1:1,sh=side<0?F.shL:F.shR;
@@ -385,7 +388,7 @@ function spawn(force,own=0){
   for(let a2=ang,k=0;k<12&&(x<xa||x>xb);k++){a2=a2<Math.PI/2?a2+Math.PI/36*2:a2-Math.PI/36*2;x=sh.x+side*Math.cos(a2)*dist;y=sh.y-Math.sin(a2)*dist;}
   x=Math.max(xa,Math.min(xb,x));y=Math.max(H*(H>W?.12:.2),Math.min(H*.78,y));
   if(spiders.some(o=>o.state!=='fly'&&Math.hypot(o.x-x,o.ty-y)<s*2.2))return false;   // don't stack spiders
-  if(force==='m'){spiders.push({id:Math.random(),own,x,ty:y,y:-40,s:Math.max(26,F.sw*.3),type:'m',hp:1,state:'down',t0:tNow,life:7,hangT:0,dodgeReady:1e9,face:'happy',swing:0,sv:0,faceT:0,k:1});FX.zip();return true;}
+  if(force==='m'){spiders.push({id:Math.random(),own,x,ty:y,y:-40,s:Math.max(30,F.sw*.36),type:'m',hp:1,state:'down',t0:tNow,life:7,hangT:0,dodgeReady:1e9,face:'happy',swing:0,sv:0,faceT:0,k:1});FX.zip();return true;}
   let type='n';const r=Math.random();
   if(elapsed>=60){if(r<.2)type='b';else if(r<.36)type='h';else if(r<.58)type='r';}
   else if(elapsed>=45){if(r<.18)type='h';else if(r<.45)type='r';}
@@ -449,6 +452,11 @@ function strike(k,x,y){
    🧊 Ice (tier 1, safe) → 💪 Power rackets (tier 2) → ⚡ Zap (tier 3, strongest but risky).
    Whoever holds a card's pose 2 s first gets it; the card then rests a few seconds and can be won again by anyone. */
 const TIERS=[['ice',.25],['power',.45],['zap',.65]],COOL=10;
+/* 16 Nov (Edgar): cards back to the first size. Tier 1 + 2 side by side, tier 3 centred under them, all in the middle. */
+function cardLayout(){const gap=8;let cw=Math.min(W*.2,H*.36),ch=cw*1.1;
+  const fit=(H-24-gap)/2;if(ch>fit){ch=fit;cw=ch/1.1;}
+  const top=(H-(ch*2+gap))/2+ch/2;
+  return {cw,ch,x0:W/2-cw-gap/2,x1:W/2+cw+gap/2,pos:[{x:W/2-(cw+gap)/2,y:top},{x:W/2+(cw+gap)/2,y:top},{x:W/2,y:top+ch+gap}]};}
 function fireSuper(kind,k){
   const u=UI[lang],o=1-k;showLevel(u.sup[kind]);
   if(kind==='zap'){FX.zap();
@@ -669,11 +677,11 @@ function drawBattle(){
   }
   if(!cards.length)return;
   // the tier cards: a column in the middle, between the players — 20% smaller than the first version, and fit to the height
-  const n=3,gap=8,top=62,bot=H-46,chMax=(bot-top-gap*(n-1))/n,cw=Math.min(Math.min(W*.2,H*.36)*.8,chMax/1.25),ch=cw*1.25,cx=W/2;
-  cards.forEach((c,i)=>{const tier=TIERS.findIndex(t=>t[0]===c.kind),cy=top+ch/2+tier*(ch+gap),pop=Math.min(1,(tNow-c.t0)/.25),resting=tNow<c.cool;
+  const L=cardLayout();const {cw,ch}=L;
+  cards.forEach((c,i)=>{const tier=TIERS.findIndex(t=>t[0]===c.kind),cx=L.pos[tier].x,cy=L.pos[tier].y,pop=Math.min(1,(tNow-c.t0)/.25),resting=tNow<c.cool;
     ctx.save();ctx.translate(cx,cy);ctx.scale(pop,pop);ctx.translate(-cx,-cy);
     const p=new Path2D();p.roundRect(cx-cw/2,cy-ch/2,cw,ch,16);sticker(ctx,p,'rgba(255,248,236,.95)',3.5);
-    ctx.save();ctx.clip(p);drawPoseKid(ctx,cx,cy+ch*.26,cw*.22,c.kind,tNow);
+    ctx.save();ctx.clip(p);drawPoseKid(ctx,cx,cy+ch*.2,cw*.24,c.kind,tNow);
     if(resting){const k=(c.cool-tNow)/COOL;ctx.fillStyle='rgba(120,120,130,.55)';ctx.fillRect(cx-cw/2,cy-ch/2,cw,ch*k);}   // greyed, refilling from the bottom
     ctx.restore();
     // tier stars on top, emoji badge in the corner

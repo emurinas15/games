@@ -31,7 +31,10 @@ export const TARGET = {
   reach: { x: .5, y: .36, size: r => Math.min(r.w * .26, r.h * .3), sizeMin: .7, sizeMax: 1.45, dx: .18, dy: .14,
     // 15 Nov (Edgar): phone upright (portrait) — the shape was small and floated mid-screen. Upright: bigger (hands near
     // the sides) and the belt sits at the bottom edge, so the free space is above the head (where the spiders come).
-    portrait: { size: r => r.w * .3, belt: .95 } }
+    portrait: { size: r => r.w * .3, belt: .95 } },
+  // 16 Nov (Edgar): Spider Swat 2 players — the outline sits in the BOTTOM half of each player's side (belt at the bottom
+  // edge, a bit smaller), so there is room above the heads to see thorn balls and spiders coming down.
+  reachLow: { x: .5, belt: .97, size: r => Math.min(r.w * .21, r.h * .2), sizeMin: .65, sizeMax: 1.45, dx: .18, dy: .14 }
 };
 const HOLD = 1.5;        // seconds to hold the pose
 const POP = .7;          // seconds of the "done" animation
@@ -48,7 +51,7 @@ export function makeGuide(kind, snd = {}, over = {}) {   // txt: optional per-la
   // games with their own sound engine can pass {tick(p), done()}
   const tick = snd.tick || (p => tone({ f0: 520 + p * 500, dur: .08, type: 'sine', vol: .08 }));
   const doneSnd = snd.done || (() => SFX.chime());
-  const T = TARGET[kind === 'jump' ? 'reach' : kind];
+  const T = TARGET[kind === 'jump' ? 'reach' : kind], SHAPE = kind === 'reachLow' ? 'reach' : kind;
   const g = { kind, done: false, prog: 0, popT: -1, t: 0, inside: false, hintKey: 'find', obs: null, lastTick: 0, btn: null, lang: 'en' };
   const off = document.createElement('canvas'), oc = off.getContext('2d');
   const off2 = document.createElement('canvas'), oc2 = off2.getContext('2d');
@@ -70,6 +73,7 @@ export function makeGuide(kind, snd = {}, over = {}) {   // txt: optional per-la
   function place(r) {
     const s = T.size(r);
     if (T.portrait && r.h > r.w * 1.05) { const s2 = T.portrait.size(r); return { x: r.x + r.w * T.x, y: r.y + r.h * T.portrait.belt - s2 * 2, s: s2 }; }   // belt = nose + 2 shoulder widths
+    if (T.belt) return { x: r.x + r.w * T.x, y: r.y + r.h * T.belt - s * 2, s };   // belt = nose + 2 shoulder widths
     if (T.foot) return { x: r.x + r.w * T.x, y: Math.max(r.y + r.h * T.y, r.y + r.h * T.foot - s * 4.37), s };   // feet at T.foot of the height
     return { x: r.x + r.w * T.x, y: r.y + r.h * T.y, s };
   }
@@ -142,7 +146,7 @@ export function makeGuide(kind, snd = {}, over = {}) {   // txt: optional per-la
       }
       return { top: y - hr * 1.5, bot: footY + s * .12 };
     }
-    if (kind === 'reach' || kind === 'jump') {
+    if (SHAPE === 'reach' || kind === 'jump') {
       const belt = shy + s * 1.45;
       blob(x, y - hr * .2, hr, hr * 1.22);                                      // head
       bust(s * .13, y + hr * .7, hw, shy, belt, hw * .86);                     // neck, shoulders, torso down to the belt
