@@ -37,14 +37,14 @@
 <div class="count" id="count"></div>
 <div class="toast" id="toast"></div>
 
-<div class="card" id="start">
+<div class="card home kid" id="start">
   <h1 id="t-title">Marble Plate</h1>
   <p class="sub" id="t-sub"></p>
+  <button class="btn" id="play"><span id="t-play">Play</span></button>
   <div class="g-row pick"><span id="t-size">Plate</span>
     <div class="seg" id="size-seg"><button data-v="wide"></button><button data-v="medium"></button><button data-v="narrow"></button></div></div>
   <div class="g-row pick"><span id="t-count">Marbles</span>
     <div class="seg" id="count-seg"><button data-v="3">3</button><button data-v="5">5</button><button data-v="7">7</button></div></div>
-  <button class="btn" id="play"><span id="t-play">Play</span></button>
   <p class="note" id="t-privacy"></p>
   <details id="grown">
     <summary id="t-grown">For grown-ups</summary>
@@ -128,7 +128,8 @@ let addOn=LS.get('mp-add','1')==='1';const MAX_ON=12;
 const bestKey=()=>'mp-best-'+size+'-'+count+(addOn?'-add':'');
 let best=0; const loadBest=()=>{best=+LS.get(bestKey(),'0')||0;}; loadBest();
 
-S.track='baroque'; S.amb='none'; S.ambOn=false;   // 13 Nov: no pond/water sounds in this game S.bpm=()=>BPM[size]; S.bpmFixed=true;
+S.track='baroque'; S.musicVol=.45;   // 16 Nov (Edgar): music still too loud here — about half
+ S.amb='none'; S.ambOn=false;   // 13 Nov: no pond/water sounds in this game S.bpm=()=>BPM[size]; S.bpmFixed=true;
 const syncSound=bindSound(()=>UI[lang]);
 
 function setLang(l){
