@@ -670,7 +670,7 @@ function render(dt){
   if(turn)drawTurnPhone();
 }
 
-/* battle layer: strike slots, red flash, "out" halves, the super-pose card and each player's hold star */
+/* battle layer: strike slots, red flash, "out" halves, the super-pose cards (they fill with the holding player's colour) */
 function drawBattle(){
   const u=UI[lang];
   for(const k of [0,1]){const x0=k*W/2;
@@ -688,19 +688,20 @@ function drawBattle(){
   cards.forEach((c,i)=>{const tier=TIERS.findIndex(t=>t[0]===c.kind),cx=L.pos[tier].x,cy=L.pos[tier].y,pop=Math.min(1,(tNow-c.t0)/.25),resting=tNow<c.cool;
     ctx.save();ctx.translate(cx,cy);ctx.scale(pop,pop);ctx.translate(-cx,-cy);
     const p=new Path2D();p.roundRect(cx-cw/2,cy-ch/2,cw,ch,16);sticker(ctx,p,'rgba(255,248,236,.95)',3.5);
-    ctx.save();ctx.clip(p);drawPoseKid(ctx,cx,cy+ch*.2,cw*.24,c.kind,tNow);
+    ctx.save();ctx.clip(p);
+    // 17 Nov (Edgar): the card itself fills up from the bottom in the colour of the player holding its pose (no star).
+    // One player holding → the whole card; both at once → blue on the left half, pink on the right half.
+    if(!resting){const both=c.prog[0]>0&&c.prog[1]>0;
+      for(const k of [0,1]){const pr=c.prog[k];if(!(pr>0))continue;const x0=both?(k?cx:cx-cw/2):cx-cw/2,w=both?cw/2:cw,hh=ch*pr;
+        ctx.fillStyle=k?'rgba(255,143,170,.8)':'rgba(110,190,245,.8)';ctx.fillRect(x0,cy+ch/2-hh,w,hh);
+        ctx.fillStyle='rgba(255,255,255,.6)';ctx.fillRect(x0,cy+ch/2-hh,w,Math.min(hh,3));}}   // light top edge
+    drawPoseKid(ctx,cx,cy+ch*.2,cw*.24,c.kind,tNow);
     if(resting){const k=(c.cool-tNow)/COOL;ctx.fillStyle='rgba(120,120,130,.55)';ctx.fillRect(cx-cw/2,cy-ch/2,cw,ch*k);}   // greyed, refilling from the bottom
-    ctx.restore();
+    ctx.restore();ctx.lineWidth=3.5;ctx.strokeStyle=INK;ctx.stroke(p);   // outline back on top of the colour fill
     // tier stars on top, emoji badge in the corner
     for(let j=0;j<=tier;j++){ctx.save();ctx.translate(cx+(j-tier/2)*cw*.2,cy-ch/2+cw*.11);sticker(ctx,starPath(cw*.08),resting?'#E6E1D8':'#FFD84D',2);ctx.restore();}
     ctx.font=`${Math.round(cw*.2)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(UI[lang].sup[c.kind].split(' ')[0],cx+cw*.33,cy+ch*.36);
     ctx.restore();});
-  // each player's hold star, above the head: fills with the pose they're closest to finishing
-  for(const k of [0,1]){if(out[k])continue;let bc=null;for(const c of cards)if(c.prog[k]>0&&(!bc||c.prog[k]>bc.prog[k]))bc=c;if(!bc)continue;
-    const b=bodies[k],x=b.ok?b.nose.x:W*(k?.75:.25),y=b.ok?Math.max(70,b.nose.y-b.sw*1.1):H*.25,R=26,pr=bc.prog[k];
-    const sp=starPath(R);ctx.save();ctx.translate(x,y);sticker(ctx,sp,'rgba(255,255,255,.85)',3);
-    ctx.save();ctx.clip(sp);ctx.fillStyle=k?'#FF9FB0':'#7FC8F8';ctx.fillRect(-R,R-2*R*pr,2*R,2*R*pr);ctx.restore();ctx.lineWidth=3;ctx.strokeStyle=INK;ctx.stroke(sp);
-    ctx.font='18px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(UI[lang].sup[bc.kind].split(' ')[0],0,R+14);ctx.restore();}
 }
 function bubbleC(txt,x,y,fs,fill){
   ctx.save();ctx.font=`700 ${fs}px Fredoka,sans-serif`;ctx.direction=lang==='he'?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';

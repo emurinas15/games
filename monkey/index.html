@@ -87,7 +87,8 @@ html,body{background:#2E8C86}
 import {INK,$,LS,S,audio,tone,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,startFaceTracker,coverMap,drawMirroredVideo,playSample,loadSamples,drawKid} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
 import {setupHowTo,seg,bigStar} from '../shared/howto.js';
-const guide=makeGuide('face');
+// the face is close to the phone (~30 cm) and fills the screen, so the setup outline is bigger and very forgiving on size
+const guide=makeGuide('face',{},{target:{size:r=>Math.min(r.w*.5,r.h*.3),sizeMin:.45,sizeMax:2.4,dx:.22,dy:.2}});
 
 /* Monkey Climb — head lift (neck extension) with level ears.
    Design follows the HappenLand animation guidelines v5: the banana (the goal) sits on the centre line inside the
@@ -284,7 +285,10 @@ function track(now){
   const dy=(lm[152].y-lm[10].y)*vh,dz=(lm[10].z-lm[152].z)*vw;
   const lift=Math.atan2(dz,dy)*180/Math.PI;
   // ear tilt: line between the sides of the face against the bottom of the screen
-  const a=P(234),b=P(454),roll=Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
+  // 17 Nov fix: after mirroring, landmark 234 is on the RIGHT of the screen, so sort the two sides by x first.
+  // (Before, the line ran right→left and read as ~180° tilt, so "ears level" always failed and the monkeys never climbed.)
+  let a=P(234),b=P(454);if(a.x>b.x)[a,b]=[b,a];
+  const roll=Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
   // distance: iris width (about 11.7 mm at every age) and the camera's field of view
   let cm=head.cm;
   if(lm.length>476){const iw=(i,j)=>Math.hypot((lm[i].x-lm[j].x)*vw,(lm[i].y-lm[j].y)*vh);const ip=(iw(469,471)+iw(474,476))/2;

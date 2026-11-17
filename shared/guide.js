@@ -51,7 +51,7 @@ export function makeGuide(kind, snd = {}, over = {}) {   // txt: optional per-la
   // games with their own sound engine can pass {tick(p), done()}
   const tick = snd.tick || (p => tone({ f0: 520 + p * 500, dur: .08, type: 'sine', vol: .08 }));
   const doneSnd = snd.done || (() => SFX.chime());
-  const T = TARGET[kind === 'jump' ? 'reach' : kind], SHAPE = kind === 'reachLow' ? 'reach' : kind;
+  const T = { ...TARGET[kind === 'jump' ? 'reach' : kind], ...(over.target || {}) }, SHAPE = kind === 'reachLow' ? 'reach' : kind;
   const g = { kind, done: false, prog: 0, popT: -1, t: 0, inside: false, hintKey: 'find', obs: null, lastTick: 0, btn: null, lang: 'en' };
   const off = document.createElement('canvas'), oc = off.getContext('2d');
   const off2 = document.createElement('canvas'), oc2 = off2.getContext('2d');

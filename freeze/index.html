@@ -82,42 +82,43 @@ import {setupHowTo,seg,bigStar} from '../shared/howto.js';
 const UI={
  en:{title:"Freeze & Copy",sub:"Spin the animal wheel, watch it freeze — and copy the statue!",play:"Play",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
-  g1:"Raise a hand to spin the wheel. The animal dances, freezes into a funny pose, and you copy it — hold the copy until the jar fills. After a few spins come mix-ups: half one animal, half another. 8 spins a game. One player plays against the clock; two players race to copy first.",
+  g1:"Raise a hand to spin the wheel. The animal dances, freezes into a funny pose, and you copy it — hold the copy until the jar fills. After a few spins come mix-ups: half one animal, half another. A game lasts 1½ minutes — copy as many statues as you can. One player tries to beat their record; two players race to copy first.",
   body:"Body",full:"Standing",seated:"Seated",who:"Players",solo:"👤 1 player",duo:"👥 2-player race",strict:"Copy",easy:"Easy",medium:"Medium",hard:"Hard",feet:"Step back — show me your feet!",
   music:"Music",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
   g2:"★ Turn the phone sideways. Standing: about 2.5–3 m away, so the whole body is seen. Seated: arms and trunk only; the phone can be closer, about 1–1.5 m.",
   g3:"★ Two players: stand side by side, both in the picture — best on a big screen (📺) with the phone farther back and sideways.",
-  g4:"★ Copy sets how close the copy must be: Easy (31°, one leg part may be off), Medium (23°, one leg part may be off), Hard (16°, every part exact). Every part of the body must be seen — standing, that includes both feet. Start with Easy. Time to copy gets shorter and holds get longer as the game goes on.",
+  g4:"★ Copy sets how close the copy must be: Easy (31°, one leg part may be off), Medium (23°, one leg part may be off), Hard (16°, every part exact). Every part of the body must be seen — standing, that includes both feet. Start with Easy. There is no time limit per statue — only the 1½-minute game clock; holds get a little longer as the game goes on.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
   sec2:"copies",of:" of ",over:["Nice try!","Well done!","Great copying!","Statue masters!"],again:"Play again",newbest:"New record!",bestis:"Best: ",
   ready:"Getting ready…",two:"Two players, side by side!",raise:"Raise a hand to spin!",mix:"MIX-UP!",freeze:"Freeze!",copy:"Copy me!",
   great:["Great copy!","Perfect!","You're a statue!","Nailed it!"],miss:["Hehe, too tricky!","Almost!","Next one!"],winL:"← Blue wins!",winR:"Pink wins! →",
-  spin:"Spin",left:"s",blue:"Blue",pink:"Pink",tie:"A tie!",nobody:"Step in front of the camera!",turn:"Turn the phone sideways to play",
+  spin:"Spin",left:"s",timeup:"Time's up!",blue:"Blue",pink:"Pink",tie:"A tie!",nobody:"Step in front of the camera!",turn:"Turn the phone sideways to play",
   nocam:"No camera here — this game needs a camera.",aria:"Game area"},
  he:{title:"קופאים ומעתיקים",sub:"מסובבים את גלגל החיות, החיה קופאת — ומעתיקים את הפסל!",play:"שחקו",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
-  g1:"מרימים יד כדי לסובב את הגלגל. החיה רוקדת, קופאת בתנוחה מצחיקה, ומעתיקים אותה — מחזיקים עד שהצנצנת מתמלאת. אחרי כמה סיבובים מגיעים ערבובים: חצי חיה אחת וחצי חיה אחרת. 8 סיבובים במשחק. שחקן אחד משחק נגד השעון; שני שחקנים מתחרים מי מעתיק ראשון.",
+  g1:"מרימים יד כדי לסובב את הגלגל. החיה רוקדת, קופאת בתנוחה מצחיקה, ומעתיקים אותה — מחזיקים עד שהצנצנת מתמלאת. אחרי כמה סיבובים מגיעים ערבובים: חצי חיה אחת וחצי חיה אחרת. משחק נמשך דקה וחצי — מעתיקים כמה שיותר פסלים. שחקן אחד מנסה לשבור את השיא שלו; שני שחקנים מתחרים מי מעתיק ראשון.",
   body:"גוף",full:"עמידה",seated:"ישיבה",who:"שחקנים",solo:"👤 שחקן אחד",duo:"👥 מרוץ לשניים",strict:"העתקה",easy:"קל",medium:"בינוני",hard:"קשה",feet:"זוזו אחורה — תראו לי את הרגליים!",
   music:"מוזיקה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
   g2:"★ מסובבים את הטלפון לרוחב. עמידה: במרחק של בערך 2.5–3 מ׳, כך שכל הגוף נראה. ישיבה: רק ידיים וגו; אפשר לקרב את הטלפון, בערך מטר עד מטר וחצי.",
   g3:"★ שני שחקנים: עומדים זה לצד זה, שניהם בתמונה — הכי טוב על מסך גדול (📺) כשהטלפון רחוק יותר ולרוחב.",
-  g4:"★ ״העתקה״ קובע כמה מדויקת צריכה להיות ההעתקה: קל (31°, חלק אחד ברגליים יכול לסטות), בינוני (23°, חלק אחד ברגליים יכול לסטות), קשה (16°, כל חלק מדויק). כל חלקי הגוף צריכים להיראות — בעמידה גם שתי כפות הרגליים. מתחילים ב״קל״. הזמן להעתקה מתקצר וההחזקה מתארכת ככל שהמשחק מתקדם.",
+  g4:"★ ״העתקה״ קובע כמה מדויקת צריכה להיות ההעתקה: קל (31°, חלק אחד ברגליים יכול לסטות), בינוני (23°, חלק אחד ברגליים יכול לסטות), קשה (16°, כל חלק מדויק). כל חלקי הגוף צריכים להיראות — בעמידה גם שתי כפות הרגליים. מתחילים ב״קל״. אין הגבלת זמן לכל פסל — רק שעון המשחק של דקה וחצי; ההחזקה מתארכת קצת ככל שהמשחק מתקדם.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
   sec2:"העתקות",of:" מתוך ",over:["ניסיון יפה!","כל הכבוד!","העתקות מעולות!","אלופי הפסלים!"],again:"עוד פעם",newbest:"שיא חדש!",bestis:"השיא: ",
   ready:"מתכוננים…",two:"שני שחקנים, זה לצד זה!",raise:"הרימו יד כדי לסובב!",mix:"ערבוב!",freeze:"קופאים!",copy:"תעתיקו אותי!",
   great:["העתקה מעולה!","מושלם!","יציבים כמו פסל!","בול!"],miss:["חחח, קשה מדי!","כמעט!","הבא!"],winL:"← הכחול ניצח!",winR:"הוורוד ניצח! →",
-  spin:"סיבוב",left:"שנ׳",blue:"כחול",pink:"ורוד",tie:"תיקו!",nobody:"היכנסו מול המצלמה!",turn:"סובבו את הטלפון לרוחב כדי לשחק",
+  spin:"סיבוב",left:"שנ׳",timeup:"נגמר הזמן!",blue:"כחול",pink:"ורוד",tie:"תיקו!",nobody:"היכנסו מול המצלמה!",turn:"סובבו את הטלפון לרוחב כדי לשחק",
   nocam:"אין כאן מצלמה — המשחק הזה צריך מצלמה.",aria:"אזור המשחק"}
 };
 
 // 15 Nov (Edgar: "too forgiving"): one notch up — old Medium is the new Easy, old Hard the new Medium, and a new Hard
 // ~30% tighter than the old Hard. MISS = how many leg/trunk segments may be off (arms must always match).
-const SPINS=8,TOL={easy:31,medium:23,hard:16},MISS={easy:1,medium:1,hard:0};
+// 17 Nov (Edgar): no timer per pose — the whole game lasts 1½ minutes (1 and 2 players)
+const GAME_T=90,TOL={easy:31,medium:23,hard:16},MISS={easy:1,medium:1,hard:0};
 let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
 let bodyMode=LS.get('fc-body','full'); if(!['full','seated'].includes(bodyMode))bodyMode='full';
 let who=LS.get('fc-who3','solo'); if(!['solo','duo'].includes(who))who='solo';
 let strict=LS.get('fc-strict','medium'); if(!TOL[strict])strict='medium';
-let best=0; const bestKey=()=>'fc3-best-'+bodyMode+strict;   /* new tiers -> new records */ const loadBest=()=>{best=+LS.get(bestKey(),'0')||0;};
+let best=0; const bestKey=()=>'fc4-best-'+bodyMode+strict;   /* new tiers -> new records */ const loadBest=()=>{best=+LS.get(bestKey(),'0')||0;};
 S.track='dance'; S.amb='none'; S.ambOn=false;
 const syncSound=bindSound(()=>UI[lang]);
 setupCast({canvas:$('c'),button:$('cast'),lang:()=>lang,sound:()=>(audio(),S),onChange:()=>{}});
@@ -365,7 +366,8 @@ function duoSlots(){const mid=W/2,s=[null,null];if(people.length>=2){s[0]=people
 function say(t,dur=1.6){bigMsg=t;bigMsgT=tNow+dur;}
 function setPhase(p){phase=p;phaseT=0;}
 const pick=a=>a[Math.floor(Math.random()*a.length)];
-const copyTime=()=>Math.max(6,10-spinN*.6), holdTime=()=>Math.min(1.6,.9+spinN*.1);
+let gameT=0;const timeLeft=()=>Math.max(0,GAME_T-gameT),clock=()=>{const t=Math.ceil(timeLeft());return Math.floor(t/60)+':'+String(t%60).padStart(2,'0');};
+const holdTime=()=>Math.min(1.6,.9+spinN*.1);
 
 /* the animal wheel: spins until a hand goes up, then always brakes over exactly 2 s (same braking every time).
    15 Nov (Edgar): one second less and 75% faster (was 0.6 turns/s, 3 s braking; mix-up auto spin 1.8 -> 1.2 s) */
@@ -390,7 +392,7 @@ async function play(){
   $('start').hidden=true;$('end').hidden=true;
   if(!camOK){say(UI[lang].ready,99);state='loading';
     try{await startCam();}catch(e){console.warn(e);state='menu';bigMsg='';$('start').hidden=false;toast(UI[lang].nocam,6000);return;}}
-  bigMsg='';score=[0,0];spinN=0;lastPicks=[];target=null;pops=[];loadBest();
+  bigMsg='';score=[0,0];spinN=0;gameT=0;lastPicks=[];target=null;pops=[];loadBest();
   $('stopx').classList.add('on');musicStart();
   const gk=bodyMode==='full'?'full':'body',gt={en:{find:'Stand in front of the camera'},he:{find:'עמדו מול המצלמה'}};
   guide=who==='duo'?null:makeGuide(gk,{},bodyMode==='full'?gt:{});if(guide)guide.reset();
@@ -408,9 +410,9 @@ function endGame(quit){
 }
 function fillEnd(nb){const u=UI[lang];$('newbest').hidden=!nb;$('newbest').textContent=u.newbest;
   if(who==='duo'){$('final').textContent=score[0]+' – '+score[1];$('t-over').textContent=score[0]===score[1]?u.tie:(score[0]>score[1]?u.winL:u.winR);$('best-line').textContent='';}
-  else{$('final').textContent=score[0]+u.of+SPINS;$('t-over').textContent=u.over[Math.min(3,Math.floor(score[0]/2.1))];$('best-line').textContent=u.bestis+best;}}
+  else{$('final').textContent=score[0];$('t-over').textContent=u.over[Math.min(3,Math.floor(score[0]/3))];$('best-line').textContent=u.bestis+best;}}
 
-function nextSpin(){ if(spinN>=SPINS){endGame(false);return;} state='play';setPhase('spin');wheelStart(false);target=null;meters=[0,0];winner=-1; }
+function nextSpin(){ if(timeLeft()<=0){endGame(false);return;} state='play';setPhase('spin');wheelStart(false);target=null;meters=[0,0];winner=-1; }
 
 let last=performance.now();
 function frame(now){
@@ -425,7 +427,9 @@ function frame(now){
   else if(state==='count'){ if(tNow-countT>=3)nextSpin(); }
   else if(state==='play'){
     phaseT+=dt;
-    if(phase==='spin'){ wheelUpdate(dt);
+    if(phase!=='timeup'){gameT+=dt;if(timeLeft()<=0){setPhase('timeup');say(u.timeup,1.8);FX.giggle();}}
+    if(phase==='timeup'){if(phaseT>1.9)endGame(false);}
+    else if(phase==='spin'){ wheelUpdate(dt);
       if(WH.result>=0&&WH.stopT>.8){ const a=WH.result;lastPicks=[a,...lastPicks].slice(0,2);
         if(spinN>=3&&Math.random()<.6){ target={a,b:null};setPhase('mix');say(u.mix,1.2);FX.giggle();wheelStart(true);}
         else{ target=makeTarget(a);setPhase('show');SFX.boing(); } } }
@@ -444,8 +448,8 @@ function frame(now){
         if(meters[i]>=1&&winner<0)winner=i;}
       if(winner>=0){score[who==='duo'?winner:0]++;FX.great();say(who==='duo'?(winner?u.winR:u.winL):pick(u.great),1.4);
         for(let k=0;k<14;k++)pops.push({x:W/2,y:H*.3,vx:(Math.random()-.5)*W*.8,vy:-H*(.3+Math.random()*.5),life:1.2});setPhase('cheer');}
-      else if(phaseT>copyTime()){say(pick(u.miss),1.4);FX.giggle();setPhase('laugh');} }
-    else if(phase==='cheer'||phase==='laugh'){ if(phaseT>1.6)nextSpin(); }
+    }
+    else if(phase==='cheer'){ if(phaseT>1.6)nextSpin(); }
   }
   render(dt);
   requestAnimationFrame(frame);
@@ -560,10 +564,10 @@ function render(dt){
     else{drawStage();
       if(phase==='copy'||phase==='cheer'||phase==='laugh'){
         const PR=playRect();if(who==='duo'){drawMeter(0,PR.x+30);drawMeter(1,W-43);}else drawMeter(0,W-43);
-        if(phase==='copy'){drawCopyDots();const left=Math.ceil(copyTime()-phaseT),duo=who==='duo';bubble('⏱ '+left,duo?W/2:PR.x+PR.w/2,duo?64+fs*.2:H-fs*1.6,fs,left<=3?'#FFE3E8':'#fff');}}}
+        if(phase==='copy')drawCopyDots();}}
     // HUD: spin count and score(s)
     const hf=Math.max(16,Math.min(24,W*.042)),hy=H-hf*1.6;
-    if(phase==='spin'||phase==='mix'){const SR=stageRect();bubble(u.spin+' '+Math.min(SPINS,spinN+1)+' / '+SPINS,who==='duo'?W*.5:SR.x+SR.w+8+(W-SR.x-SR.w-8)/2,64+hf*.2,hf);}
+    {const SR=stageRect(),left=timeLeft();bubble('⏱ '+clock(),who==='duo'?W*.5:SR.x+SR.w+8+(W-SR.x-SR.w-8)/2,64+hf*.2,hf,left<=10?'#FFE3E8':'#fff');}   // one game clock, always on screen
     if(who==='duo'){bubble(String(score[0]),36,64+hf*.2,hf,'#DDF3FF');bubble(String(score[1]),W-36,64+hf*.2,hf,'#FFE3E8');}
     else bubble('★ '+score[0],W-44,64+hf*.2,hf,'#E6F7DE');
   }

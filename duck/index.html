@@ -157,11 +157,11 @@ const UI={
  en:{title:"Duck on My Head",sub:"Tilt your head to keep the duckling on!",play:"Play",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",
   grown:"For grown-ups",
-  g1:"The duckling walks from side to side toward the butterflies, which flutter in from outside the screen, hover at the side for a few seconds and fly off (5 kinds take turns). They are only something to look at; nobody needs to catch them. Left alone, the duck walks off, so the child keeps tilting the head the other way to hold it on. If the head tilts more than about 30°, the duck sits down and slides on its bottom, faster and faster, so big tilts are risky. The duck gets faster as the child does well, and slows down after a fall. When it falls, it splashes into the pond.",
+  g1:"The duckling walks from side to side toward the butterflies, which flutter in from outside the screen, hover at the side for a few seconds and fly off (5 kinds take turns). They are only something to look at; nobody needs to catch them. Left alone, the duck walks off, so the child keeps tilting the head the other way to hold it on. If the head tilts more than about 30°, the duck sits down and slides on its bottom, faster and faster, so big tilts are risky. The duck gets faster as the child does well, and slows down after a fall. When it falls, it splashes into the pond at the bottom of the screen and swims away; a new duckling comes. Once a butterfly has been on the screen for a moment, the duck tilts its head toward it.",
   tilt:"Tilt needed",small:"Small",medium:"Medium",big:"Big",
   g2:"★ Make it harder: sit on a therapy ball or a balance cushion, then stand, then stand on one leg.",
   g3:"★ Stand the phone upright at eye level, with room above the head for the duck.",
-  legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
+  legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0 · Splash: Oculus Audio Pack 01, CC BY 4.0",
   sec:"seconds",best:"best",sec2:"seconds with the duckling on",
   over:"Great balancing!",again:"Play again",newbest:"New record!",bestis:"Best: ",
   ready:"Getting ready…",face:"Show me your face!",lost:"Where did you go?",
@@ -174,11 +174,11 @@ const UI={
  he:{title:"ברווזון על הראש",sub:"הטו את הראש כדי שהברווזון לא ייפול!",play:"שחקו",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",
   grown:"למבוגרים",
-  g1:"הברווזון הולך מצד לצד לכיוון הפרפרים, שנכנסים מחוץ למסך, מרחפים בצד כמה שניות ועפים (5 סוגים מתחלפים). הם רק להסתכל עליהם; אין צורך לתפוס אותם. בלי עזרה הברווזון יוצא מהעלה, אז הילד מטה את הראש כל הזמן לצד השני כדי להחזיק אותו. אם הראש מוטה יותר מכ־30°, הברווזון מתיישב ומחליק על הישבן, מהר יותר ויותר, כך שהטיה גדולה מדי מסוכנת. הברווזון מאיץ כשהילד מצליח, ומאט אחרי נפילה. כשהוא נופל — הוא נוחת בשלולית בשפריץ.",
+  g1:"הברווזון הולך מצד לצד לכיוון הפרפרים, שנכנסים מחוץ למסך, מרחפים בצד כמה שניות ועפים (5 סוגים מתחלפים). הם רק להסתכל עליהם; אין צורך לתפוס אותם. בלי עזרה הברווזון יוצא מהעלה, אז הילד מטה את הראש כל הזמן לצד השני כדי להחזיק אותו. אם הראש מוטה יותר מכ־30°, הברווזון מתיישב ומחליק על הישבן, מהר יותר ויותר, כך שהטיה גדולה מדי מסוכנת. הברווזון מאיץ כשהילד מצליח, ומאט אחרי נפילה. כשהוא נופל — הוא נוחת בשפריץ גדול בבריכה שבתחתית המסך ושוחה החוצה; ברווזון חדש מגיע. כשפרפר מופיע על המסך, אחרי רגע הברווזון מטה את הראש לכיוונו.",
   tilt:"כמה להטות",small:"קצת",medium:"בינוני",big:"הרבה",
   g2:"★ להקשות: ישיבה על כדור טיפולי או כרית איזון, אחר כך עמידה, ואז עמידה על רגל אחת.",
   g3:"★ העמידו את הטלפון ישר בגובה העיניים, עם מקום מעל הראש בשביל הברווזון.",
-  legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
+  legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0 · שפריץ: Oculus Audio Pack 01, ‏CC BY 4.0",
   sec:"שניות",best:"שיא",sec2:"שניות עם ברווזון על הראש",
   over:"איזה איזון!",again:"עוד פעם",newbest:"שיא חדש!",bestis:"השיא: ",
   ready:"מתכוננים…",face:"תראו לי את הפנים!",lost:"לאן נעלמתם?",
@@ -222,7 +222,9 @@ document.querySelectorAll('#tilt-seg button').forEach(b=>b.onclick=()=>{tiltSize
 
 /* ================= SOUND (synth, no files) ================= */
 let AC=null;
-function audio(){ if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}} if(AC&&!BUS.master){makeBuses(AC);loadSamples(AC,SONG_NOTES.pond);} if(AC&&AC.state==='suspended')AC.resume(); return AC;}
+let SPLASH_BUF=null;
+function loadSplash(a){fetch('../shared/sfx/splash.mp3').then(r=>r.arrayBuffer()).then(b=>a.decodeAudioData(b)).then(d=>{SPLASH_BUF=d;}).catch(()=>{});}
+function audio(){ if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}} if(AC&&!BUS.master){makeBuses(AC);loadSamples(AC,SONG_NOTES.pond);loadSplash(AC);} if(AC&&AC.state==='suspended')AC.resume(); return AC;}
 function tone({f0=440,f1=f0,dur=.15,type='sine',vol=.25,at=0,filter=null,q=1}){
   const a=AC;if(!a)return;const t=a.currentTime+at;
   const o=a.createOscillator(),g=a.createGain();o.type=type;
@@ -235,7 +237,12 @@ function tone({f0=440,f1=f0,dur=.15,type='sine',vol=.25,at=0,filter=null,q=1}){
 const SFX={
   quack(at=0,p=1){tone({f0:620*p,f1:420*p,dur:.13,type:'sawtooth',vol:.546,at,filter:1300,q:3});tone({f0:640*p,f1:380*p,dur:.16,type:'sawtooth',vol:.488,at:at+.17,filter:1200,q:3});},   // another 50% louder (12 Nov evening)
   fall(){tone({f0:900,f1:180,dur:.7,type:'sine',vol:.22});this.quack(.05,1.25);},
-  splash(){const a=AC;if(!a)return;   // 17 Nov: a watery splash: a filtered noise burst + a few bloops
+  splash(){const a=AC;if(!a)return;   // 17 Nov (evening): a real recorded water splash, with a soft body "plop" under it
+    if(SPLASH_BUF){const src=a.createBufferSource();src.buffer=SPLASH_BUF;const g=a.createGain();g.gain.value=1.1;src.connect(g);g.connect(BUS.sfx);src.start();
+      tone({f0:170,f1:60,dur:.22,type:'sine',vol:.32});
+      [[.42,1400],[.58,1800],[.75,1200]].forEach(([at,f])=>tone({f0:f,f1:f*1.6,dur:.05,type:'sine',vol:.05,at}));return;}
+    this.splashSynth();},
+  splashSynth(){const a=AC;if(!a)return;
     const n=a.sampleRate*.7,b=a.createBuffer(1,n,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++){const k=i/n;d[i]=(Math.random()*2-1)*Math.pow(1-k,2.2)*(k<.02?k/.02:1);}
     const src=a.createBufferSource();src.buffer=b;const f=a.createBiquadFilter();f.type='bandpass';f.Q.value=.8;f.frequency.setValueAtTime(2600,a.currentTime);f.frequency.exponentialRampToValueAtTime(500,a.currentTime+.6);
     const g=a.createGain();g.gain.value=.75;src.connect(f);f.connect(g);g.connect(BUS.sfx);src.start();
@@ -378,7 +385,7 @@ function ell(x,y,rx,ry,rot=0){const p=new Path2D();p.ellipse(x,y,rx,ry,rot,0,Mat
 
 /* ---- Duckling (origin = between the feet, size = height in px) ---- */
 function drawDuck(c,size,o={}){
-  const {dir=1,phase=0,wobble=0,tumble=0,t=0,happy=0,sit=0,look=0}=o;const D=DUCKS[o.kind||kind];const dark=D===DUCKS.black;
+  const {dir=1,phase=0,wobble=0,tumble=0,t=0,happy=0,sit=0,look=0,hr=0,swim=0}=o;const D=DUCKS[o.kind||kind];const dark=D===DUCKS.black;
   const u=size/100, lw=Math.max(2,5.5*u);
   const lx=look*1.6*u,ly=-look*2.4*u;   // pupils look up toward the butterfly
   c.save();
@@ -396,24 +403,30 @@ function drawDuck(c,size,o={}){
   // body group outline (draw thick ink first, then fills = merged sticker outline)
   const body=ell(-3*u,-32*u,31*u,23*u);
   const tail=new Path2D();tail.moveTo(-27*u,-40*u);tail.quadraticCurveTo(-40*u,-50*u,-43*u,-58*u);tail.quadraticCurveTo(-30*u,-50*u,-22*u,-24*u);tail.closePath();
-  const head=ell(14*u,-63*u,19.5*u,19*u);
-  const tuft=new Path2D();tuft.moveTo(8*u,-80*u);tuft.quadraticCurveTo(6*u,-94*u,15*u,-92*u);tuft.quadraticCurveTo(12*u,-86*u,16*u,-81*u);
+  // 17 Nov (Edgar): the head can tilt a little toward the butterfly (hr, radians, around the neck)
+  const HP=[10*u,-46*u],HM=new DOMMatrix().translate(HP[0],HP[1]).rotate(hr*180/Math.PI).translate(-HP[0],-HP[1]);
+  const inHead=q=>{const r=new Path2D();r.addPath(q,HM);return r;};
+  const headOnly=ell(14*u,-63*u,19.5*u,19*u);
+  const tuft0=new Path2D(),tuft=tuft0;tuft.moveTo(8*u,-80*u);tuft.quadraticCurveTo(6*u,-94*u,15*u,-92*u);tuft.quadraticCurveTo(12*u,-86*u,16*u,-81*u);
    tuft.quadraticCurveTo(20*u,-92*u,27*u,-86*u);tuft.quadraticCurveTo(22*u,-84*u,22*u,-79*u);tuft.closePath();
-  const beak=new Path2D();beak.moveTo(29*u,-66*u);beak.quadraticCurveTo(45*u,-67*u,44*u,-59*u);beak.quadraticCurveTo(40*u,-53*u,29*u,-56*u);beak.closePath();
+  const beak0=new Path2D();beak0.moveTo(29*u,-66*u);beak0.quadraticCurveTo(45*u,-67*u,44*u,-59*u);beak0.quadraticCurveTo(40*u,-53*u,29*u,-56*u);beak0.closePath();
+  const head=inHead(headOnly),tuftR=inHead(tuft0),beak=inHead(beak0);
   c.lineJoin='round';c.strokeStyle=INK;c.lineWidth=lw*2;
-  for(const p of [tail,body,head,tuft,beak])c.stroke(p);
-  c.fillStyle=D.body;for(const p of [tail,body,head,tuft])c.fill(p);
+  for(const p of [tail,body,head,tuftR,beak])c.stroke(p);
+  c.fillStyle=D.body;for(const p of [tail,body,head,tuftR])c.fill(p);
   c.fillStyle='#FF9A3C';c.fill(beak);
-  c.lineWidth=lw*.6;c.beginPath();c.moveTo(31*u,-60.5*u);c.quadraticCurveTo(37*u,-60*u,42*u,-61*u);c.stroke();
+  const headT=()=>{c.translate(HP[0],HP[1]);c.rotate(hr);c.translate(-HP[0],-HP[1]);};
+  c.save();headT();c.lineWidth=lw*.6;c.beginPath();c.moveTo(31*u,-60.5*u);c.quadraticCurveTo(37*u,-60*u,42*u,-61*u);c.stroke();c.restore();
   // belly highlight
   c.fillStyle=dark?'rgba(255,255,255,.18)':'rgba(255,255,255,.35)';c.fill(ell(4*u,-24*u,15*u,8*u,-.1));
-  c.fillStyle='rgba(255,255,255,.55)';c.fill(ell(8*u,-72*u,6*u,3.5*u,-.5));
+  c.save();headT();c.fillStyle='rgba(255,255,255,.55)';c.fill(ell(8*u,-72*u,6*u,3.5*u,-.5));c.restore();
   // wing
   const flap=wobble?Math.sin(t*30)*0.7:Math.sin(phase*.5)*0.08;
   c.save();c.translate(-8*u,-36*u);c.rotate(-0.25-flap);
   const wing=new Path2D();wing.moveTo(-14*u,0);wing.quadraticCurveTo(-4*u,-14*u,12*u,-4*u);wing.quadraticCurveTo(6*u,12*u,-14*u,0);
   c.fillStyle=D.wing;c.fill(wing);c.lineWidth=lw*.8;c.stroke(wing);c.restore();
-  // eye
+  // eye + cheek turn with the head
+  c.save();headT();
   const er=wobble?1.35:1;
   if(happy){c.lineWidth=lw*.8;if(dark){c.strokeStyle='#fff';}c.beginPath();c.arc(19*u,-64*u,4.5*u,Math.PI*1.1,Math.PI*1.9);c.stroke();}
   else{
@@ -423,6 +436,7 @@ function drawDuck(c,size,o={}){
   }
   // cheek
   c.fillStyle='rgba(255,140,165,.85)';c.fill(ell(12*u,-56*u,5*u,3.2*u));
+  c.restore();
   // feet stuck out in front while sliding on its bottom
   if(sit){const kick=Math.sin(t*18)*.12;for(const [fx,fy,rot] of [[27,-26,-.6+kick],[35,-17,-.35-kick]]){c.save();c.translate(fx*u,fy*u);c.rotate(rot);c.scale(1.4,1.4);
     const p=new Path2D();p.moveTo(-8*u,0);p.quadraticCurveTo(0,-7*u,9*u,-1*u);p.quadraticCurveTo(1*u,4*u,-8*u,0);c.fillStyle='#FF9A3C';c.fill(p);c.lineWidth=lw*.45;c.strokeStyle=INK;c.stroke(p);c.restore();}}
@@ -492,9 +506,63 @@ function drawRoom(){
   // soft clouds
   ctx.fillStyle='rgba(255,255,255,.75)';
   for(const [x,y,s] of [[.18,.2,1],[.8,.3,.8],[.55,.12,.6]]){const cx=x*W,cy=y*H,r=Math.min(W,H)*.06*s;ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.arc(cx+r,cy-r*.4,r*1.2,0,7);ctx.arc(cx+r*2.1,cy,r*.9,0,7);ctx.fill();}
-  // pond at the bottom (where the duck lands when it falls)
-  const py=H*.9;ctx.fillStyle='#7CCBEA';ctx.beginPath();ctx.ellipse(W/2,py+H*.08,W*.75,H*.12,0,0,7);ctx.fill();
-  ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(W*.3,py+H*.02,W*.07,H*.008,0,0,7);ctx.ellipse(W*.75,py+H*.05,W*.05,H*.007,0,0,7);ctx.stroke();
+}
+/* 17 Nov (Edgar): the bottom 10% of the screen is a little pond (not the sea): green-teal water with a soft
+   wavy edge, reeds and lily pads at the sides. Something drifts slowly across it every 6-10 s.
+   The duck falls into it with a big splash and swims away off the screen. */
+const POND_TOP=.9;
+let floaters=[],floatNext=3;
+const FLOAT_KINDS=['leaf','lily','frog','feather'];
+function updateFloaters(dt){
+  if(tNow>floatNext&&floaters.length<2){const dir=Math.random()<.5?1:-1,k=FLOAT_KINDS[Math.floor(Math.random()*FLOAT_KINDS.length)];
+    floaters.push({k,dir,x:dir>0?-60:W+60,sp:W/(14+Math.random()*6),seed:Math.random()*9,rot:(Math.random()-.5)*.6});floatNext=tNow+6+Math.random()*4;}
+  for(const f of floaters)f.x+=f.dir*f.sp*dt;
+  floaters=floaters.filter(f=>f.x>-90&&f.x<W+90);
+}
+function waterY(x,t){return H*POND_TOP+Math.sin(x/W*9+t*1.3)*H*.004+Math.sin(x/W*23-t*2.1)*H*.002;}
+function drawPond(){
+  const top=H*POND_TOP,t=tNow,lw=Math.max(2.5,Math.min(W,H)*.006);
+  const p=new Path2D();p.moveTo(-4,H+4);for(let x=-4;x<=W+4;x+=8)p.lineTo(x,waterY(x,t));p.lineTo(W+4,H+4);p.closePath();
+  const g=ctx.createLinearGradient(0,top,0,H);g.addColorStop(0,'#9FDCF0');g.addColorStop(1,'#5FAED6');
+  ctx.save();ctx.fillStyle=g;ctx.fill(p);ctx.lineWidth=lw;ctx.strokeStyle=INK;ctx.lineJoin='round';
+  ctx.beginPath();for(let x=-4;x<=W+4;x+=8){const y=waterY(x,t);x<0?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.stroke();
+  // soft shine lines drifting on the water
+  ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=lw*.9;ctx.lineCap='round';
+  for(let i=0;i<5;i++){const x=((i*.23+t*.012)%1)*W*1.1-W*.05,y=top+(H-top)*(.35+(i%3)*.2),l=W*(.04+(i%2)*.025);
+    ctx.beginPath();ctx.moveTo(x-l,y);ctx.quadraticCurveTo(x,y-H*.004,x+l,y);ctx.stroke();}
+  ctx.restore();
+  // reeds + lily pads at the two sides (behind nothing important)
+  const sz=Math.min(W,H)*.08;
+  for(const side of [0,1]){const bx=side?W-sz*.7:sz*.7;
+    for(let i=0;i<3;i++){const x=bx+(side?-1:1)*i*sz*.35,hgt=sz*(1.6+i*.35)*(i===1?1.1:1),sway=Math.sin(t*1.2+i+side)*sz*.08;
+      ctx.save();ctx.lineCap='round';ctx.strokeStyle=INK;ctx.lineWidth=lw*2.2;ctx.beginPath();ctx.moveTo(x,top+sz*.4);ctx.quadraticCurveTo(x+sway*.5,top-hgt*.5,x+sway,top-hgt);ctx.stroke();
+      ctx.strokeStyle='#6FBF5A';ctx.lineWidth=lw*1.1;ctx.stroke();
+      if(i!==2){sticker(ell(x+sway,top-hgt+sz*.18,sz*.11,sz*.26),'#A0673A',lw);}   // cattail
+      ctx.restore();}
+    drawLilyPad(side?W-sz*2.1:sz*2.1,top+(H-top)*.55,sz*.55,side?2.4:.6,side===0);}
+  for(const f of floaters)drawFloater(f);
+}
+function drawLilyPad(x,y,r,a,flower){
+  const lw=Math.max(2,r*.09);ctx.save();ctx.translate(x,y);ctx.scale(1,.42);
+  const p=new Path2D();p.moveTo(0,0);p.arc(0,0,r,a+.35,a+Math.PI*2-.05);p.closePath();sticker(p,'#7DC85E',lw);ctx.restore();
+  if(flower){ctx.save();ctx.translate(x+r*.15,y-r*.18);for(let i=0;i<6;i++){ctx.save();ctx.rotate(i/6*Math.PI*2);sticker(ell(0,-r*.22,r*.12,r*.24),i%2?'#FFC2D6':'#FF9EC0',lw*.8);ctx.restore();}
+    sticker(ell(0,0,r*.1,r*.1),'#FFD84D',lw*.7);ctx.restore();}
+}
+function drawFloater(f){
+  const top=H*POND_TOP,sz=Math.min(W,H)*.07,x=f.x,y=waterY(x,tNow)+(H-top)*.32+Math.sin(tNow*2+f.seed)*sz*.06,lw=Math.max(2,sz*.07);
+  ctx.save();ctx.translate(x,y);ctx.rotate(f.rot+Math.sin(tNow*1.4+f.seed)*.08);
+  // a soft ring of water around it
+  ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=lw;ctx.beginPath();ctx.ellipse(0,sz*.12,sz*(.75+Math.sin(tNow*2+f.seed)*.05),sz*.16,0,0,7);ctx.stroke();
+  if(f.k==='leaf'){const p=new Path2D();p.moveTo(-sz*.6,0);p.quadraticCurveTo(0,-sz*.5,sz*.6,0);p.quadraticCurveTo(0,sz*.32,-sz*.6,0);sticker(p,'#F2A33C',lw);
+    ctx.strokeStyle='rgba(43,33,24,.45)';ctx.lineWidth=lw*.7;ctx.beginPath();ctx.moveTo(-sz*.55,0);ctx.lineTo(sz*.5,-sz*.02);ctx.stroke();}
+  else if(f.k==='lily'){ctx.restore();drawLilyPad(x,y,sz*.55,f.seed,true);return;}
+  else if(f.k==='frog'){ctx.restore();drawLilyPad(x,y+sz*.05,sz*.6,f.seed,false);ctx.save();ctx.translate(x,y-sz*.12);
+    sticker(ell(0,0,sz*.32,sz*.22),'#8BD16B',lw);for(const e of [-1,1]){sticker(ell(e*sz*.16,-sz*.2,sz*.1,sz*.1),'#8BD16B',lw*.8);ctx.fillStyle=INK;ctx.fill(ell(e*sz*.16,-sz*.21,sz*.045,sz*.05));}
+    ctx.fillStyle='rgba(255,140,165,.8)';ctx.fill(ell(-sz*.18,-sz*.02,sz*.05,sz*.03));ctx.fill(ell(sz*.18,-sz*.02,sz*.05,sz*.03));
+    ctx.strokeStyle=INK;ctx.lineWidth=lw*.7;ctx.beginPath();ctx.arc(0,-sz*.04,sz*.09,.3,Math.PI-.3);ctx.stroke();}
+  else{const p=new Path2D();p.moveTo(-sz*.55,sz*.05);p.quadraticCurveTo(-sz*.1,-sz*.32,sz*.55,-sz*.1);p.quadraticCurveTo(0,sz*.18,-sz*.55,sz*.05);sticker(p,'#FFFDF5',lw);
+    ctx.strokeStyle='rgba(43,33,24,.4)';ctx.lineWidth=lw*.6;ctx.beginPath();ctx.moveTo(-sz*.6,sz*.07);ctx.quadraticCurveTo(0,-sz*.06,sz*.5,-sz*.08);ctx.stroke();}
+  ctx.restore();
 }
 
 /* ================= TRACKING ================= */
@@ -549,7 +617,7 @@ const K=3;                          // slide damping
 const TILT_G={small:12,medium:7.2,big:4.6};
 const HELP={small:4*Math.PI/180,medium:7*Math.PI/180,big:11*Math.PI/180};  // tilt toward the middle that holds the duck at the edge
 let state='menu';                   // menu | ready | count | play | fall | over
-const duck={x:0,vs:0,vw:0,phase:0,dir:1,wob:0,fallT:0,fx:0,fy:0,fvx:0,fvy:0,spin:0,dropT:0};
+const duck={x:0,vs:0,vw:0,phase:0,dir:1,wob:0,fallT:0,fx:0,fy:0,fvx:0,fvy:0,spin:0,dropT:0,hr:0,look:0};
 const fly={x:.6,tx:.6,next:0,y:0};
 let score=0,lives=3,starsGiven=0,tNow=0,countT=0,lastNew=false,demoRoll=0,startLevel=0;
 let particles=[],stars=[],splashes=[];
@@ -565,6 +633,7 @@ function updateBflies(dt){
     bflies.push({kind:k,side:sd,ph:'in',seed:Math.random()*99,x:sd>0?W+sz*1.5:-sz*1.5,y:H*(.12+Math.random()*.3)});
     bfNext=tNow+3+Math.random()*2;}
   for(const b of bflies){
+    if(b.seen==null&&b.x>0&&b.x<W)b.seen=tNow;   // the moment it is actually on the screen
     if(b.ph==='out'){b.vx+=b.side*sz*14*dt;b.vy-=sz*4*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;if(b.x<-sz*3||b.x>W+sz*3||b.y<-sz*3)b.gone=true;continue;}
     const hx=(b.side>0?W-m:m)-b.side*Math.abs(Math.cos(tNow*1.1+b.seed))*m*.6,hy=H*.3+Math.sin(tNow*.9+b.seed)*H*.12;
     b.x+=(hx-b.x)*Math.min(1,dt*(b.ph==='in'?2.2:3));b.y+=(hy-b.y)*Math.min(1,dt*(b.ph==='in'?2.2:3));
@@ -572,10 +641,21 @@ function updateBflies(dt){
   bflies=bflies.filter(b=>!b.gone);
 }
 const bfSize=()=>Math.max(30,Math.min(W,H)*.1);
+/* 17 Nov (Edgar): the duck tilts its head a little toward the butterfly — only 0.75 s after the butterfly has
+   appeared on the screen (never before), and back to straight when it flies away. Doesn't need to be exact. */
+const LOOK_DELAY=.75;
+function updateLook(dt,s){
+  const b=bflies.find(q=>q.ph!=='out'&&q.seen!=null&&tNow-q.seen>=LOOK_DELAY);let want=0,amt=0;
+  if(b&&!duck.sit&&s){const dsz=s.half*1.05,u=dsz/100,cr=Math.cos(s.roll),sr=Math.sin(s.roll);
+    const lx=duck.x*s.half+duck.dir*12*u,ly=-60*u+(duck.dropT>0?-H:0),hx=s.x+lx*cr-ly*sr,hy=s.y+lx*sr+ly*cr;
+    const vx=b.x-hx,vy=b.y-hy,ax=(vx*cr+vy*sr)*duck.dir,ay=-vx*sr+vy*cr,a=Math.atan2(ay,ax);
+    want=Math.abs(a)<Math.PI/2?Math.max(-.38,Math.min(.1,a*.5)):-.3;amt=1;}
+  duck.hr+=(want-duck.hr)*Math.min(1,dt*5);duck.look+=(amt-duck.look)*Math.min(1,dt*5);
+}
 
 function speed(){const D=DUCKS[kind];return D.base+D.range*level;}
 function nextOffCount(){const D=DUCKS[kind];return D.offEvery[0]+Math.floor(Math.random()*(D.offEvery[1]-D.offEvery[0]+1));}
-function resetDuck(){const side=Math.random()<.5?-1:1;Object.assign(duck,{x:0,vs:0,vw:0,wob:0,dropT:0.55,sit:false,splashed:false});newLeg(side);fly.x=fly.tx=side*.6;}
+function resetDuck(){const side=Math.random()<.5?-1:1;Object.assign(duck,{x:0,vs:0,vw:0,wob:0,dropT:0.55,sit:false,splashed:false,hr:0,look:0});newLeg(side);fly.x=fly.tx=side*.6;}
 
 function buildLives(){const box=$('lives');box.innerHTML='';for(let i=0;i<3;i++){const c=document.createElement('canvas');c.width=80;c.height=80;const x=c.getContext('2d');x.translate(40,74);drawDuck(x,64,{});if(i>=lives)c.className='lost';box.appendChild(c);}}
 
@@ -628,17 +708,26 @@ function fillEnd(nb){const u=UI[lang];$('final').textContent=Math.floor(score);$
   $('best-line').textContent=u.bestis+Math.floor(best);$('t-privacy2').textContent=u.privacy;}
 
 /* ---- splash: puddle, crown of drops, ripples ---- */
-function splash(x,y){SFX.splash();const r=Math.min(W,H)*.2;splashes.push({x,y,r,t:tNow,drops:Array.from({length:14},(_,i)=>{const a=Math.PI*(1.08+i/13*.84);return {vx:Math.cos(a)*r*(1.6+Math.random()*1.4),vy:Math.sin(a)*r*(3.2+Math.random()*1.8),s:r*(.06+Math.random()*.05)};})});}
+function splash(x,y){SFX.splash();const r=Math.min(W,H)*.34;   // 17 Nov: a big splash
+  splashes.push({x,y,r,t:tNow,drops:Array.from({length:26},(_,i)=>{const a=Math.PI*(1.05+i/25*.9);return {vx:Math.cos(a)*r*(1.4+Math.random()*1.8),vy:Math.sin(a)*r*(3.6+Math.random()*2.6),s:r*(.045+Math.random()*.05)};})});}
 function drawSplashes(dt){
   splashes=splashes.filter(o=>tNow-o.t<2);
   for(const o of splashes){const k=tNow-o.t,r=o.r,fade=Math.min(1,(2-k)/.5);
     ctx.save();ctx.globalAlpha=fade;
-    const pr=r*(1.1+Math.min(1,k*5)*.3);sticker(ell(o.x,o.y,pr,pr*.28),'#7CCBEA',Math.max(3,r*.03));   // the puddle
-    ctx.fillStyle='rgba(255,255,255,.45)';ctx.fill(ell(o.x-pr*.35,o.y-pr*.06,pr*.25,pr*.05));
+    if(k<.5){ctx.save();ctx.globalAlpha=fade*(1-k/.5);ctx.fillStyle='rgba(255,255,255,.85)';ctx.fill(ell(o.x,o.y,r*(.5+k*1.2),r*(.1+k*.15)));ctx.restore();}   // white foam where it went in
     ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=3;for(const d of [0,.3,.6]){const q=k-d;if(q<0||q>1.2)continue;ctx.globalAlpha=fade*(1-q/1.2);ctx.beginPath();ctx.ellipse(o.x,o.y,r*(.3+q*1.1),r*(.3+q*1.1)*.26,0,0,7);ctx.stroke();}
     ctx.globalAlpha=fade;
     if(k<.9){const cr=Math.sin(Math.min(1,k/.35)*Math.PI);   // the crown
-      if(cr>0){const p=new Path2D();p.moveTo(o.x-r*.55,o.y);for(let i=0;i<=6;i++){const xx=o.x-r*.55+i*r*1.1/6,hh=(i%2?.55:1)*r*.85*cr;p.lineTo(xx,o.y-hh);}p.lineTo(o.x+r*.55,o.y);p.closePath();sticker(p,'#A8E0FF',Math.max(3,r*.03));}}
+      if(cr>0){   // a fan of water sheets: narrow at the water, wide and spiky at the top, the middle tallest
+        const N=7,base=r*.32,spread=r*(.55+.6*cr),hmax=r*1.5*cr,lw2=Math.max(3,r*.025),p=new Path2D();
+        p.moveTo(o.x-base,o.y+r*.03);
+        for(let i=0;i<N;i++){const f=i/(N-1)-.5,tipX=o.x+f*2*spread,tipY=o.y-hmax*(1-Math.abs(f)*1.1)*(i%2?.82:1),
+            nf=(i+.5)/(N-1)-.5,valX=o.x+nf*2*spread*.8,valY=o.y-hmax*(.42-Math.abs(nf)*.3);
+          p.quadraticCurveTo((tipX+o.x+f*2*base)/2,tipY+hmax*.25,tipX,tipY);
+          if(i<N-1)p.quadraticCurveTo(tipX+(valX-tipX)*.5,tipY+hmax*.08,valX,valY);}
+        p.quadraticCurveTo(o.x+base*1.4,o.y-hmax*.2,o.x+base,o.y+r*.03);p.closePath();
+        sticker(p,'#BDEBF2',lw2);
+        ctx.save();ctx.clip(p);ctx.fillStyle='rgba(255,255,255,.6)';ctx.fill(ell(o.x-spread*.25,o.y-hmax*.45,spread*.18,hmax*.35,-.3));ctx.restore();}}
     for(const d of o.drops){const q=Math.min(k,1.1),x=o.x+d.vx*q,y=o.y+d.vy*q+r*7*q*q;if(y>o.y+2)continue;sticker(ell(x,y,d.s,d.s*1.25),'#A8E0FF',2.5);}
     ctx.restore();}
 }
@@ -694,7 +783,8 @@ function frame(now){
   kidNeck+=((state==='menu'?H*.58:H*.82)-kidNeck)*Math.min(1,dt*4);
 
   // state logic
-  if(state==='menu'||state==='play')updateBflies(dt);
+  if(state==='menu'||state==='play'){updateBflies(dt);updateLook(dt,surface());}
+  updateFloaters(dt);
   if(state==='menu'){
     updateFly(dt,1.1);
     const G=TILT_G.medium*DUCKS[kind].slip,need=K*(-1.3*duck.x-duck.vw)/G;
@@ -729,12 +819,14 @@ function frame(now){
     }
   }
   else if(state==='fall'){
-    const wl=H*.9;   // 17 Nov (Edgar): the duck lands in a pond puddle with a splash
+    const wl=H*POND_TOP+(H*(1-POND_TOP))*.45;   // 17 Nov (Edgar): the duck lands in the pond with a big splash, then swims away
     if(!duck.splashed){duck.fvy+=H*2.4*dt;duck.fx+=duck.fvx*dt;duck.fy+=duck.fvy*dt;duck.spin+=dt*8*Math.sign(duck.fvx);
-      duck.fx=Math.max(W*.12,Math.min(W*.88,duck.fx));
+      duck.fx=Math.max(W*.15,Math.min(W*.85,duck.fx));
       if(duck.fy>=wl){duck.splashed=tNow;duck.fy=wl;splash(duck.fx,wl);}}
-    if(duck.splashed&&tNow-duck.splashed>.45&&!duck.quacked){duck.quacked=1;SFX.quack(0,1.15);}
-    if(tNow-duck.fallT>2.3){ if(lives<=0)endGame(); else {SFX.poof();state='play';resetDuck();SFX.boing();} }
+    if(duck.splashed&&tNow-duck.splashed>.45&&!duck.quacked){duck.quacked=1;SFX.quack(0,1.15);duck.swimDir=duck.fx<W/2?-1:1;}
+    if(duck.splashed&&tNow-duck.splashed>.75){const k=tNow-duck.splashed-.75;duck.fx+=duck.swimDir*Math.min(1,k*1.5)*W*.32*dt;duck.phase+=dt*9;}
+    const gone=duck.splashed&&(duck.fx<-W*.12||duck.fx>W*1.12);
+    if(gone||tNow-duck.fallT>4.5){ if(lives<=0)endGame(); else {SFX.poof();state='play';resetDuck();SFX.boing();} }
   }
   render(now,dt);
   requestAnimationFrame(frame);
@@ -761,7 +853,7 @@ function render(now,dt){
     if(state!=='fall'&&!(state==='ready'||state==='count')){
       let yoff=0;if(duck.dropT>0)yoff=-Math.pow(duck.dropT/.55,2)*H*.5;
       ctx.save();ctx.translate(duck.x*s.half,yoff);if(duck.sit&&Math.abs(duck.vs)>.1){const back=Math.sign(duck.vs);for(let i=0;i<4;i++){ctx.fillStyle=`rgba(255,255,255,${.55-i*.12})`;ctx.fill(ell(-back*(dsz*.32+i*dsz*.16),-dsz*.06,dsz*(.09+i*.02),dsz*(.05+i*.01)));}}
-      drawDuck(ctx,dsz,{dir:duck.dir,phase:duck.phase,wobble:duck.sit?1:duck.wob,sit:duck.sit?1:0,look:duck.sit?0:1,t:tNow,happy:state==='menu'&&Math.abs(duck.x)<.2&&Math.sin(tNow*.7)>.6?1:0});ctx.restore();
+      drawDuck(ctx,dsz,{dir:duck.dir,phase:duck.phase,wobble:duck.sit?1:duck.wob,sit:duck.sit?1:0,look:duck.sit?0:duck.look,hr:duck.sit?0:duck.hr,t:tNow,happy:state==='menu'&&Math.abs(duck.x)<.2&&Math.sin(tNow*.7)>.6?1:0});ctx.restore();
     }
     if(state==='count'){ctx.save();ctx.translate(0,-s.half*1.7+Math.sin(tNow*6)*6);drawDuck(ctx,dsz,{dir:1,phase:tNow*3,t:tNow,wobble:.4});ctx.restore();}
     ctx.restore();
@@ -770,12 +862,16 @@ function render(now,dt){
       for(const b of bflies)drawButterfly(b.x,b.y,bfSize(),tNow+b.seed,BFLY[b.kind]);
     }
   }
+  drawPond();
   drawSplashes(dt);
   if(state==='fall'){const dz=Math.min(s.half*1.05,Math.min(W,H)*.32);
     if(!duck.splashed){ctx.save();ctx.translate(duck.fx,duck.fy);drawDuck(ctx,dz,{dir:duck.dir,tumble:duck.spin,wobble:1,t:tNow});ctx.restore();}
-    else{const k=tNow-duck.splashed,pop=Math.min(1,Math.max(0,(k-.25)/.35)),bob=Math.sin(k*7)*dz*.03;   // pops back up and bobs, wet and surprised
-      ctx.save();ctx.beginPath();ctx.rect(0,0,W,duck.fy+dz*.02);ctx.clip();ctx.translate(duck.fx,duck.fy+dz*.55*(1-pop)+bob+dz*.12);
-      drawDuck(ctx,dz,{dir:duck.dir,wobble:1,t:tNow});ctx.restore();}}
+    else{const k=tNow-duck.splashed,pop=Math.min(1,Math.max(0,(k-.25)/.35)),bob=Math.sin(k*5)*dz*.025,sd=duck.swimDir||duck.dir,swimming=k>.75;
+      // pops back up, shakes off, then paddles away out of the screen with a little wake behind it
+      if(swimming){ctx.save();ctx.strokeStyle='rgba(255,255,255,.75)';ctx.lineWidth=3;ctx.lineCap='round';
+        for(let i=1;i<=3;i++){const bx=duck.fx-sd*dz*(.3+i*.28),sp=dz*.08*i;ctx.globalAlpha=1-i*.25;ctx.beginPath();ctx.moveTo(bx-sd*dz*.1,duck.fy-sp*.6);ctx.lineTo(bx+sd*dz*.12,duck.fy);ctx.lineTo(bx-sd*dz*.1,duck.fy+sp*.6);ctx.stroke();}ctx.restore();}
+      ctx.save();ctx.beginPath();ctx.rect(0,0,W,duck.fy+dz*.02);ctx.clip();ctx.translate(duck.fx,duck.fy+dz*.55*(1-pop)+bob+dz*.16);
+      drawDuck(ctx,dz,{dir:swimming?sd:duck.dir,wobble:swimming?0:1,phase:swimming?duck.phase*.3:0,t:tNow,happy:swimming&&Math.sin(tNow*3)>.3?1:0});ctx.restore();}}
   // feathers
   particles=particles.filter(p=>(p.life-=dt)>0);
   for(const p of particles){p.vy+=200*dt;p.vx*=.98;p.x+=p.vx*dt;p.y+=p.vy*dt*.5;p.r+=dt*4;ctx.save();ctx.globalAlpha=Math.min(1,p.life);ctx.translate(p.x,p.y);ctx.rotate(p.r);
