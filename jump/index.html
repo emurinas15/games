@@ -97,6 +97,7 @@ body.casting .toast{visibility:hidden}
    A jump is read from the upper body only (head + both shoulders), so the child can stand close and watch the
    screen; see the JUMP COUNTER notes. Body landmarks only (no audio, no rope); see project doc IP-CHECK.md. Nothing is recorded or sent. */
 import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom} from '../shared/kit.js';
+import {camLoad,timeoutP} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
 import {setupCast} from '../shared/cast.js';
 import {setupHowTo,seg,bigStar} from '../shared/howto.js';
@@ -197,7 +198,7 @@ async function startCam(){
   const opts=(d,k)=>({baseOptions:{modelAssetPath:`https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_${k}/float16/1/pose_landmarker_${k}.task`,delegate:d},
     runningMode:'VIDEO',numPoses:2,minPoseDetectionConfidence:.45,minPosePresenceConfidence:.45,minTrackingConfidence:.45});
   let err=null;
-  for(const [d,k] of [['GPU','full'],['GPU','lite'],['CPU','lite']]){try{tracker=await vision.PoseLandmarker.createFromOptions(files,opts(d,k));break;}catch(e){err=e;}}
+  for(const [d,k] of [['GPU','full'],['GPU','lite'],['CPU','lite']]){try{tracker=await timeoutP(vision.PoseLandmarker.createFromOptions(files,opts(d,k)),d==='GPU'?30000:120000);break;}catch(e){err=e;}}
   if(!tracker)throw err||new Error('model');
   camOK=true;
 }
@@ -255,7 +256,7 @@ async function play(){
   audio();SFX.go();
   $('start').hidden=true;$('end').hidden=true;
   if(!camOK&&!FAKE){toast(UI[lang].ready,0);state='loading';
-    try{await startCam();$('toast').classList.remove('on');}
+    try{await camLoad(startCam);$('toast').classList.remove('on');}
     catch(e){console.warn(e);toast(UI[lang].nocam,6000);}}
   dets=[makeDet(),makeDet()];aCount=0;elapsed=0;pops=[];lastRes=null;lastSec=99;
   $('stopx').classList.add('on');musicStart();

@@ -76,6 +76,7 @@
 
 <script type="module">
 import {INK,$,LS,S,audio,tone,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom,drawKid,startFaceTracker,faceFrame,drawMirroredVideo} from '../shared/kit.js';
+import {camLoad,timeoutP} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
 import {setupHowTo,seg,bigStar} from '../shared/howto.js';
 const guide=makeGuide('face');
@@ -269,7 +270,7 @@ async function play(){
   $('score').textContent='0';$('best').textContent=Math.floor(best);$('hud').classList.add('on');
   if(!camTried){
     camTried=true;msg(UI[lang].ready);state='ready';
-    try{tracker=await startFaceTracker(video);camOK=true;mode='camera';}
+    try{tracker=await camLoad(()=>startFaceTracker(video));camOK=true;mode='camera';}
     catch(e){mode='finger';msg('');const t=$('toast');t.textContent=UI[lang].nocam;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),5000);}
   } else mode=camOK?'camera':'finger';
   guide.reset();

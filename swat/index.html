@@ -96,6 +96,7 @@
 
 <script type="module">
 import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom,startPoseTracker,poseFrames,drawMirroredVideo} from '../shared/kit.js';
+import {camLoad,timeoutP} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
 import {setupHowTo,seg,bigStar} from '../shared/howto.js';
 import {drawKid} from '../shared/kit.js';
@@ -487,7 +488,7 @@ async function play(){
   $('hud').classList.toggle('duo',duo());$('score2').hidden=!duo();$('best-pill').hidden=duo();showScore();
   if(!camTried){
     camTried=true;msg(UI[lang].ready);state='ready';
-    try{tracker=await startPoseTracker(video,{numPoses:2});camOK=true;mode='camera';}
+    try{tracker=await camLoad(()=>startPoseTracker(video,{numPoses:2}));camOK=true;mode='camera';}
     catch(e){mode='finger';msg('');const t=$('toast');t.textContent=UI[lang].nocam;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),5000);}
   } else mode=camOK?'camera':'finger';
   guide.reset();guides.forEach(g=>g.reset());

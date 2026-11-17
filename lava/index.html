@@ -122,6 +122,7 @@ body.casting .msg,body.casting .count,body.casting .lvl,body.casting .hud{visibi
 
 <script type="module">
 import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom} from '../shared/kit.js';
+import {camLoad,timeoutP} from '../shared/kit.js';
 import {setupCast} from '../shared/cast.js';
 import {setupHowTo,seg,bigStar} from '../shared/howto.js';
 
@@ -413,7 +414,7 @@ async function startCam(){
       runningMode:'VIDEO',numPoses:4,minPoseDetectionConfidence:.35,minPosePresenceConfidence:.35,minTrackingConfidence:.35,outputSegmentationMasks:m});
     let lastErr=null;
     for(const [d,m,k] of [['GPU',true,'full'],['GPU',true],['CPU',true],['GPU',false],['CPU',false]]){
-      try{tracker=await vision.PoseLandmarker.createFromOptions(files,opts(d,m,k));break;}catch(e){lastErr=e;console.warn('tracker',d,m,e);}}
+      try{tracker=await timeoutP(vision.PoseLandmarker.createFromOptions(files,opts(d,m,k)),d==='GPU'?30000:120000);break;}catch(e){lastErr=e;console.warn('tracker',d,m,e);}}
     if(!tracker){const e=new Error('model');e.cause=lastErr;throw e;}
   }
   camOK=true;
@@ -620,7 +621,7 @@ async function play(wantDemo,again){
   if(!wantDemo){
     if(!corners&&!guideSeen){openGuide(true);return;}   // first time: show how to set up
     msg(UI[lang].ready);
-    try{if(!camOK)await startCam();mode='camera';}
+    try{if(!camOK)await camLoad(startCam);mode='camera';}
     catch(e){console.warn(e);stopCam();msg('');$('start').hidden=false;state='menu';showCamError(e);return;}
   } else {mode='demo';stopCam();}
   msg('');

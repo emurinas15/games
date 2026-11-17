@@ -433,7 +433,7 @@ export async function startFaceTracker(video) {
   const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
   const files = await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
   const opts = d => ({ baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', delegate: d }, runningMode: 'VIDEO', numFaces: 1 });
-  try { return await vision.FaceLandmarker.createFromOptions(files, opts('GPU')); }
+  try { return await timeoutP(vision.FaceLandmarker.createFromOptions(files, opts('GPU')), 30000); }
   catch (e) { return await vision.FaceLandmarker.createFromOptions(files, opts('CPU')); }
 }
 export function coverMap(video, W, H) { const vw = video.videoWidth || 640, vh = video.videoHeight || 480, s = Math.max(W / vw, H / vh); return { vw, vh, s, ox: (W - vw * s) / 2, oy: (H - vh * s) / 2 }; }
@@ -457,7 +457,7 @@ export async function startPoseTracker(video, opt = {}) {   // opt.numPoses: 2 f
   const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
   const files = await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
   const opts = d => ({ baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task', delegate: d }, runningMode: 'VIDEO', numPoses: opt.numPoses || 1 });
-  try { return await vision.PoseLandmarker.createFromOptions(files, opts('GPU')); }
+  try { return await timeoutP(vision.PoseLandmarker.createFromOptions(files, opts('GPU')), 30000); }
   catch (e) { return await vision.PoseLandmarker.createFromOptions(files, opts('CPU')); }
 }
 /* every person the tracker sees -> an array of point functions like poseFrame's (null if the frame failed) */
@@ -473,3 +473,33 @@ export function poseFrame(tracker, video, now, W, H) {
   const m = coverMap(video, W, H);
   return i => ({ x: m.ox + (1 - lm[i].x) * m.vw * m.s, y: m.oy + lm[i].y * m.vh * m.s, v: lm[i].visibility ?? 1 });
 }
+
+/* ======================= SLOW CAMERA START (18 Nov) =======================
+   Edgar: a game sat on "Getting ready…" and never started. Usual causes: another tab or app still holds the front
+   camera, the camera permission prompt was missed/blocked, or a slow connection on the first start (the tracker files
+   are ~10 MB). camLoad(fn) runs the camera+tracker start and, if it takes more than 15 s, shows a small card with
+   what to check and a "Try again" button (reloads the page). timeoutP lets a hanging GPU start fall back to the CPU. */
+export function timeoutP(p, ms) { return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]); }
+const SLOW_TXT = {
+  en: { t: 'Still getting ready…', a: 'Close other tabs or apps that use the camera (another game too).', b: 'Make sure the camera is allowed: tap 🔒 next to the address → Camera → Allow.', c: 'On a slow connection the first start can take up to a minute.', btn: 'Try again' },
+  he: { t: 'עדיין מתכוננים…', a: 'סגרו לשוניות או אפליקציות אחרות שמשתמשות במצלמה (גם משחק אחר).', b: 'ודאו שהמצלמה מורשית: לוחצים על 🔒 ליד הכתובת ← מצלמה ← לאפשר.', c: 'בחיבור איטי ההפעלה הראשונה יכולה לקחת עד דקה.', btn: 'לנסות שוב' } };
+export function slowWatch(after = 15000) {
+  let el = null; const lang = () => (document.documentElement.lang === 'he' ? 'he' : 'en');
+  const id = setTimeout(() => {
+    const T = SLOW_TXT[lang()]; el = document.createElement('div'); el.dir = lang() === 'he' ? 'rtl' : 'ltr';
+    el.style.cssText = 'position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);transform:translateX(-50%);z-index:50;width:min(92vw,460px);background:#FFF8EC;border:3px solid #2b2118;border-radius:22px;box-shadow:0 4px 0 #2b2118;padding:12px 16px;font:500 15px/1.35 Andika,Fredoka,sans-serif;color:#2b2118';
+    el.innerHTML = `<div style="font:700 18px Fredoka,sans-serif;margin-bottom:6px">${T.t}</div><div>🌿 ${T.a}</div><div>🌿 ${T.b}</div><div>🌿 ${T.c}</div>`;
+    const b = document.createElement('button'); b.textContent = T.btn;
+    b.style.cssText = 'margin-top:10px;background:#8BD16B;border:3px solid #2b2118;border-radius:18px;padding:6px 18px;font:700 16px Fredoka,sans-serif;color:#2b2118;box-shadow:0 3px 0 #2b2118;cursor:pointer';
+    b.onclick = () => location.reload(); el.appendChild(b); document.body.appendChild(el);
+  }, after);
+  return () => { clearTimeout(id); if (el) el.remove(); };
+}
+export async function camLoad(fn) { const stop = slowWatch(); try { return await fn(); } finally { stop(); } }
+/* warm the shared tracker code while the start card is showing, so pressing Play is quicker (camera games only) */
+if (typeof document !== 'undefined') setTimeout(() => {
+  if (!document.querySelector('video')) return;
+  const base = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/';
+  import(base + 'vision_bundle.mjs').catch(() => {});
+  fetch(base + 'wasm/vision_wasm_internal.wasm').catch(() => {});
+}, 1500);

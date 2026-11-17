@@ -105,6 +105,7 @@ summary::after{content:" ▾"}details[open] summary::after{content:" ▴"}
 
 <script type="module">
 import {S,audio as kitAudio,musicStart,musicStop,bindSound} from '../shared/kit.js';
+import {camLoad,timeoutP} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
 import {setupHowTo,seg,bigStar} from '../shared/howto.js';
 import {drawKid as kitKid,sticker as kitStk,ell as kitEll} from '../shared/kit.js';
@@ -301,12 +302,41 @@ function drawFlower(x,y,u,b,lw,t,pal=PAL[0],stem=true){
   if(open>.95){ctx.fillStyle='#fff';ctx.fill(ell(-R*.12,-R*.12,R*.1,R*.1));}
   ctx.restore();
 }
-/* leaf marker on the child's hands */
-function drawHandLeaf(x,y,ok,s,t){
-  ctx.save();ctx.translate(x,y);ctx.rotate(-.6+Math.sin(t*4)*.15);const sc=ok?1.15+Math.sin(t*10)*.06:1;ctx.scale(sc,sc);
-  ctx.globalAlpha=ok?1:.85;stk(leafPath(s,s*.42),ok?'#7DDB5E':'#E9E4D6',Math.max(2.5,s*.12));
+/* 18 Nov (Edgar): clearer feedback. Wrong arm → nothing on that hand. Right arm → a bright green leaf pops onto the hand.
+   Whole pose right → a ring of little leaves grows around each hand leaf as the hold fills (a leafy "timer" wreath);
+   when it closes, a big green burst (see drawWin). */
+const handPop=[0,0];
+function drawHandLeaf(x,y,ok,s,t,k,ring){
+  handPop[k]=ok?Math.min(1,handPop[k]+.12):Math.max(0,handPop[k]-.2);const pk=handPop[k];if(pk<=0)return;
+  const pop=pk<1?Math.sin(pk*Math.PI*.5)*(1+.3*Math.sin(pk*Math.PI)):1;
+  // soft green glow under the leaf
+  ctx.save();ctx.globalAlpha=.35*pk;ctx.fillStyle='#9BF07A';ctx.fill(ell(x,y,s*1.15*pop,s*1.15*pop));ctx.restore();
+  ctx.save();ctx.translate(x,y);ctx.scale(pop*1.25,pop*1.25);ctx.rotate(-.6+Math.sin(t*4)*.15);ctx.translate(-s*.5,0);
+  stk(leafPath(s,s*.45),'#5FD14A',Math.max(2.5,s*.12));
+  ctx.strokeStyle='rgba(43,33,24,.4)';ctx.lineWidth=Math.max(1.5,s*.06);ctx.beginPath();ctx.moveTo(s*.12,0);ctx.lineTo(s*.85,0);ctx.stroke();
   ctx.restore();
-  if(ok){ctx.fillStyle='rgba(255,255,255,.9)';for(let i=0;i<3;i++){const a=t*3+i*2.1;ctx.fill(ell(x+Math.cos(a)*s*.9,y+Math.sin(a)*s*.9,s*.08,s*.08));}}
+  // the wreath: N little leaves pop in one by one around the hand as the hold fills
+  if(ring>0){const N=10,Rr=s*1.55,lw=Math.max(2,s*.08);
+    for(let i=0;i<N;i++){const need=i/N,q=Math.max(0,Math.min(1,(ring-need)*N*1.5));if(q<=0)continue;
+      const a=-Math.PI/2+i/N*Math.PI*2,sc=q<1?Math.sin(q*Math.PI*.5)*(1+.4*Math.sin(q*Math.PI)):1;
+      ctx.save();ctx.translate(x+Math.cos(a)*Rr,y+Math.sin(a)*Rr);ctx.rotate(a+Math.PI/2+Math.sin(t*5+i)*.12);ctx.scale(sc,sc);
+      ctx.translate(-s*.28,0);stk(leafPath(s*.56,s*.26),i%2?'#7DDB5E':'#4FBF45',lw);ctx.restore();}}
+}
+/* the success burst over the camera picture: green glow, a big leaf pops in, a wreath of leaves flies outward */
+function drawWin(r,k){
+  if(k>1.4)return;const cx=r.x+r.w/2,cy=r.y+r.h*.48,S=Math.min(r.w,r.h);
+  ctx.save();const cp=new Path2D();cp.roundRect(r.x,r.y,r.w,r.h,26);ctx.clip(cp);
+  ctx.globalAlpha=Math.max(0,.45*(1-k/1.1));const g=ctx.createRadialGradient(cx,cy,S*.05,cx,cy,S*.8);g.addColorStop(0,'#C8FFAF');g.addColorStop(1,'#5FD14A');ctx.fillStyle=g;ctx.fillRect(r.x,r.y,r.w,r.h);
+  ctx.globalAlpha=1;
+  for(let i=0;i<14;i++){const a=i/14*Math.PI*2,d=S*(.12+k*.55),f=Math.max(0,1-k/1.3);ctx.save();ctx.globalAlpha=f;ctx.translate(cx+Math.cos(a)*d,cy+Math.sin(a)*d);ctx.rotate(a+k*4);
+    stk(leafPath(S*.09,S*.04),i%3===0?'#FFD84D':(i%2?'#7DDB5E':'#4FBF45'),3);ctx.restore();}
+  const q=Math.min(1,k/.35),pop=q<1?Math.sin(q*Math.PI*.5)*(1+.35*Math.sin(q*Math.PI)):1,fade=k>1?Math.max(0,1-(k-1)/.4):1,L=S*.36;
+  ctx.globalAlpha=fade;ctx.translate(cx,cy);ctx.scale(pop,pop);ctx.rotate(-.5+Math.sin(k*9)*.06);ctx.translate(-L/2,0);
+  stk(leafPath(L,L*.46),'#5FD14A',Math.max(4,L*.05));
+  ctx.strokeStyle='rgba(43,33,24,.45)';ctx.lineWidth=Math.max(2,L*.025);ctx.beginPath();ctx.moveTo(L*.1,0);ctx.lineTo(L*.88,0);
+  for(const f of [.3,.5,.7]){ctx.moveTo(L*f,0);ctx.lineTo(L*(f+.12),-L*.13);ctx.moveTo(L*f,0);ctx.lineTo(L*(f+.12),L*.13);}ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.55)';ctx.fill(ell(L*.35,-L*.1,L*.12,L*.035,-.15));
+  ctx.restore();
 }
 /* background panel for the sprout */
 function drawGarden(x,y,w,h){
@@ -329,7 +359,7 @@ async function startCamera(){
   const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
   const files=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
   const opts=d=>({baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',delegate:d},runningMode:'VIDEO',numPoses:1});
-  try{tracker=await vision.PoseLandmarker.createFromOptions(files,opts('GPU'));}catch(e){tracker=await vision.PoseLandmarker.createFromOptions(files,opts('CPU'));}
+  try{tracker=await timeoutP(vision.PoseLandmarker.createFromOptions(files,opts('GPU')),30000);}catch(e){tracker=await vision.PoseLandmarker.createFromOptions(files,opts('CPU'));}
   camOK=true;
 }
 let camRect={x:0,y:0,w:0,h:0};
@@ -372,7 +402,7 @@ let pressing=false;cv.addEventListener('pointerdown',()=>pressing=true);addEvent
 
 /* ============ GAME ============ */
 let state='menu',cur=null,queue=[],done=0,prog=0,celebT=0,tNow=0,introT=0;
-let leaves=[];
+let leaves=[],matchNow=false;
 function showBubble(){const b=$('bubble');if(!cur||state==='menu'||state==='over'){b.classList.remove('on');return;}b.textContent=UI[lang].poses[cur];b.classList.add('on');}
 let msgNow='';function msg(t){if(t===msgNow)return;msgNow=t;const m=$('msg');if(t){m.textContent=t;m.classList.add('on')}else m.classList.remove('on');}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
@@ -388,7 +418,7 @@ function updCount(){const c=$('count');c.textContent=(done)+' / '+ROUND;c.classL
 async function play(){
   audio();SFX.go();musicStart();$('start').hidden=true;$('end').hidden=true;
   done=0;queue=pickRound();sp.deco=[];
-  if(!camTried){msg(UI[lang].ready);try{await startCamera();mode='camera';}catch(e){mode='finger';const t=$('toast');t.textContent=UI[lang].nocam;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),6000);}msg('');}
+  if(!camTried){msg(UI[lang].ready);try{await camLoad(startCamera);mode='camera';}catch(e){mode='finger';const t=$('toast');t.textContent=UI[lang].nocam;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),6000);}msg('');}
   else mode=camOK?'camera':'finger';
   cur=null;showBubble();guide.reset();
   if(mode==='camera'){state='setup';updCount();} else startCd();
@@ -431,7 +461,7 @@ function frame(now){
   }
   else if(state==='intro'){ if(tNow-introT>1.1)state='hold'; }
   else if(state==='hold'){
-    let matched=false;
+    let matched=false;matchNow=false;
     if(mode==='camera'){
       if(!kid.ok||now-kid.lastSeen>600){msg(kid.far?UI[lang].back:UI[lang].arms);kid.okL=kid.okR=false;}
       else{
@@ -441,6 +471,7 @@ function frame(now){
         msg(kid.okL&&kid.okR&&!up?UI[lang].tall:(!matched&&kid.close?UI[lang].back:''));
       }
     } else matched=pressing;
+    matchNow=matched;
     if(matched){prog+=dt/holdSec;tick+=dt;if(tick>.5){tick=0;SFX.tick(prog);}}
     else prog=Math.max(0,prog-dt/holdSec*.6);
     sp.bloom=prog;
@@ -475,9 +506,14 @@ function render(now,dt){
       ctx.drawImage(video,camR.x*2+camR.w-(m.ox+m.vw*m.s),m.oy,m.vw*m.s,m.vh*m.s);ctx.restore();}
     ctx.restore();
     if(state==='setup'&&mode==='camera'){ctx.save();const pc=new Path2D();pc.roundRect(camR.x,camR.y,camR.w,camR.h,26);ctx.clip(pc);guide.draw(ctx,camR,lang);ctx.restore();}
-    ctx.lineWidth=4;ctx.strokeStyle=INK;const p2=new Path2D();p2.roundRect(camR.x,camR.y,camR.w,camR.h,26);ctx.stroke(p2);
+    const p2=new Path2D();p2.roundRect(camR.x,camR.y,camR.w,camR.h,26);
+    const green=(state==='hold'&&matchNow)||(state==='celebrate'&&tNow-celebT<1.2);
+    if(green){ctx.save();ctx.shadowColor='#7DEB5E';ctx.shadowBlur=22+Math.sin(tNow*8)*6;ctx.lineWidth=10;ctx.strokeStyle='#5FD14A';ctx.stroke(p2);ctx.restore();}   // frame glows green while the pose is right
+    ctx.lineWidth=4;ctx.strokeStyle=INK;ctx.stroke(p2);
     if(kid.ok&&kid.hands&&(state==='hold'||state==='celebrate')){const s=Math.max(22,kid.hands.sw*.32);
-      const okAll=state==='celebrate';drawHandLeaf(kid.hands.L.x,kid.hands.L.y,okAll||kid.okL,s,tNow);drawHandLeaf(kid.hands.R.x,kid.hands.R.y,okAll||kid.okR,s,tNow);}
+      const okAll=state==='celebrate',ring=okAll?1:(matchNow?prog:0);
+      drawHandLeaf(kid.hands.L.x,kid.hands.L.y,okAll||kid.okL,s,tNow,0,ring);drawHandLeaf(kid.hands.R.x,kid.hands.R.y,okAll||kid.okR,s,tNow,1,ring);}
+    if(state==='celebrate')drawWin(camR,tNow-celebT);
   }
   // sprout
   // start / end screen: pot sits low, just above the grown-ups card (not floating mid-screen)

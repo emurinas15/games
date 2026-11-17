@@ -150,6 +150,7 @@ details[open] summary::after{content:" ▴"}
 
 <script type="module">
 import {loadSamples,playSample,SONG_NOTES} from '../shared/kit.js';
+import {camLoad,timeoutP} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
 import {setupHowTo,seg,bigStar} from '../shared/howto.js';
 /* ================= TEXT (EN / HE) ================= */
@@ -580,7 +581,7 @@ async function startCamera(){
   const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
   const files=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
   const opts=(delegate)=>({baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',delegate},runningMode:'VIDEO',numFaces:1});
-  try{tracker=await vision.FaceLandmarker.createFromOptions(files,opts('GPU'));}
+  try{tracker=await timeoutP(vision.FaceLandmarker.createFromOptions(files,opts('GPU')),30000);}
   catch(e){tracker=await vision.FaceLandmarker.createFromOptions(files,opts('CPU'));}
   camOK=true;
 }
@@ -670,7 +671,7 @@ async function play(){
   resetDuck();
   if(!camTried){
     msg(UI[lang].ready);state='ready';
-    try{await startCamera();mode='camera';}
+    try{await camLoad(startCamera);mode='camera';}
     catch(e){mode='finger';msg('');const t=$('toast');t.textContent=UI[lang].nocam;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),5000);}
   } else mode=camOK?'camera':'finger';
   guide.reset();

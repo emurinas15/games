@@ -85,6 +85,7 @@ html,body{background:#2E8C86}
 
 <script type="module">
 import {INK,$,LS,S,audio,tone,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,startFaceTracker,coverMap,drawMirroredVideo,playSample,loadSamples,drawKid} from '../shared/kit.js';
+import {camLoad,timeoutP} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
 import {setupHowTo,seg,bigStar} from '../shared/howto.js';
 // the face is close to the phone (~30 cm) and fills the screen, so the setup outline is bigger and very forgiving on size
@@ -326,7 +327,7 @@ async function play(){
   buildBasket();$('score').textContent='0';loadBest();$('hud').classList.add('on');
   if(!camTried){
     camTried=true;msg('ready');state='ready';
-    try{tracker=await startFaceTracker(video);camOK=true;mode='camera';}
+    try{tracker=await camLoad(()=>startFaceTracker(video));camOK=true;mode='camera';}
     catch(e){mode='finger';msg('');const t=$('toast');t.textContent=UI[lang].nocam;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),5000);}
   } else mode=camOK?'camera':'finger';
   guide.reset();cmSamples=[];
@@ -365,7 +366,7 @@ function reading(lost){
 }
 function burst(x,y,n,sz){for(let i=0;i<n;i++){const a=Math.random()*6.28,sp=sz*(2+Math.random()*4);stars.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-sz*2,r:a,life:1+Math.random()*.4,s:sz*(.1+Math.random()*.08)});}}
 function party(){const C=['#FFD84D','#FF8FB8','#7FC8F8','#8BD16B','#FF9A3C','#FFFFFF'];
-  for(let i=0;i<70;i++)confetti.push({x:Math.random()*W,y:-20-Math.random()*H*.4,vx:(Math.random()-.5)*60,vy:H*(.25+Math.random()*.25),r:Math.random()*6,vr:(Math.random()-.5)*8,c:C[i%C.length],w:6+Math.random()*7,ban:i%6===0});}
+  for(let i=0;i<70;i++)confetti.push({x:Math.random()*W,y:-20-Math.random()*H*.4,vx:(Math.random()-.5)*60,vy:H*(.25+Math.random()*.25),r:Math.random()*6,vr:(Math.random()-.5)*8,c:C[i%C.length],w:6+Math.random()*7});}
 
 let last=performance.now(),demoT=0;
 function frame(now){
@@ -419,10 +420,7 @@ function geo(w=W,h=H){
   return {s,xs,x:xs[0],by,top:Math.min(top,bottom-s*.5),bottom,crown:by-s*.62};
 }
 function drawSides(c,w,h,g,cam){
-  // calm coloured strips behind the trees so monkeys + bananas stand out from the camera picture
-  const sw=g.s*1.5;
-  for(const x of g.xs){const gr=c.createLinearGradient(x<w/2?0:w,0,x<w/2?sw*1.3:w-sw*1.3,0);gr.addColorStop(0,cam?'rgba(46,140,134,.92)':'rgba(46,140,134,1)');gr.addColorStop(.7,cam?'rgba(46,140,134,.75)':'rgba(46,140,134,1)');gr.addColorStop(1,'rgba(46,140,134,0)');
-    c.fillStyle=gr;c.fillRect(x<w/2?0:w-sw*1.3,0,sw*1.3,h);}
+  // 18 Nov (Edgar): no coloured "fog" strips behind the trees any more — the trees stand straight on the camera picture
   for(const x of g.xs)drawScene(c,w,h,{...g,x},{simple,treeOnly:true});
 }
 function render(dt){
@@ -438,7 +436,7 @@ function render(dt){
   drawSides(ctx,W,H,g,cam);
   for(let i=0;i<2;i++){const m=mks[i],x=g.xs[i],flip=i?-1:1;
     if(!m.got&&bananaIn>0&&state!=='over'){ctx.save();ctx.globalAlpha=Math.min(1,bananaIn);
-      ctx.fillStyle='rgba(255,240,150,.35)';ctx.fill(ell(x,g.by,g.s*.6,g.s*.6));drawBanana(ctx,x+g.s*.05,g.by,g.s*.62,.25);ctx.restore();}
+      drawBanana(ctx,x+g.s*.05,g.by,g.s*.62,.25);ctx.restore();}
     const y=g.bottom+(g.top-g.bottom)*m.h,dance=celebT>=0&&celebT<3.5?Math.sin(tNow*9+i)*g.s*.06:0;
     ctx.save();ctx.translate(x,0);ctx.scale(flip,1);   // the monkeys face the middle (mirror the left one)
     drawMonkey(ctx,0,y+dance,g.s,{climb:m.ph,reach:m.reach,happy:m.happy,tilt:m.tilt*flip});
@@ -453,9 +451,8 @@ function render(dt){
   for(const o of stars){o.vy+=g.s*6*dt;o.x+=o.vx*dt;o.y+=o.vy*dt;o.r+=dt*4;ctx.save();ctx.globalAlpha=Math.min(1,o.life*1.5);bigStar(ctx,o.x,o.y,o.s*1.6,o.r);ctx.restore();}
   confetti=confetti.filter(o=>o.y<H+40);
   for(const o of confetti){o.x+=o.vx*dt+Math.sin(tNow*3+o.r)*30*dt;o.y+=o.vy*dt;o.r+=o.vr*dt;ctx.save();ctx.translate(o.x,o.y);ctx.rotate(o.r);
-    if(o.ban)drawBanana(ctx,0,0,o.w*2.4,0);else{ctx.fillStyle=o.c;ctx.strokeStyle=INK;ctx.lineWidth=1.5;ctx.beginPath();ctx.rect(-o.w/2,-o.w*.3,o.w,o.w*.6);ctx.fill();ctx.stroke();}ctx.restore();}
-  if(celebT>=0&&celebT<3.5){const k=Math.min(1,celebT/.35),fs=Math.min(W*.13,64);ctx.save();ctx.globalAlpha=Math.min(1,(3.5-celebT)/.4);ctx.translate(W/2,H*.5);ctx.scale(k,k);
-    ctx.font=`${fs}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🍌🎉🍌',0,Math.sin(tNow*5)*6);ctx.restore();}
+    {ctx.fillStyle=o.c;ctx.strokeStyle=INK;ctx.lineWidth=1.5;ctx.beginPath();ctx.rect(-o.w/2,-o.w*.3,o.w,o.w*.6);ctx.fill();ctx.stroke();}ctx.restore();}
+  // 18 Nov (Edgar): no 🍌🎉 emojis — the monkeys' dance, stars and confetti are the celebration
 }
 
 /* ================= HOW TO PLAY (cartoon for a 5-year-old) ================= */
@@ -476,7 +473,7 @@ function render(dt){
     {dur:2.6,cap:{en:'Head down — the monkeys wait 🐒',he:'ראש למטה — הקופים מחכים 🐒'},draw(c,w,h,t,k){scene(c,w,h,t,0);}},
     {dur:3.2,cap:{en:'Lift your head up!',he:'מרימים את הראש!'},draw(c,w,h,t,k){const l=seg(k,.05,.8);scene(c,w,h,t,l,{moving:k<.85});}},
     {dur:3,cap:{en:'Keep it straight and hold…',he:'ראש ישר ומחזיקים…'},draw(c,w,h,t,k){scene(c,w,h,t,1,{reach:seg(k,.1,.6)*.45});}},
-    {dur:3,cap:{en:'Yummy bananas! 🍌',he:'בננות טעימות! 🍌'},draw(c,w,h,t,k){scene(c,w,h,t,1,{got:seg(k,0,.5)});}}
+    {dur:3,cap:{en:'Yummy bananas!',he:'בננות טעימות!'},draw(c,w,h,t,k){scene(c,w,h,t,1,{got:seg(k,0,.5)});}}
   ]});
 }
 setLang(lang);
