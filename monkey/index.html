@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Monkey Climb · Bamboo Physio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Grandstander:wght@700;900&family=Fredoka:wght@500;600;700&family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/kit.css">
+<style>
+html,body{background:#2E8C86}
+.basket{display:flex;gap:2px;align-items:center;min-height:40px;background:#fff;border:3px solid var(--ink);border-radius:22px;padding:2px 8px;box-shadow:0 3px 0 var(--ink)}
+.basket canvas{width:24px;height:24px}
+.basket canvas.off{opacity:.22;filter:grayscale(1)}
+.nums{position:fixed;right:10px;bottom:calc(var(--safe-b) + 8px);background:rgba(255,255,255,.9);border:2px solid var(--ink);border-radius:12px;padding:3px 9px;font:600 13px Fredoka,sans-serif;z-index:5;display:none;direction:ltr}
+.nums.on{display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<video id="v" playsinline muted></video>
+
+<div class="top">
+  <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 33 C 10 20, 20 9, 34 6 C 33 20, 24 31, 8 33 Z" fill="#7DCB6B" stroke="#2b2118" stroke-width="3.5" stroke-linejoin="round"/><path d="M11 30 C 17 23, 23 16, 29 11" fill="none" stroke="#2b2118" stroke-width="2.5" stroke-linecap="round"/></svg><span>Bamboo Physio</span></div>
+  <div class="tr"><button class="snd" id="snd" aria-pressed="false">🔊</button>
+  <div class="lang"><button id="lang-en" aria-pressed="true">EN</button><button id="lang-he" aria-pressed="false">עב</button></div></div>
+</div>
+
+<div class="hud" id="hud">
+  <div class="pill"><b id="score">0</b><small id="t-sec">seconds</small></div>
+  <div class="basket" id="basket"></div>
+  <div class="pill"><b id="best">–</b><small id="t-best">fastest</small></div>
+</div>
+
+<div class="msg" id="msg"></div>
+<div class="count" id="count"></div>
+<div class="toast" id="toast"></div>
+<div class="nums" id="nums"></div>
+
+<div class="card home kid" id="start">
+  <h1 id="t-title">Monkey Climb</h1>
+  <p class="sub" id="t-sub"></p>
+  <button class="btn" id="play"><span id="t-play">Play</span></button>
+  <p class="note" id="t-privacy"></p>
+  <details id="grown">
+    <summary id="t-grown">For grown-ups</summary>
+    <div class="g-body">
+      <p id="t-g1"></p>
+      <div class="g-row"><span id="t-goal">How high</span>
+        <div class="seg" id="goal-seg"><button data-v="low"></button><button data-v="mid"></button><button data-v="high"></button></div></div>
+      <div class="g-row"><span id="t-level">Ears level within</span>
+        <div class="seg" id="level-seg"><button data-v="7"></button><button data-v="10"></button><button data-v="15"></button></div></div>
+      <div class="g-row"><span id="t-hold">Hold for</span>
+        <div class="seg" id="hold-seg"><button data-v="1"></button><button data-v="2"></button><button data-v="3"></button></div></div>
+      <div class="g-row"><span id="t-dist">Distance check</span>
+        <div class="seg" id="dist-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-simple">Simple scene</span>
+        <div class="seg" id="simple-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-mirror">Little mirror</span>
+        <div class="seg" id="mirror-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-shownums">Show numbers</span>
+        <div class="seg" id="nums-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-music">Music</span>
+        <div class="seg" id="music-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-amb">Jungle sounds</span>
+        <div class="seg" id="amb-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-sfx">Sound effects</span>
+        <div class="seg" id="sfx-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <p id="t-g2"></p>
+      <p id="t-g3"></p>
+      <p id="t-g4"></p>
+      <p id="t-g5"></p>
+      <p class="mini" id="t-legal"></p>
+    </div>
+  </details>
+</div>
+
+<div class="card" id="end" hidden>
+  <div class="center"><span class="newbest" id="newbest" hidden></span></div>
+  <h1 id="t-over"></h1>
+  <div class="big-score"><span id="final">0</span><small id="t-sec2"></small></div>
+  <p class="best-line" id="best-line"></p>
+  <button class="btn" id="again"><span id="t-again">Play again</span></button>
+  <p class="note" id="t-privacy2"></p>
+</div>
+
+<script type="module">
+import {INK,$,LS,S,audio,tone,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,startFaceTracker,coverMap,drawMirroredVideo,playSample,loadSamples,drawKid} from '../shared/kit.js';
+import {makeGuide} from '../shared/guide.js';
+import {setupHowTo,seg,bigStar} from '../shared/howto.js';
+const guide=makeGuide('face');
+
+/* Monkey Climb — head lift (neck extension) with level ears.
+   Design follows the HappenLand animation guidelines v5: the banana (the goal) sits on the centre line inside the
+   central zone; the monkey moves only up and down that line, slowly and eased; flat saturated background; the banana
+   yellow is the one attention colour; every change is readable as a still picture (monkey low / high / holding the
+   banana); the success pose is held about 3 s; nothing flashes; a "Simple scene" switch removes everything but
+   tree, monkey and banana. */
+
+/* ================= TEXT ================= */
+const UI={
+ en:{title:"Monkey Climb",sub:"Lift your head and help the monkey reach the banana!",play:"Play",
+  privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
+  g1:"The monkey climbs the tree as the child lifts the head up. When the head is up, the ears are level and the child sits at the right distance, holding the position fills up and the monkey grabs the banana. Six bananas make a round; the score is the time it took.",
+  goal:"How high",low:"A little",mid:"Straight",high:"Up",level:"Ears level within",hold:"Hold for",dist:"Distance check",simple:"Simple scene",mirror:"Little mirror",shownums:"Show numbers",
+  music:"Music",amb:"Jungle sounds",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
+  g2:"★ Stand the phone upright at the child's eye level, about 30 cm away (a short forearm's length). How high is measured against looking straight at the phone, so a phone that is too low makes it easier and too high makes it harder.",
+  g3:"★ Ears level: if the head tilts to one side more than the chosen angle, the monkey waits and nothing counts. Distance check: too close or too far pauses the monkey, and so does sliding the face forward (a chin poke) instead of lifting the head.",
+  g4:"★ Simple scene removes the leaves and ground for children who see best with less on the screen. Little mirror shows the camera picture in a corner so the child can see they are in view.",
+  g5:"★ Show numbers is for the therapist: head lift in degrees (0 = looking straight at the phone), ear tilt in degrees and an estimate of the distance. These are game estimates, not measurements.",
+  legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
+  sec:"seconds",best:"fastest",sec2:"seconds for six bananas",over:"Six bananas! Yum!",again:"Play again",newbest:"New record!",bestis:"Fastest: ",
+  ready:"Getting ready…",lost:"Where did you go?",level2:"Keep your head straight",closer:"Come a little closer",back:"Move back a little",poke:"Sit back and lift your head",
+  nocam:"No camera here. Drag up and down to lift the head.",aria:"Game area",s:" s"},
+ he:{title:"הקוף המטפס",sub:"הרימו את הראש ועזרו לקוף להגיע לבננה!",play:"שחקו",
+  privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
+  g1:"הקוף מטפס על העץ כשהילד מרים את הראש. כשהראש למעלה, האוזניים ישרות והילד יושב במרחק הנכון, ההחזקה מתמלאת והקוף תופס את הבננה. בכל סבב יש שש בננות, והניקוד הוא הזמן שלקח.",
+  goal:"כמה גבוה",low:"קצת",mid:"ישר",high:"למעלה",level:"אוזניים ישרות עד",hold:"להחזיק",dist:"בדיקת מרחק",simple:"תמונה פשוטה",mirror:"מראה קטנה",shownums:"להציג מספרים",
+  music:"מוזיקה",amb:"צלילי ג׳ונגל",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
+  g2:"★ העמידו את הטלפון ישר בגובה העיניים של הילד, במרחק של כ־30 ס״מ (בערך אורך אמה). הגובה נמדד ביחס למבט ישר אל הטלפון, ולכן טלפון נמוך מדי מקל וטלפון גבוה מדי מקשה.",
+  g3:"★ אוזניים ישרות: אם הראש נוטה הצידה יותר מהזווית שנבחרה, הקוף מחכה ושום דבר לא נספר. בדיקת מרחק: קרוב מדי או רחוק מדי עוצר את הקוף, וגם דחיפת הפנים קדימה (סנטר קדימה) במקום הרמת הראש.",
+  g4:"★ תמונה פשוטה מורידה את העלים והאדמה, לילדים שרואים הכי טוב כשיש פחות על המסך. מראה קטנה מציגה את תמונת המצלמה בפינה כדי שהילד יראה שהוא בתמונה.",
+  g5:"★ להציג מספרים – למטפל: הרמת הראש במעלות (0 = מבט ישר לטלפון), הטיית האוזניים במעלות והערכה של המרחק. אלה הערכות של המשחק, לא מדידות.",
+  legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
+  sec:"שניות",best:"הכי מהר",sec2:"שניות לשש בננות",over:"שש בננות! יאמי!",again:"עוד פעם",newbest:"שיא חדש!",bestis:"הכי מהר: ",
+  ready:"מתכוננים…",lost:"לאן נעלמתם?",level2:"ראש ישר",closer:"התקרבו קצת",back:"התרחקו קצת",poke:"שבו זקוף ותרימו את הראש",
+  nocam:"אין כאן מצלמה. גררו למעלה ולמטה כדי להרים את הראש.",aria:"אזור המשחק",s:" שנ׳"}
+};
+
+/* ================= SETTINGS ================= */
+const GOAL={low:-14,mid:-5,high:5};   // head-lift goal in degrees, 0 = face looking straight at the camera
+const RANGE=30;                        // the monkey is at the bottom when the head is this many degrees below the goal
+const ROUND=6;
+const DIST={min:21,max:42};            // cm, "about 30 cm" with wide margins
+const HFOV=62;                         // typical front camera horizontal field of view (degrees) for the distance estimate
+const IRIS=1.17;                       // cm; the iris is about the same size from early childhood
+let lang=LS.get('bamboo-lang','en');if(!UI[lang])lang='en';
+let goal=LS.get('mk-goal','mid');if(!GOAL.hasOwnProperty(goal))goal='mid';
+let level=+LS.get('mk-level','10');if(![7,10,15].includes(level))level=10;
+let holdSec=+LS.get('mk-hold','1');if(![1,2,3].includes(holdSec))holdSec=1;
+let distOn=LS.get('mk-dist','1')==='1',simple=LS.get('mk-simple','0')==='1',mirrorOn=LS.get('mk-mirror','1')==='1',numsOn=LS.get('mk-nums','0')==='1';
+let best=0;
+const bestKey=()=>'mk-best-'+goal+holdSec+level;
+const loadBest=()=>{best=+LS.get(bestKey(),'0')||0;$('best').textContent=best?Math.round(best):'–';};
+
+S.track='natural';S.amb='pond';S.ambVol=.4;
+const syncSound=bindSound(()=>UI[lang]);
+
+function segs(){
+  const u=UI[lang],mark=(id,v)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===String(v)));
+  document.querySelectorAll('#goal-seg button').forEach(b=>b.textContent=u[b.dataset.v]);
+  document.querySelectorAll('#level-seg button').forEach(b=>b.textContent=b.dataset.v+'°');
+  document.querySelectorAll('#hold-seg button').forEach(b=>b.textContent=b.dataset.v+u.s);
+  document.querySelectorAll('#dist-seg button,#simple-seg button,#mirror-seg button,#nums-seg button').forEach(b=>b.textContent=u[b.dataset.v==='1'?'on':'off']);
+  mark('goal-seg',goal);mark('level-seg',level);mark('hold-seg',holdSec);mark('dist-seg',+distOn);mark('simple-seg',+simple);mark('mirror-seg',+mirrorOn);mark('nums-seg',+numsOn);
+}
+function setLang(l){
+  lang=l;LS.set('bamboo-lang',l);const u=UI[l];
+  document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
+  for(const k of ['title','sub','play','privacy','grown','g1','goal','level','hold','dist','simple','mirror','shownums','music','amb','sfx','g2','g3','g4','g5','legal','sec','best','sec2','over','again'])
+    {const e=$('t-'+k);if(e)e.textContent=u[k];}
+  $('t-privacy2').textContent=u.privacy;
+  $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
+  $('c').setAttribute('aria-label',u.aria);
+  segs();syncSound();if(msgKey)msg(msgKey);
+  if(!$('end').hidden)fillEnd(lastNew);
+}
+$('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
+const bindSeg=(id,fn)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{fn(b.dataset.v);segs();});
+bindSeg('goal-seg',v=>{goal=v;LS.set('mk-goal',v);loadBest();});
+bindSeg('level-seg',v=>{level=+v;LS.set('mk-level',v);loadBest();});
+bindSeg('hold-seg',v=>{holdSec=+v;LS.set('mk-hold',v);loadBest();});
+bindSeg('dist-seg',v=>{distOn=v==='1';LS.set('mk-dist',v);});
+bindSeg('simple-seg',v=>{simple=v==='1';LS.set('mk-simple',v);});
+bindSeg('mirror-seg',v=>{mirrorOn=v==='1';LS.set('mk-mirror',v);});
+bindSeg('nums-seg',v=>{numsOn=v==='1';LS.set('mk-nums',v);});
+
+/* ================= CANVAS ================= */
+const cv=$('c'),ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;}
+addEventListener('resize',resize);resize();
+
+/* ================= ART (sticker style) ================= */
+const BG='#2E8C86', FUR='#9A6340', FUR_D='#7C4C2E', CREAM='#F7E1BE', BANANA='#FFD84D', LEAF='#3F9E4D', LEAF_D='#2F7A3B', TRUNK='#D29A5E';
+
+function limb(c,x0,y0,x1,y1,cx,cy,w,lw,col){   // a soft furry arm/leg: outline stroke then fill stroke
+  const p=new Path2D();p.moveTo(x0,y0);p.quadraticCurveTo(cx,cy,x1,y1);
+  c.lineCap='round';c.lineJoin='round';
+  c.strokeStyle=INK;c.lineWidth=w+lw*2;c.stroke(p);c.strokeStyle=col;c.lineWidth=w;c.stroke(p);
+}
+/* the monkey hugging the trunk. (x,y) = middle of the body, s = size.
+   o.climb = climbing phase (moves arms/legs a little), o.reach 0..1 = right arm up to the banana, o.happy 0..1, o.tilt = head tilt */
+function drawMonkey(c,x,y,s,o={}){
+  const lw=Math.max(2.5,s*.045),ph=o.climb||0,reach=o.reach||0,happy=o.happy||0,tilt=o.tilt||0;
+  const sw=Math.sin(ph)*s*.05;
+  c.save();c.translate(x,y);
+  // tail
+  {const p=new Path2D();p.moveTo(s*.12,s*.38);p.bezierCurveTo(s*.6,s*.62,s*.86,s*.2,s*.66,-s*.02);p.bezierCurveTo(s*.55,-s*.16,s*.42,-s*.02,s*.52,s*.06);
+   c.lineCap='round';c.strokeStyle=INK;c.lineWidth=s*.09+lw*2;c.stroke(p);c.strokeStyle=FUR;c.lineWidth=s*.09;c.stroke(p);}
+  // legs wrapped round the trunk
+  for(const d of [-1,1]){const k=d*sw;
+    limb(c,d*s*.18,s*.32,d*s*.36,s*.5+k,d*s*.44,s*.22,s*.17,lw,FUR);
+    sticker(c,ell(d*s*.38,s*.56+k,s*.12,s*.08,d*.3),CREAM,lw);}
+  // body + belly
+  sticker(c,ell(0,s*.12,s*.33,s*.4),FUR,lw);
+  c.fillStyle=CREAM;c.fill(ell(0,s*.2,s*.21,s*.26));
+  // arms: left always on the trunk; right one reaches up for the banana
+  const L={x:-s*.3,y:-s*.62-sw},R0={x:s*.3,y:-s*.62+sw},R1={x:s*.06,y:-s*1.1};
+  const R={x:R0.x+(R1.x-R0.x)*reach,y:R0.y+(R1.y-R0.y)*reach};
+  limb(c,-s*.22,-s*.12,L.x,L.y,-s*.42,-s*.32,s*.13,lw,FUR);
+  limb(c,s*.22,-s*.12,R.x,R.y,s*(.42-.2*reach),-s*(.32+.25*reach),s*.13,lw,FUR);
+  sticker(c,ell(L.x,L.y,s*.09,s*.08),CREAM,lw);
+  if(reach<.98)sticker(c,ell(R.x,R.y,s*.09,s*.08),CREAM,lw);
+  // head
+  c.save();c.translate(0,-s*.28);c.rotate(tilt);c.translate(0,s*.28);
+  const hy=-s*.48;
+  for(const d of [-1,1]){sticker(c,ell(d*s*.4,hy+s*.02,s*.14,s*.13),FUR,lw);c.fillStyle='#F4B9A0';c.fill(ell(d*s*.4,hy+s*.02,s*.075,s*.07));}
+  sticker(c,ell(0,hy,s*.35,s*.31),FUR,lw);
+  // tuft
+  {const p=new Path2D();p.moveTo(-s*.08,hy-s*.29);p.quadraticCurveTo(-s*.02,hy-s*.44,s*.06,hy-s*.36);p.quadraticCurveTo(s*.02,hy-s*.32,s*.05,hy-s*.28);
+   c.strokeStyle=INK;c.lineWidth=lw*1.1;c.lineCap='round';c.stroke(p);}
+  // face mask
+  c.fillStyle=CREAM;c.beginPath();c.ellipse(-s*.11,hy-s*.03,s*.13,s*.13,0,0,7);c.ellipse(s*.11,hy-s*.03,s*.13,s*.13,0,0,7);c.fill();
+  c.beginPath();c.ellipse(0,hy+s*.12,s*.21,s*.14,0,0,7);c.fill();
+  // eyes: round, or happy arcs
+  for(const d of [-1,1]){
+    if(happy>.5){c.strokeStyle=INK;c.lineWidth=lw*1.1;c.beginPath();c.arc(d*s*.1,hy-s*.01,s*.05,Math.PI*1.1,Math.PI*1.9);c.stroke();}
+    else{c.fillStyle=INK;c.fill(ell(d*s*.1,hy-s*.03,s*.05,s*.062));c.fillStyle='#fff';c.fill(ell(d*s*.1+s*.018,hy-s*.055,s*.018,s*.018));}
+    c.fillStyle='rgba(255,130,150,.55)';c.fill(ell(d*s*.2,hy+s*.08,s*.06,s*.04));
+  }
+  c.fillStyle=INK;c.fill(ell(-s*.03,hy+s*.06,s*.015,s*.012));c.fill(ell(s*.03,hy+s*.06,s*.015,s*.012));
+  if(happy>.5){const m=new Path2D();m.moveTo(-s*.09,hy+s*.12);m.quadraticCurveTo(0,hy+s*.27,s*.09,hy+s*.12);m.closePath();sticker(c,m,'#C9465A',lw*.8);
+    c.fillStyle='#F59AA8';c.fill(ell(0,hy+s*.19,s*.04,s*.022));}
+  else{c.strokeStyle=INK;c.lineWidth=lw*.9;c.beginPath();c.arc(0,hy+s*.1,s*.07,.15*Math.PI,.85*Math.PI);c.stroke();}
+  c.restore();
+  // right hand on top when it holds the banana
+  if(reach>=.98)sticker(c,ell(R.x,R.y,s*.09,s*.08),CREAM,lw);
+  c.restore();
+}
+function drawBanana(c,x,y,s,rot=0){   // (x,y) = middle; hangs from its stem at the top
+  const lw=Math.max(2.5,s*.07);
+  c.save();c.translate(x,y);c.rotate(rot);
+  const p=new Path2D();p.moveTo(-s*.12,-s*.55);
+  p.bezierCurveTo(s*.42,-s*.35,s*.48,s*.3,s*.02,s*.58);
+  p.bezierCurveTo(s*.2,s*.22,s*.16,-s*.25,-s*.12,-s*.55);p.closePath();
+  sticker(c,p,BANANA,lw);
+  c.fillStyle='rgba(255,255,255,.45)';c.fill(ell(s*.2,-s*.05,s*.04,s*.2,-.2));
+  sticker(c,ell(s*.03,s*.57,s*.05,s*.04),'#6B4A2B',lw*.6);
+  {const st=new Path2D();st.moveTo(-s*.12,-s*.55);st.lineTo(-s*.2,-s*.72);c.strokeStyle=INK;c.lineWidth=s*.08+lw*2;c.lineCap='round';c.stroke(st);c.strokeStyle='#8A6A3A';c.lineWidth=s*.08;c.stroke(st);}
+  c.restore();
+}
+function leafShape(len,wid){const p=new Path2D();p.moveTo(0,0);p.bezierCurveTo(len*.3,-wid,len*.75,-wid*.9,len,0);p.bezierCurveTo(len*.75,wid*.6,len*.3,wid*.7,0,0);return p;}
+/* scene geometry for the current screen */
+function geo(w=W,h=H){
+  const s=Math.min(w*.34,h*.19),x=w/2;
+  const by=Math.max(h*.25,96+s*.7);            // banana: on the centre line, top of the central zone, below the HUD
+  const top=by+s*1.12,bottom=Math.min(h*.8,h-s*.75);
+  return {s,x,by,top:Math.min(top,bottom-s*.5),bottom,crown:by-s*.62};
+}
+function drawScene(c,w,h,g,o){
+  c.fillStyle=BG;c.fillRect(0,0,w,h);
+  const s=g.s,lw=Math.max(3,s*.05);
+  if(!o.simple){   // standard version: soft hills and two big leaves at the edges (outside the action zone)
+    c.fillStyle='#3FA36E';c.beginPath();c.ellipse(w*.18,h*1.04,w*.55,h*.14,0,0,7);c.ellipse(w*.86,h*1.06,w*.5,h*.13,0,0,7);c.fill();
+    for(const [lx,ly,a,f] of [[0,h*.62,-.5,1],[w,h*.5,Math.PI+.45,1]]){c.save();c.translate(lx,ly);c.rotate(a);sticker(c,leafShape(s*1.6*f,s*.42*f),'#4DB06A',lw);
+      c.strokeStyle='rgba(43,33,24,.35)';c.lineWidth=lw*.7;c.beginPath();c.moveTo(s*.1,0);c.quadraticCurveTo(s*.8,-s*.08,s*1.5,0);c.stroke();c.restore();}
+  }
+  // trunk
+  const tw0=s*.5,tw1=s*.36,ty=g.crown+s*.15;
+  const t=new Path2D();t.moveTo(g.x-tw0/2,h+10);t.bezierCurveTo(g.x-tw0*.45,h*.7,g.x-tw1*.6,ty+s,g.x-tw1/2,ty);t.lineTo(g.x+tw1/2,ty);
+  t.bezierCurveTo(g.x+tw1*.6,ty+s,g.x+tw0*.45,h*.7,g.x+tw0/2,h+10);t.closePath();sticker(c,t,TRUNK,lw);
+  c.strokeStyle='rgba(43,33,24,.28)';c.lineWidth=lw*.7;c.lineCap='round';
+  for(let yy=ty+s*.5,i=0;yy<h;yy+=s*.55,i++){const ww=tw1+(tw0-tw1)*((yy-ty)/(h-ty));const dx=(i%2?.12:-.12)*ww;c.beginPath();c.moveTo(g.x-ww*.28+dx,yy);c.quadraticCurveTo(g.x+dx,yy+s*.07,g.x+ww*.28+dx,yy);c.stroke();}
+  // crown of leaves (dark green behind the banana so the yellow stands out)
+  const cx=g.x,cy=g.crown;
+  const leaves=o.simple?[[-2.75,1.25],[-.4,1.25],[-1.95,1.05],[-1.2,1.05]]:[[-2.9,1.35],[-.25,1.35],[-2.35,1.2],[-.8,1.2],[-1.9,1.05],[-1.25,1.05]];
+  for(const [a,f] of leaves){c.save();c.translate(cx,cy);c.rotate(a);sticker(c,leafShape(s*1.25*f,s*.36*f),a<-2||a>-1?LEAF:LEAF_D,lw);
+    c.strokeStyle='rgba(43,33,24,.35)';c.lineWidth=lw*.7;c.beginPath();c.moveTo(s*.1,0);c.quadraticCurveTo(s*.6*f,-s*.06,s*1.15*f,0);c.stroke();c.restore();}
+}
+
+/* ================= TRACKING ================= */
+const video=$('v');
+let mode='demo',tracker=null,camOK=false,camTried=false,lastVT=-1;
+const head={ok:false,lastSeen:0,lift:0,roll:0,cm:30,cx:0,cy:0,w:0,raw:{lift:0,roll:0,cm:30}};
+function track(now){
+  if(!tracker||video.readyState<2||video.currentTime===lastVT)return;lastVT=video.currentTime;
+  let res;try{res=tracker.detectForVideo(video,now);}catch(e){return;}
+  const lm=res&&res.faceLandmarks&&res.faceLandmarks[0];if(!lm){head.ok=false;return;}
+  const vw=video.videoWidth||640,vh=video.videoHeight||480,m=coverMap(video,W,H);
+  const P=i=>({x:m.ox+(1-lm[i].x)*vw*m.s,y:m.oy+lm[i].y*vh*m.s});
+  // head lift: forehead (10) vs chin (152) depth — chin comes toward the camera as the head lifts
+  const dy=(lm[152].y-lm[10].y)*vh,dz=(lm[10].z-lm[152].z)*vw;
+  const lift=Math.atan2(dz,dy)*180/Math.PI;
+  // ear tilt: line between the sides of the face against the bottom of the screen
+  const a=P(234),b=P(454),roll=Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
+  // distance: iris width (about 11.7 mm at every age) and the camera's field of view
+  let cm=head.cm;
+  if(lm.length>476){const iw=(i,j)=>Math.hypot((lm[i].x-lm[j].x)*vw,(lm[i].y-lm[j].y)*vh);const ip=(iw(469,471)+iw(474,476))/2;
+    if(ip>2){const f=(vw/2)/Math.tan(HFOV*Math.PI/360);cm=f*IRIS/ip;}}
+  const k=head.ok?.25:1;
+  head.lift+=(lift-head.lift)*k;head.roll+=(roll-head.roll)*k;head.cm+=(cm-head.cm)*(head.ok?.12:1);
+  head.cx=(a.x+b.x)/2;head.cy=(a.y+b.y)/2;head.w=Math.hypot(b.x-a.x,b.y-a.y);
+  head.raw={lift,roll,cm};head.ok=true;head.lastSeen=now;
+}
+/* no camera: drag up and down lifts the cartoon head */
+let drag={on:false,y0:0,v0:0},fakeLift=-30;
+cv.addEventListener('pointerdown',e=>{drag={on:true,y0:e.clientY,v0:fakeLift};});
+cv.addEventListener('pointermove',e=>{if(!drag.on)return;fakeLift=Math.max(-45,Math.min(15,drag.v0+(drag.y0-e.clientY)/H*120));});
+addEventListener('pointerup',()=>{drag.on=false;});
+
+/* ================= GAME ================= */
+let state='menu',tNow=0,score=0,countT=0,lastNew=false;
+let got=0,mk={h:0,v:0,ph:0,reach:0,happy:0,tilt:0},hold=0,celebT=-1,stars=[],noteStep=0,startCm=0,cmSamples=[],bananaIn=1;
+function buildBasket(){const box=$('basket');box.innerHTML='';for(let i=0;i<ROUND;i++){const c=document.createElement('canvas');c.width=48;c.height=48;drawBanana(c.getContext('2d'),24,24,30,.5);if(i>=got)c.className='off';box.appendChild(c);}}
+let msgKey='';function msg(k){const m=$('msg');if(k){m.textContent=UI[lang][k];m.classList.add('on')}else m.classList.remove('on');msgKey=k;}
+
+async function play(){
+  audio();loadSamples(S.AC,{kalimba:CLIMB});SFX.go();musicStart();
+  $('start').hidden=true;$('end').hidden=true;
+  score=0;got=0;hold=0;celebT=-1;stars=[];noteStep=0;bananaIn=1;Object.assign(mk,{h:0,v:0,reach:0,happy:0,tilt:0});fakeLift=-30;
+  buildBasket();$('score').textContent='0';loadBest();$('hud').classList.add('on');
+  if(!camTried){
+    camTried=true;msg('ready');state='ready';
+    try{tracker=await startFaceTracker(video);camOK=true;mode='camera';}
+    catch(e){mode='finger';msg('');const t=$('toast');t.textContent=UI[lang].nocam;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),5000);}
+  } else mode=camOK?'camera':'finger';
+  guide.reset();cmSamples=[];
+  if(mode==='finger'){state='count';countT=tNow;} else {state='ready';msg('');}
+}
+$('play').onclick=play;$('again').onclick=play;
+
+const CLIMB=[67,69,72,74,76,79,81,84];
+function note(i){const m=CLIMB[Math.max(0,Math.min(7,i))];if(!playSample(S.AC,'kalimba',m,S.AC.currentTime+.01,.15,S.BUS.sfx))tone({f0:440*Math.pow(2,(m-69)/12),dur:.25,type:'triangle',vol:.1});}
+function ook(){[0,.2].forEach((d,i)=>tone({f0:380+i*90,f1:620+i*120,dur:.16,type:'triangle',vol:.14,at:d}));}
+function endGame(){
+  state='over';musicStop();$('hud').classList.remove('on');msg('');$('nums').classList.remove('on');
+  lastNew=!best||score<best;if(lastNew){best=score;LS.set(bestKey(),best.toFixed(1));}
+  fillEnd(lastNew);$('end').hidden=false;SFX.chime();
+}
+function fillEnd(nb){const u=UI[lang];$('final').textContent=Math.round(score);$('newbest').hidden=!nb;$('newbest').textContent=u.newbest;
+  $('best-line').textContent=u.bestis+Math.round(best);$('t-privacy2').textContent=u.privacy;$('t-over').textContent=u.over;$('t-sec2').textContent=u.sec2;}
+
+/* reading of the head this frame: lift (deg), roll (deg), cm, and what is wrong (if anything) */
+function reading(){
+  if(mode!=='camera')return {lift:fakeLift,roll:0,cm:30,why:''};
+  const r={lift:head.lift,roll:head.roll,cm:head.cm,why:''};
+  if(Math.abs(r.roll)>level)r.why='level2';
+  if(distOn){if(r.cm>DIST.max)r.why='closer';else if(r.cm<DIST.min)r.why='back';
+    else if(startCm&&r.cm<startCm*.84&&r.lift>GOAL[goal]-RANGE*.5)r.why='poke';}
+  return r;
+}
+
+let last=performance.now(),demoT=0;
+function frame(now){
+  const dt=Math.min(.05,(now-last)/1000);last=now;tNow+=dt;
+  if(mode==='camera')track(now);
+
+  if(state==='menu'){demoT+=dt;const k=(Math.sin(demoT*.6)+1)/2;mk.h+=(k-mk.h)*Math.min(1,dt*1.2);mk.ph+=dt*1.5;}
+  else if(state==='ready'){if(mode==='camera'&&guide.update(dt,head.ok?{x:head.cx,y:head.cy,size:head.w}:null,{x:0,y:0,w:W,h:H})==='done'){state='count';countT=tNow;msg('');}}
+  else if(state==='count'){
+    if(mode==='camera'&&head.ok)cmSamples.push(head.cm);
+    const n=3-Math.floor(tNow-countT),el=$('count');
+    if(n>0){if(el.textContent!==String(n)){el.textContent=n;el.style.display='block';SFX.tick();}}
+    else{el.style.display='none';el.textContent='';state='play';SFX.boing();
+      cmSamples.sort((a,b)=>a-b);startCm=cmSamples.length?cmSamples[cmSamples.length>>1]:0;}
+  }
+  else if(state==='play'){
+    const lost=mode==='camera'&&(!head.ok||now-head.lastSeen>500);
+    score+=dt;$('score').textContent=Math.floor(score);
+    if(celebT>=0){   // success pose is held, then the monkey slides down slowly and a new banana fades in
+      celebT+=dt;mk.happy=1;mk.reach=1;
+      if(celebT<.5)for(const s of stars)s.k=Math.min(1,s.k+dt*1.5);
+      if(celebT>3){const k=Math.min(1,(celebT-3)/1.6);mk.reach=1-Math.min(1,k*2);mk.happy=k<.5?1:0;mk.h=Math.max(0,1-k*k*(3-2*k));bananaIn=Math.max(0,(celebT-3.6)/.9);
+        if(k>=1){celebT=-1;stars=[];hold=0;noteStep=0;bananaIn=1;if(got>=ROUND)endGame();}}
+      else bananaIn=0;
+    }
+    else if(lost){msg('lost');hold=Math.max(0,hold-dt);}
+    else{
+      const r=reading();msg(r.why);
+      // where the head says the monkey should be (0 bottom .. 1 at the banana)
+      const want=Math.max(0,Math.min(1,(r.lift-(GOAL[goal]-RANGE))/RANGE));
+      mk.tilt+=(Math.max(-.35,Math.min(.35,r.roll*Math.PI/180))-mk.tilt)*Math.min(1,dt*3);
+      if(r.why){mk.v*=.8;}   // something is off: the monkey waits where it is (it may slide down if the head drops)
+      const target=r.why?Math.min(mk.h,want):want;
+      // slow, eased following: gentle spring with a speed limit (up .55 / down .4 of the climb per second)
+      const acc=(target-mk.h)*9-mk.v*5.5;mk.v+=acc*dt;mk.v=Math.max(-.4,Math.min(.55,mk.v));mk.h=Math.max(0,Math.min(1,mk.h+mk.v*dt));
+      if(Math.abs(mk.v)>.03)mk.ph+=dt*Math.min(3,Math.abs(mk.v)*10);
+      const step=Math.floor(mk.h*6);if(step>noteStep){noteStep=step;note(step);}else if(mk.h<(noteStep-.6)/6)noteStep=Math.max(0,step);
+      const atTop=mk.h>.97,headUp=want>=1&&!r.why;
+      mk.reach+=((atTop&&headUp?.45:0)-mk.reach)*Math.min(1,dt*4);
+      if(atTop&&headUp){hold+=dt;if(hold>=holdSec){   // got it!
+        got++;buildBasket();celebT=0;mk.v=0;SFX.chime();setTimeout(ook,250);msg('');
+        stars=Array.from({length:6},(_,i)=>({a:-Math.PI/2+(i-2.5)*.62,k:0}));}}
+      else hold=Math.max(0,hold-dt*2);
+    }
+    if(numsOn&&mode==='camera'){const n=$('nums');n.classList.add('on');n.textContent=`lift ${head.lift.toFixed(0)}° · ears ${Math.abs(head.roll).toFixed(0)}° · ~${head.cm.toFixed(0)} cm`;}
+    else $('nums').classList.remove('on');
+  }
+  render(dt);
+  requestAnimationFrame(frame);
+}
+
+function render(dt){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  const cam=mode==='camera'&&camOK&&state!=='menu';
+  if(cam&&state==='ready'){if(video.readyState>=2){drawMirroredVideo(ctx,video,W,H);ctx.fillStyle='rgba(30,90,86,.25)';ctx.fillRect(0,0,W,H);}else{ctx.fillStyle=BG;ctx.fillRect(0,0,W,H);}
+    guide.draw(ctx,{x:0,y:0,w:W,h:H},lang);return;}
+  const g=geo();
+  drawScene(ctx,W,H,g,{simple});
+  // the banana: on the centre line, gently fades back in for the next one
+  if(bananaIn>0&&state!=='over'){ctx.save();ctx.globalAlpha=Math.min(1,bananaIn);
+    if(!simple){ctx.fillStyle='rgba(255,240,150,.25)';ctx.fill(ell(g.x,g.by,g.s*.55,g.s*.55));}
+    drawBanana(ctx,g.x+g.s*.05,g.by,g.s*.62,.25);ctx.restore();}
+  const y=g.bottom+(g.top-g.bottom)*mk.h;
+  drawMonkey(ctx,g.x,y,g.s,{climb:mk.ph,reach:mk.reach,happy:mk.happy,tilt:mk.tilt});
+  if(celebT>=0){   // the banana is in the monkey's hand
+    const R={x:g.x+g.s*.06,y:y-g.s*1.1};drawBanana(ctx,g.x+g.s*.05,Math.min(g.by,R.y-g.s*.05),g.s*.62,.25);
+    ctx.fillStyle='#F7E1BE';ctx.lineWidth=Math.max(2.5,g.s*.045);sticker(ctx,ell(R.x,R.y,g.s*.09,g.s*.08),'#F7E1BE',Math.max(2.5,g.s*.045));
+    const fade=celebT>2.6?Math.max(0,1-(celebT-2.6)/.5):1;
+    ctx.save();ctx.globalAlpha=fade;for(const s of stars){const rr=g.s*(.55+s.k*.4);bigStar(ctx,R.x+Math.cos(s.a)*rr,R.y+Math.sin(s.a)*rr*.45,g.s*.13,s.a);}ctx.restore();
+  }
+  // little mirror in the corner so the child knows the camera sees them
+  if(cam&&mirrorOn&&video.readyState>=2&&state==='play'){
+    const r=Math.min(W,H)*.12,mx=r+12,my=H-r-14-(innerWidth>innerHeight?0:6);
+    ctx.save();ctx.beginPath();ctx.arc(mx,my,r,0,7);ctx.clip();
+    const vw=video.videoWidth,vh=video.videoHeight,sc=Math.max(2*r/vw,2*r/vh);ctx.translate(mx,my);ctx.scale(-1,1);ctx.drawImage(video,-vw*sc/2,-vh*sc/2,vw*sc,vh*sc);ctx.restore();
+    ctx.lineWidth=4;ctx.strokeStyle=INK;ctx.beginPath();ctx.arc(mx,my,r,0,7);ctx.stroke();
+  }
+}
+
+/* ================= HOW TO PLAY (cartoon for a 5-year-old) ================= */
+{
+  function scene(c,w,h,t,lift,o={}){   // lift 0 = head down .. 1 = head up
+    const tg={...geo(w*.55,h),x:w*.7};tg.s=Math.min(w*.17,h*.2);tg.by=h*.24;tg.crown=tg.by-tg.s*.62;tg.top=tg.by+tg.s*1.12;tg.bottom=h*.82;
+    drawScene(c,w,h,tg,{simple:false});
+    if(!o.got)drawBanana(c,tg.x+tg.s*.05,tg.by,tg.s*.62,.25);
+    const hw=Math.min(w*.2,h*.36);drawKid(c,w,h,w*.25,h*1.0,hw,(o.roll||0),t,0,.9-lift*1.6);
+    const y=tg.bottom+(tg.top-tg.bottom)*(o.mh??lift);
+    drawMonkey(c,tg.x,y,tg.s,{climb:t*2*(o.moving?1:0),reach:o.got?1:(o.reach||0),happy:o.got?1:0,tilt:o.roll||0});
+    if(o.got){const R={x:tg.x+tg.s*.06,y:y-tg.s*1.1};drawBanana(c,R.x+tg.s*.04,R.y-tg.s*.22,tg.s*.62,.25);sticker(c,ell(R.x,R.y,tg.s*.09,tg.s*.08),CREAM,Math.max(2.5,tg.s*.045));
+      for(let i=0;i<6;i++){const a=-Math.PI/2+(i-2.5)*.55,rr=tg.s*(.5+o.got*.6);bigStar(c,R.x+Math.cos(a)*rr,R.y-tg.s*.2+Math.sin(a)*rr*.8,13,a);}}
+  }
+  setupHowTo({lang:()=>lang,play:()=>play(),steps:[
+    {dur:2.6,cap:{en:'Head down — the monkey waits 🐒',he:'ראש למטה — הקוף מחכה 🐒'},draw(c,w,h,t,k){scene(c,w,h,t,0);}},
+    {dur:3.2,cap:{en:'Lift your head up!',he:'מרימים את הראש!'},draw(c,w,h,t,k){const l=seg(k,.05,.8);scene(c,w,h,t,l,{moving:k<.85});}},
+    {dur:3,cap:{en:'Keep it straight and hold…',he:'ראש ישר ומחזיקים…'},draw(c,w,h,t,k){scene(c,w,h,t,1,{reach:seg(k,.1,.6)*.45});}},
+    {dur:3,cap:{en:'Yummy banana! 🍌',he:'בננה טעימה! 🍌'},draw(c,w,h,t,k){scene(c,w,h,t,1,{got:seg(k,0,.5)});}}
+  ]});
+}
+setLang(lang);
+loadBest();buildBasket();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
