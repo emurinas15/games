@@ -157,7 +157,7 @@ const UI={
  en:{title:"Duck on My Head",sub:"Tilt your head to keep the duckling on!",play:"Play",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",
   grown:"For grown-ups",
-  g1:"The duckling follows a butterfly from side to side, and the butterfly always flies just past the edge of the leaf. Left alone, the duck walks off, so the child keeps tilting the head the other way to hold it on. If the head tilts more than about 30°, the duck sits down and slides on its bottom, faster and faster, so big tilts are risky. The duck gets faster as the child does well, and slows down after a fall.",
+  g1:"The duckling walks from side to side toward the butterflies, which flutter in from outside the screen, hover at the side for a few seconds and fly off (5 kinds take turns). They are only something to look at; nobody needs to catch them. Left alone, the duck walks off, so the child keeps tilting the head the other way to hold it on. If the head tilts more than about 30°, the duck sits down and slides on its bottom, faster and faster, so big tilts are risky. The duck gets faster as the child does well, and slows down after a fall. When it falls, it splashes into the pond.",
   tilt:"Tilt needed",small:"Small",medium:"Medium",big:"Big",
   g2:"★ Make it harder: sit on a therapy ball or a balance cushion, then stand, then stand on one leg.",
   g3:"★ Stand the phone upright at eye level, with room above the head for the duck.",
@@ -174,7 +174,7 @@ const UI={
  he:{title:"ברווזון על הראש",sub:"הטו את הראש כדי שהברווזון לא ייפול!",play:"שחקו",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",
   grown:"למבוגרים",
-  g1:"הברווזון הולך אחרי פרפר מצד לצד, והפרפר תמיד עף קצת מעבר לקצה העלה. בלי עזרה הברווזון יוצא מהעלה, אז הילד מטה את הראש כל הזמן לצד השני כדי להחזיק אותו. אם הראש מוטה יותר מכ־30°, הברווזון מתיישב ומחליק על הישבן, מהר יותר ויותר, כך שהטיה גדולה מדי מסוכנת. הברווזון מאיץ כשהילד מצליח, ומאט אחרי נפילה.",
+  g1:"הברווזון הולך מצד לצד לכיוון הפרפרים, שנכנסים מחוץ למסך, מרחפים בצד כמה שניות ועפים (5 סוגים מתחלפים). הם רק להסתכל עליהם; אין צורך לתפוס אותם. בלי עזרה הברווזון יוצא מהעלה, אז הילד מטה את הראש כל הזמן לצד השני כדי להחזיק אותו. אם הראש מוטה יותר מכ־30°, הברווזון מתיישב ומחליק על הישבן, מהר יותר ויותר, כך שהטיה גדולה מדי מסוכנת. הברווזון מאיץ כשהילד מצליח, ומאט אחרי נפילה. כשהוא נופל — הוא נוחת בשלולית בשפריץ.",
   tilt:"כמה להטות",small:"קצת",medium:"בינוני",big:"הרבה",
   g2:"★ להקשות: ישיבה על כדור טיפולי או כרית איזון, אחר כך עמידה, ואז עמידה על רגל אחת.",
   g3:"★ העמידו את הטלפון ישר בגובה העיניים, עם מקום מעל הראש בשביל הברווזון.",
@@ -235,6 +235,11 @@ function tone({f0=440,f1=f0,dur=.15,type='sine',vol=.25,at=0,filter=null,q=1}){
 const SFX={
   quack(at=0,p=1){tone({f0:620*p,f1:420*p,dur:.13,type:'sawtooth',vol:.546,at,filter:1300,q:3});tone({f0:640*p,f1:380*p,dur:.16,type:'sawtooth',vol:.488,at:at+.17,filter:1200,q:3});},   // another 50% louder (12 Nov evening)
   fall(){tone({f0:900,f1:180,dur:.7,type:'sine',vol:.22});this.quack(.05,1.25);},
+  splash(){const a=AC;if(!a)return;   // 17 Nov: a watery splash: a filtered noise burst + a few bloops
+    const n=a.sampleRate*.7,b=a.createBuffer(1,n,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++){const k=i/n;d[i]=(Math.random()*2-1)*Math.pow(1-k,2.2)*(k<.02?k/.02:1);}
+    const src=a.createBufferSource();src.buffer=b;const f=a.createBiquadFilter();f.type='bandpass';f.Q.value=.8;f.frequency.setValueAtTime(2600,a.currentTime);f.frequency.exponentialRampToValueAtTime(500,a.currentTime+.6);
+    const g=a.createGain();g.gain.value=.75;src.connect(f);f.connect(g);g.connect(BUS.sfx);src.start();
+    [[420,900,.05],[520,1100,.16],[360,780,.27],[600,1250,.36]].forEach(([f0,f1,at])=>tone({f0,f1,dur:.09,type:'sine',vol:.16,at}));},
   poof(){const a=AC;if(!a)return;const n=a.sampleRate*.25,b=a.createBuffer(1,n,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n)**2;
     const s=a.createBufferSource();s.buffer=b;const f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=900;const g=a.createGain();g.gain.value=.35;s.connect(f);f.connect(g);g.connect(BUS.sfx);s.start();},
   boing(){tone({f0:180,f1:520,dur:.22,type:'sine',vol:.25});},
@@ -428,13 +433,16 @@ function drawDuck(c,size,o={}){
 }
 
 /* ---- Butterfly ---- */
-function drawButterfly(x,y,s,t){
+/* 17 Nov (Edgar): 5 kinds of butterfly take turns at the sides of the screen */
+const BFLY=[{a:'#FF8FB8',b:'#B79CFF',d:'rgba(255,255,255,.6)'},{a:'#FF9A3C',b:'#FFC56B',d:'#2B2118'},{a:'#5FB7F0',b:'#A8E0FF',d:'rgba(255,255,255,.75)'},
+  {a:'#FFE066',b:'#FFB347',d:'#E8743B'},{a:'#7ED6A8',b:'#C9B6FF',d:'#FFFFFF'}];
+function drawButterfly(x,y,s,t,P=BFLY[0]){
   const fl=0.25+0.75*Math.abs(Math.sin(t*11));
   ctx.save();ctx.translate(x,y);ctx.rotate(Math.sin(t*3)*0.15);const lw=Math.max(2,s*.09);
   for(const sd of [-1,1]){ctx.save();ctx.scale(sd*fl,1);
-    sticker(ell(s*.42,-s*.22,s*.42,s*.32,-.5),'#FF8FB8',lw);
-    sticker(ell(s*.32,s*.2,s*.28,s*.22,.5),'#B79CFF',lw);
-    ctx.fillStyle='rgba(255,255,255,.6)';ctx.fill(ell(s*.45,-s*.25,s*.12,s*.08,-.5));
+    sticker(ell(s*.42,-s*.22,s*.42,s*.32,-.5),P.a,lw);
+    sticker(ell(s*.32,s*.2,s*.28,s*.22,.5),P.b,lw);
+    ctx.fillStyle=P.d;ctx.fill(ell(s*.45,-s*.25,s*.12,s*.08,-.5));ctx.fill(ell(s*.36,s*.22,s*.07,s*.06));
     ctx.restore();}
   sticker(ell(0,0,s*.09,s*.36),'#5B3A29',lw*.8);
   ctx.lineWidth=lw*.7;ctx.strokeStyle=INK;ctx.beginPath();ctx.moveTo(-s*.03,-s*.33);ctx.quadraticCurveTo(-s*.12,-s*.6,-s*.22,-s*.62);ctx.moveTo(s*.03,-s*.33);ctx.quadraticCurveTo(s*.12,-s*.6,s*.22,-s*.62);ctx.stroke();
@@ -544,11 +552,30 @@ let state='menu';                   // menu | ready | count | play | fall | over
 const duck={x:0,vs:0,vw:0,phase:0,dir:1,wob:0,fallT:0,fx:0,fy:0,fvx:0,fvy:0,spin:0,dropT:0};
 const fly={x:.6,tx:.6,next:0,y:0};
 let score=0,lives=3,starsGiven=0,tNow=0,countT=0,lastNew=false,demoRoll=0,startLevel=0;
-let particles=[],stars=[];
+let particles=[],stars=[],splashes=[];
+/* 17 Nov (Edgar): children thought they had to help the duck catch the butterfly and let it fall.
+   Now the butterflies stay at the SIDES of the screen, on the side the duck is heading to: one flies in from
+   outside the screen, hovers 3-5 s, flies off, and a different kind comes in. The duck just watches it. */
+let bflies=[],bfNext=0,bfKind=0;
+function updateBflies(dt){
+  const sd=Math.sign(duck.goal)||1,sz=bfSize(),m=sz*1.25,cur=bflies.find(b=>b.ph!=='out');
+  if(!cur||cur.side!==sd||tNow>bfNext){
+    if(cur){cur.ph='out';cur.vx=cur.side*sz*2;cur.vy=-sz*3;}
+    let k;do k=Math.floor(Math.random()*BFLY.length);while(k===bfKind);bfKind=k;
+    bflies.push({kind:k,side:sd,ph:'in',seed:Math.random()*99,x:sd>0?W+sz*1.5:-sz*1.5,y:H*(.12+Math.random()*.3)});
+    bfNext=tNow+3+Math.random()*2;}
+  for(const b of bflies){
+    if(b.ph==='out'){b.vx+=b.side*sz*14*dt;b.vy-=sz*4*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;if(b.x<-sz*3||b.x>W+sz*3||b.y<-sz*3)b.gone=true;continue;}
+    const hx=(b.side>0?W-m:m)-b.side*Math.abs(Math.cos(tNow*1.1+b.seed))*m*.6,hy=H*.3+Math.sin(tNow*.9+b.seed)*H*.12;
+    b.x+=(hx-b.x)*Math.min(1,dt*(b.ph==='in'?2.2:3));b.y+=(hy-b.y)*Math.min(1,dt*(b.ph==='in'?2.2:3));
+    if(b.ph==='in'&&Math.abs(b.x-hx)<sz)b.ph='hover';}
+  bflies=bflies.filter(b=>!b.gone);
+}
+const bfSize=()=>Math.max(30,Math.min(W,H)*.1);
 
 function speed(){const D=DUCKS[kind];return D.base+D.range*level;}
 function nextOffCount(){const D=DUCKS[kind];return D.offEvery[0]+Math.floor(Math.random()*(D.offEvery[1]-D.offEvery[0]+1));}
-function resetDuck(){const side=Math.random()<.5?-1:1;Object.assign(duck,{x:0,vs:0,vw:0,wob:0,dropT:0.55,sit:false});newLeg(side);fly.x=fly.tx=side*.6;}
+function resetDuck(){const side=Math.random()<.5?-1:1;Object.assign(duck,{x:0,vs:0,vw:0,wob:0,dropT:0.55,sit:false,splashed:false});newLeg(side);fly.x=fly.tx=side*.6;}
 
 function buildLives(){const box=$('lives');box.innerHTML='';for(let i=0;i<3;i++){const c=document.createElement('canvas');c.width=80;c.height=80;const x=c.getContext('2d');x.translate(40,74);drawDuck(x,64,{});if(i>=lives)c.className='lost';box.appendChild(c);}}
 
@@ -581,7 +608,7 @@ function surface(){ // returns {x,y,roll,half} of the pad top in screen px
 function drawKidGeom(roll,hw){const r=hw*.5,neckY=kidNeck,top=-r*2.02;return {x:W/2+Math.sin(roll)*-top,y:neckY+Math.cos(roll)*top,neckY};}
 
 function fallOff(side,s){
-  state='fall';duck.fallT=tNow;lives--;buildLives();
+  state='fall';duck.fallT=tNow;duck.splashed=false;duck.quacked=0;lives--;buildLives();
   level=Math.max(0,level-.12);LS.set('hb-duck-level-'+kind,level.toFixed(3));
   const lx=duck.x*s.half;duck.fx=s.x+Math.cos(s.roll)*lx;duck.fy=s.y+Math.sin(s.roll)*lx;
   duck.fvx=side*s.half*1.6;duck.fvy=-s.half*2.2;duck.spin=0;
@@ -599,6 +626,22 @@ function endGame(){
 }
 function fillEnd(nb){const u=UI[lang];$('final').textContent=Math.floor(score);$('newbest').hidden=!nb;$('newbest').textContent=u.newbest;
   $('best-line').textContent=u.bestis+Math.floor(best);$('t-privacy2').textContent=u.privacy;}
+
+/* ---- splash: puddle, crown of drops, ripples ---- */
+function splash(x,y){SFX.splash();const r=Math.min(W,H)*.2;splashes.push({x,y,r,t:tNow,drops:Array.from({length:14},(_,i)=>{const a=Math.PI*(1.08+i/13*.84);return {vx:Math.cos(a)*r*(1.6+Math.random()*1.4),vy:Math.sin(a)*r*(3.2+Math.random()*1.8),s:r*(.06+Math.random()*.05)};})});}
+function drawSplashes(dt){
+  splashes=splashes.filter(o=>tNow-o.t<2);
+  for(const o of splashes){const k=tNow-o.t,r=o.r,fade=Math.min(1,(2-k)/.5);
+    ctx.save();ctx.globalAlpha=fade;
+    const pr=r*(1.1+Math.min(1,k*5)*.3);sticker(ell(o.x,o.y,pr,pr*.28),'#7CCBEA',Math.max(3,r*.03));   // the puddle
+    ctx.fillStyle='rgba(255,255,255,.45)';ctx.fill(ell(o.x-pr*.35,o.y-pr*.06,pr*.25,pr*.05));
+    ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=3;for(const d of [0,.3,.6]){const q=k-d;if(q<0||q>1.2)continue;ctx.globalAlpha=fade*(1-q/1.2);ctx.beginPath();ctx.ellipse(o.x,o.y,r*(.3+q*1.1),r*(.3+q*1.1)*.26,0,0,7);ctx.stroke();}
+    ctx.globalAlpha=fade;
+    if(k<.9){const cr=Math.sin(Math.min(1,k/.35)*Math.PI);   // the crown
+      if(cr>0){const p=new Path2D();p.moveTo(o.x-r*.55,o.y);for(let i=0;i<=6;i++){const xx=o.x-r*.55+i*r*1.1/6,hh=(i%2?.55:1)*r*.85*cr;p.lineTo(xx,o.y-hh);}p.lineTo(o.x+r*.55,o.y);p.closePath();sticker(p,'#A8E0FF',Math.max(3,r*.03));}}
+    for(const d of o.drops){const q=Math.min(k,1.1),x=o.x+d.vx*q,y=o.y+d.vy*q+r*7*q*q;if(y>o.y+2)continue;sticker(ell(x,y,d.s,d.s*1.25),'#A8E0FF',2.5);}
+    ctx.restore();}
+}
 
 /* ---- update ---- */
 /* The butterfly flies from side to side, always just past the edge of the leaf, and the duck
@@ -651,6 +694,7 @@ function frame(now){
   kidNeck+=((state==='menu'?H*.58:H*.82)-kidNeck)*Math.min(1,dt*4);
 
   // state logic
+  if(state==='menu'||state==='play')updateBflies(dt);
   if(state==='menu'){
     updateFly(dt,1.1);
     const G=TILT_G.medium*DUCKS[kind].slip,need=K*(-1.3*duck.x-duck.vw)/G;
@@ -685,8 +729,12 @@ function frame(now){
     }
   }
   else if(state==='fall'){
-    duck.fvy+=H*2.4*dt;duck.fx+=duck.fvx*dt;duck.fy+=duck.fvy*dt;duck.spin+=dt*8*Math.sign(duck.fvx);
-    if(tNow-duck.fallT>1.5){ if(lives<=0)endGame(); else {SFX.poof();state='play';resetDuck();SFX.boing();} }
+    const wl=H*.9;   // 17 Nov (Edgar): the duck lands in a pond puddle with a splash
+    if(!duck.splashed){duck.fvy+=H*2.4*dt;duck.fx+=duck.fvx*dt;duck.fy+=duck.fvy*dt;duck.spin+=dt*8*Math.sign(duck.fvx);
+      duck.fx=Math.max(W*.12,Math.min(W*.88,duck.fx));
+      if(duck.fy>=wl){duck.splashed=tNow;duck.fy=wl;splash(duck.fx,wl);}}
+    if(duck.splashed&&tNow-duck.splashed>.45&&!duck.quacked){duck.quacked=1;SFX.quack(0,1.15);}
+    if(tNow-duck.fallT>2.3){ if(lives<=0)endGame(); else {SFX.poof();state='play';resetDuck();SFX.boing();} }
   }
   render(now,dt);
   requestAnimationFrame(frame);
@@ -719,11 +767,15 @@ function render(now,dt){
     ctx.restore();
     // butterfly in world space above the pad
     if(state==='menu'||state==='play'){
-      const bx=s.x+Math.cos(s.roll)*fly.x*s.half,by=s.y+Math.sin(s.roll)*fly.x*s.half-s.half*1.12+Math.sin(tNow*2.3)*s.half*.08;
-      drawButterfly(bx,by,s.half*.3,tNow);
+      for(const b of bflies)drawButterfly(b.x,b.y,bfSize(),tNow+b.seed,BFLY[b.kind]);
     }
   }
-  if(state==='fall'){ctx.save();ctx.translate(duck.fx,duck.fy);drawDuck(ctx,s.half*1.05,{dir:duck.dir,tumble:duck.spin,wobble:1,t:tNow});ctx.restore();}
+  drawSplashes(dt);
+  if(state==='fall'){const dz=Math.min(s.half*1.05,Math.min(W,H)*.32);
+    if(!duck.splashed){ctx.save();ctx.translate(duck.fx,duck.fy);drawDuck(ctx,dz,{dir:duck.dir,tumble:duck.spin,wobble:1,t:tNow});ctx.restore();}
+    else{const k=tNow-duck.splashed,pop=Math.min(1,Math.max(0,(k-.25)/.35)),bob=Math.sin(k*7)*dz*.03;   // pops back up and bobs, wet and surprised
+      ctx.save();ctx.beginPath();ctx.rect(0,0,W,duck.fy+dz*.02);ctx.clip();ctx.translate(duck.fx,duck.fy+dz*.55*(1-pop)+bob+dz*.12);
+      drawDuck(ctx,dz,{dir:duck.dir,wobble:1,t:tNow});ctx.restore();}}
   // feathers
   particles=particles.filter(p=>(p.life-=dt)>0);
   for(const p of particles){p.vy+=200*dt;p.vx*=.98;p.x+=p.vx*dt;p.y+=p.vy*dt*.5;p.r+=dt*4;ctx.save();ctx.globalAlpha=Math.min(1,p.life);ctx.translate(p.x,p.y);ctx.rotate(p.r);
@@ -755,7 +807,7 @@ function buildDucks(){
     const hw=Math.min(w*.24,h*.38),top=drawKid(w/2,h*1.06,hw,roll,t),half=hw*.95;
     ctx.save();ctx.translate(top.x,top.y);ctx.rotate(roll);drawPad(half);
     ctx.save();ctx.translate(dx*half,0);drawDuck(ctx,half*1.05,{kind:'yellow',dir:o.dir??1,phase:walk,wobble:o.wob||0,look:1,t,happy:o.happy||0});ctx.restore();ctx.restore();
-    if(bx!=null){const x=top.x+Math.cos(roll)*bx*half,y=top.y+Math.sin(roll)*bx*half-half*1.15+Math.sin(t*2.3)*half*.08;drawButterfly(x,y,half*.3,t);}
+    if(bx!=null){const x=bx>0?w*.9:w*.1,y=h*.22+Math.sin(t*2.3)*h*.05;drawButterfly(x,y,Math.min(w,h)*.08,t,BFLY[bx>0?0:2]);}
     if(o.stars)for(let i=0;i<8;i++){const a=i/8*6.3,r=half*(.4+o.stars*1.4);bigStar(c,top.x+Math.cos(a)*r,top.y-half*.6+Math.sin(a)*r*.6,15*(1.2-o.stars*.6),a+o.stars*3);}
   });}
   setupHowTo({lang:()=>lang,play:()=>play(),steps:[

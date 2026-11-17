@@ -363,13 +363,16 @@ function judge(p,kind){
 }
 // which squares a player stands on
 function cellOf(x,y){const g=toGrid(x,y);if(!(g.x>=0&&g.x<N&&g.y>=0&&g.y<N))return null;return cells[Math.floor(g.y)*N+Math.floor(g.x)];}
+// 17 Nov (Edgar): "homing" — a foot up to a third of a square outside the floor still belongs to the nearest square
+function homeCell(x,y){const g=toGrid(x,y),m=.35;if(!(g.x>=-m&&g.x<N+m&&g.y>=-m&&g.y<N+m))return null;
+  const u=Math.max(0,Math.min(N-1,Math.floor(g.x))),v=Math.max(0,Math.min(N-1,Math.floor(g.y)));return cells[v*N+u];}
 // a foot within this share of a tile from a rock counts as on it (kids' side wins close calls); far rows get more room
 function nearRock(f){const g=toGrid(f.x,f.y),m=.14+.12*(1-Math.max(0,Math.min(1,g.y/N)));
   for(const [du,dv] of [[-m,0],[m,0],[0,-m],[0,m]]){const u=g.x+du,v=g.y+dv;if(u<0||u>=N||v<0||v>=N)continue;const c=cells[Math.floor(v)*N+Math.floor(u)];if(c.type==='rock')return true;}
   return false;}
 function standing(p){ // -> {rock,glass,q,lava,any}
   const r={rock:false,glass:false,q:false,lava:0,on:0};
-  for(const f of p.feet){if(!f.ok)continue;const c=cellOf(f.x,f.y);if(!c)continue;r.on++;
+  for(const f of p.feet){if(!f.ok)continue;const c=mode==='camera'?homeCell(f.x,f.y):cellOf(f.x,f.y);if(!c)continue;r.on++;
     if(c.type==='rock'||nearRock(f))r.rock=true;else if(c.type==='glass'&&tNow-c.t0-.35<MELT)r.glass=true;else if(c.type==='q')r.q=true;else r.lava++;}
   return r;
 }
@@ -388,7 +391,7 @@ function fakeTracker(){
     for(let k=0;k<2;k++){const cx=.35+.3*k+.12*Math.sin(t*.7+k*2),fy=.78+.12*Math.sin(t*.5+k),hgt=.55*(.6+.4*fy);
       const lm=[];for(let i=0;i<33;i++)lm.push({x:cx,y:fy-hgt*.5,visibility:1});
       lm[0]={x:cx,y:fy-hgt,visibility:1};lm[2]=lm[5]=lm[0];lm[23]={x:cx-.02,y:fy-hgt*.45,visibility:1};lm[24]={x:cx+.02,y:fy-hgt*.45,visibility:1};
-      for(const [h,to,an,dx] of [[29,31,27,-.025],[30,32,28,.025]]){lm[h]={x:cx+dx,y:fy,visibility:1};lm[to]={x:cx+dx,y:fy+.01,visibility:1};lm[an]={x:cx+dx,y:fy-.02,visibility:1};}
+      for(const [h,to,an,dx,kn] of [[29,31,27,-.025,25],[30,32,28,.025,26]]){lm[kn]={x:cx+dx*.8,y:fy-hgt*.24,visibility:1};lm[h]={x:cx+dx,y:fy,visibility:1};lm[to]={x:cx+dx,y:fy+.01,visibility:1};lm[an]={x:cx+dx,y:fy-.02,visibility:1};}
       L.push(lm);
       const arr=new Float32Array(pw*ph);for(let y=0;y<ph;y++)for(let x=0;x<pw;x++){const nx=x/pw,ny=y/ph;if(Math.abs(nx-cx)<.04&&ny>fy-hgt&&ny<fy+.01)arr[y*pw+x]=1;}
       M.push({getAsFloat32Array:()=>arr,close(){}});}
@@ -442,10 +445,20 @@ function track(now){
     if(!pl){const open=state==='ready'||state==='count'||(state==='play'&&levelNo<=startLv&&phase==='quiz');
       pl={id:Math.random(),color:open?COLORS[nextColor++%COLORS.length]:'#ccc',spect:!open,lives:LIVES,status:'',statusT:0,score:0,feet:[{x:0,y:0,ok:false},{x:0,y:0,ok:false}],hip};players.push(pl);}
     seen.push(pl);pl.hip=hip;pl.seen=now;pl.mask=k;
-    const foot=(heel,toe,ank)=>{const h=lm[heel],t=lm[toe],a=lm[ank],vis=x=>(x.visibility??1)>.3;
-      if(vis(h)&&vis(t))return {x:sx((h.x+t.x)/2),y:sy((h.y+t.y)/2),ok:true};if(vis(a))return {x:sx(a.x),y:sy(a.y)+vr.h*.015,ok:true};return {ok:false};};
-    const nf=[foot(29,31,27),foot(30,32,28)];
-    nf.forEach((f,i)=>{const o=pl.feet[i];if(f.ok&&o.ok){o.x+=(f.x-o.x)*.6;o.y+=(f.y-o.y)*.6;}else Object.assign(o,f);});
+    /* 17 Nov (Edgar): the foot landmarks themselves were unreliable. Now the foot is worked out from the lower leg:
+       the knee→ankle line, carried on a little past the ankle to the floor. If the ankle is lost, from the thigh
+       (hip→knee) carried on one shin-length past the knee. Heel/toe only help when the model is sure of them. */
+    const foot=(hip,knee,ank,heel,toe)=>{const vis=(x,v=.3)=>x&&(x.visibility??1)>v,H_=lm[hip],K=lm[knee],A=lm[ank],h=lm[heel],t=lm[toe];
+      let e=null;
+      if(vis(K)&&vis(A,.2))e={x:A.x+(A.x-K.x)*.18,y:A.y+(A.y-K.y)*.18};
+      else if(vis(H_)&&vis(K))e={x:K.x+(K.x-H_.x)*1.05,y:K.y+(K.y-H_.y)*1.05};
+      if(vis(h,.65)&&vis(t,.65)){const m={x:(h.x+t.x)/2,y:(h.y+t.y)/2};e=e?{x:(e.x+m.x)/2,y:(e.y+m.y)/2}:m;}
+      if(!e&&vis(A))e={x:A.x,y:A.y+.015};
+      if(!e)return {ok:false};
+      const dir=vis(h,.5)&&vis(t,.5)?Math.sign((vr.mirror?-1:1)*(t.x-h.x))||0:0;
+      return {x:sx(e.x),y:sy(e.y),ok:true,dir};};
+    const nf=[foot(23,25,27,29,31),foot(24,26,28,30,32)];
+    nf.forEach((f,i)=>{const o=pl.feet[i];if(f.ok&&o.ok){o.x+=(f.x-o.x)*.5;o.y+=(f.y-o.y)*.5;if(f.dir)o.dir=f.dir;}else Object.assign(o,f);});
     const ok=pl.feet.filter(f=>f.ok);
     if(ok.length){pl.sx=ok.reduce((s,f)=>s+f.x,0)/ok.length;pl.sy=Math.max(...ok.map(f=>f.y));const g=toGrid(pl.sx,pl.sy);pl.u=g.x;pl.v=g.y;pl.px=cellPx(Math.max(0,Math.min(N,g.x)),Math.max(0,Math.min(N,g.y)));}
     pl.headPt={x:sx(lm[0].x),y:sy(Math.min(lm[0].y,lm[2].y,lm[5].y))-vr.h*.04};
@@ -475,6 +488,31 @@ function track(now){
    c.globalCompositeOperation='destination-in';c.drawImage(mC,0,0);
    // 50% see-through wherever the background is known (fully grey where it isn't yet, so no colour leaks)
    c.globalCompositeOperation='destination-out';c.globalAlpha=.5;c.drawImage(outBg,0,0);c.globalAlpha=1;c.globalCompositeOperation='source-over';}
+}
+/* 17 Nov (Edgar): a hand-drawn shoe on each foot, and a soft outline around the square that foot is on */
+function drawShoe(x,y,s,dir,col){
+  const lw=Math.max(2.5,s*.07);ctx.save();ctx.translate(x,y);ctx.scale(dir<0?-1:1,1);
+  const sole=new Path2D();sole.moveTo(-s*.55,-s*.02);sole.quadraticCurveTo(-s*.6,s*.14,-s*.42,s*.16);sole.lineTo(s*.5,s*.16);sole.quadraticCurveTo(s*.72,s*.14,s*.66,-s*.04);sole.closePath();
+  const up=new Path2D();up.moveTo(-s*.52,0);up.bezierCurveTo(-s*.56,-s*.36,-s*.4,-s*.58,-s*.14,-s*.58);up.quadraticCurveTo(-s*.02,-s*.42,s*.12,-s*.3);
+  up.bezierCurveTo(s*.38,-s*.26,s*.66,-s*.2,s*.66,-s*.02);up.closePath();
+  ctx.fillStyle='rgba(43,33,24,.25)';ctx.fill(ell(s*.05,s*.2,s*.62,s*.1));
+  sticker(ctx,up,col,lw);sticker(ctx,sole,'#FFFFFF',lw);
+  sticker(ctx,ell(s*.5,-s*.08,s*.17,s*.11,.2),'#FFFFFF',lw*.8);   // toe cap
+  ctx.strokeStyle='#FFFFFF';ctx.lineWidth=lw*1.1;ctx.lineCap='round';
+  for(const k of [0,1,2]){const lx=-s*.12+k*s*.13,ly=-s*.44+k*s*.07;ctx.beginPath();ctx.moveTo(lx-s*.07,ly+s*.02);ctx.lineTo(lx+s*.07,ly-s*.03);ctx.stroke();}   // laces
+  ctx.fillStyle='rgba(255,255,255,.4)';ctx.fill(ell(-s*.3,-s*.36,s*.08,s*.12,-.3));
+  ctx.restore();}
+function drawFeet(){
+  for(const p of players){if(p.mask<0||p.spect||p.out)continue;
+    const ok=p.feet.filter(f=>f.ok);if(!ok.length)continue;
+    const lit=new Set();
+    for(const f of ok){const c=homeCell(f.x,f.y);if(!c||lit.has(c))continue;lit.add(c);
+      const u0=c.u-.5,v0=c.v-.5,i=.07,path=projPath([[u0+i,v0+i],[u0+1-i,v0+i],[u0+1-i,v0+1-i],[u0+i,v0+1-i]]);
+      ctx.save();ctx.lineJoin='round';ctx.strokeStyle=INK;ctx.lineWidth=10;ctx.globalAlpha=.4;ctx.stroke(path);ctx.globalAlpha=1;ctx.strokeStyle=p.color;ctx.lineWidth=6;ctx.stroke(path);ctx.strokeStyle='#FFFFFF';ctx.lineWidth=2;ctx.globalAlpha=.55+.35*Math.sin(tNow*5);ctx.stroke(path);ctx.restore();}
+    const xs=ok.map(f=>f.x),mid=(Math.min(...xs)+Math.max(...xs))/2;
+    for(const f of ok){const g=toGrid(f.x,f.y),sz=Math.max(18,Math.min(70,cellPx(Math.max(0,Math.min(N,g.x)),Math.max(0,Math.min(N,g.y)))*.3));
+      drawShoe(f.x,f.y-sz*.12,sz,f.dir||(ok.length>1?(f.x<mid?-1:1):1),p.color);}
+  }
 }
 function drawVid(src){ctx.save();if(vr.mirror){ctx.translate(vr.ox+vr.w,vr.oy);ctx.scale(-1,1);}else ctx.translate(vr.ox,vr.oy);ctx.drawImage(src,0,0,vr.w,vr.h);ctx.restore();}
 
@@ -733,6 +771,7 @@ function render(dt){
     for(const it of items){if(it.c){if(it.c.type!=='lava')drawTile(it.c);}else drawBean(it.p);}
   }
   if(cam&&cutA.width){drawVid(cutA);drawVid(cutB);drawVid(cutC);}
+  if(cam&&(state==='play'||state==='count'||state==='ready'))drawFeet();
   if(cam&&(state==='play'||state==='count'||state==='ready'))for(const p of players){ // a little colour star above each child
     if(!p.headPt||p.mask<0||p.spect)continue;const s=Math.max(12,Math.min(30,(p.px||60)*.25));ctx.save();if(p.out)ctx.globalAlpha=.45;ctx.translate(p.headPt.x,p.headPt.y-s*2.2);sticker(ctx,starPath(s),p.out?'#BBBBBB':p.color,3);ctx.restore();
     if(!p.out){ctx.save();drawHearts(ctx,p.headPt.x,p.headPt.y-s*.6,p.lives,s*.42);ctx.restore();}}
