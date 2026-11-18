@@ -477,13 +477,13 @@ export function poseFrame(tracker, video, now, W, H) {
 /* ======================= SLOW CAMERA START (18 Nov) =======================
    Edgar: a game sat on "Getting ready…" and never started. Usual causes: another tab or app still holds the front
    camera, the camera permission prompt was missed/blocked, or a slow connection on the first start (the tracker files
-   are ~10 MB). camLoad(fn) runs the camera+tracker start and, if it takes more than 15 s, shows a small card with
+   are ~10 MB). camLoad(fn) runs the camera+tracker start and, if it takes more than 10 s, shows a small card with
    what to check and a "Try again" button (reloads the page). timeoutP lets a hanging GPU start fall back to the CPU. */
 export function timeoutP(p, ms) { return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]); }
 const SLOW_TXT = {
   en: { t: 'Still getting ready…', a: 'Close other tabs or apps that use the camera (another game too).', b: 'Make sure the camera is allowed: tap 🔒 next to the address → Camera → Allow.', c: 'On a slow connection the first start can take up to a minute.', btn: 'Try again' },
   he: { t: 'עדיין מתכוננים…', a: 'סגרו לשוניות או אפליקציות אחרות שמשתמשות במצלמה (גם משחק אחר).', b: 'ודאו שהמצלמה מורשית: לוחצים על 🔒 ליד הכתובת ← מצלמה ← לאפשר.', c: 'בחיבור איטי ההפעלה הראשונה יכולה לקחת עד דקה.', btn: 'לנסות שוב' } };
-export function slowWatch(after = 15000) {
+export function slowWatch(after = 10000) {
   let el = null; const lang = () => (document.documentElement.lang === 'he' ? 'he' : 'en');
   const id = setTimeout(() => {
     const T = SLOW_TXT[lang()]; el = document.createElement('div'); el.dir = lang() === 'he' ? 'rtl' : 'ltr';

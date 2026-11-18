@@ -366,7 +366,7 @@ function reading(lost){
 }
 function burst(x,y,n,sz){for(let i=0;i<n;i++){const a=Math.random()*6.28,sp=sz*(2+Math.random()*4);stars.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-sz*2,r:a,life:1+Math.random()*.4,s:sz*(.1+Math.random()*.08)});}}
 function party(){const C=['#FFD84D','#FF8FB8','#7FC8F8','#8BD16B','#FF9A3C','#FFFFFF'];
-  for(let i=0;i<70;i++)confetti.push({x:Math.random()*W,y:-20-Math.random()*H*.4,vx:(Math.random()-.5)*60,vy:H*(.25+Math.random()*.25),r:Math.random()*6,vr:(Math.random()-.5)*8,c:C[i%C.length],w:6+Math.random()*7});}
+  for(let i=0;i<70;i++)confetti.push({x:Math.random()*W,y:-20-Math.random()*H*.4,vx:(Math.random()-.5)*60,vy:H*(.25+Math.random()*.25),r:Math.random()*6,vr:(Math.random()-.5)*8,c:C[i%C.length],w:6+Math.random()*7,ban:i%6===0});}
 
 let last=performance.now(),demoT=0;
 function frame(now){
@@ -451,8 +451,8 @@ function render(dt){
   for(const o of stars){o.vy+=g.s*6*dt;o.x+=o.vx*dt;o.y+=o.vy*dt;o.r+=dt*4;ctx.save();ctx.globalAlpha=Math.min(1,o.life*1.5);bigStar(ctx,o.x,o.y,o.s*1.6,o.r);ctx.restore();}
   confetti=confetti.filter(o=>o.y<H+40);
   for(const o of confetti){o.x+=o.vx*dt+Math.sin(tNow*3+o.r)*30*dt;o.y+=o.vy*dt;o.r+=o.vr*dt;ctx.save();ctx.translate(o.x,o.y);ctx.rotate(o.r);
-    {ctx.fillStyle=o.c;ctx.strokeStyle=INK;ctx.lineWidth=1.5;ctx.beginPath();ctx.rect(-o.w/2,-o.w*.3,o.w,o.w*.6);ctx.fill();ctx.stroke();}ctx.restore();}
-  // 18 Nov (Edgar): no 🍌🎉 emojis — the monkeys' dance, stars and confetti are the celebration
+    if(o.ban)drawBanana(ctx,0,0,o.w*2.4,0);else{ctx.fillStyle=o.c;ctx.strokeStyle=INK;ctx.lineWidth=1.5;ctx.beginPath();ctx.rect(-o.w/2,-o.w*.3,o.w,o.w*.6);ctx.fill();ctx.stroke();}ctx.restore();}
+  // 18 Nov (Edgar): no 🍌🎉 emojis — the monkeys' dance, stars and confetti (with little bananas) are the celebration
 }
 
 /* ================= HOW TO PLAY (cartoon for a 5-year-old) ================= */
