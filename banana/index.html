@@ -49,8 +49,8 @@ html,body{background:#2E8C86}
       <p id="t-g1"></p>
       <div class="g-row"><span id="t-goal">How high</span>
         <div class="seg" id="goal-seg"><button data-v="low"></button><button data-v="mid"></button><button data-v="high"></button></div></div>
-      <div class="g-row"><span id="t-level">Head tilt allowed</span>
-        <div class="seg" id="level-seg"><button data-v="15"></button><button data-v="20"></button><button data-v="30"></button></div></div>
+      <div class="g-row"><span id="t-level">Head tilt</span>
+        <div class="seg" id="level-seg"><button data-v="10"></button><button data-v="20"></button></div></div>
       <div class="g-row"><span id="t-dist">Distance check</span>
         <div class="seg" id="dist-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
       <div class="g-row"><span id="t-shownums">Show numbers</span>
@@ -101,10 +101,10 @@ const UI={
  en:{title:"Banana Head",sub:"Lift your head so the two monkeys can climb up to the bananas on your head!",play:"Play",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
   g1:"The child sees their own face with two bananas on top of the head and two monkeys, a white one and a black one, on the sides of the face. While the head is lifted toward the phone, the monkeys climb up the sides of the face to the bananas. If the head is tilted to one side more than the allowed angle, only the monkey on the higher side climbs and the other one waits — so the monkeys show how level the head is. When the head drops or the face leaves the picture, both stop. When both monkeys have their bananas they high-five on top of the head. Six rounds; the score is the time it took.",
-  goal:"How high",low:"A little",mid:"Straight",high:"Up",level:"Head tilt allowed",dist:"Distance check",shownums:"Show numbers",
+  goal:"How high",low:"A little",mid:"Straight",high:"Up",level:"Head tilt",notilt:"No tilt",withtilt:"With tilt",dist:"Distance check",shownums:"Show numbers",
   music:"Music",amb:"Jungle sounds",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
   g2:"★ Stand the phone upright at the child's eye level, about 30–50 cm away, so the whole face and a little space above the head are in the picture. How high is measured against looking straight at the phone, so a phone that is too low makes it easier and too high makes it harder.",
-  g3:"★ Head tilt is measured on the line between the two eyes (it stays visible when the head turns a little and isn't fooled by glasses or by raising one eyebrow). Within the allowed angle (30° by default) both monkeys climb; beyond it only the higher side climbs. Distance check: too close or too far pauses the monkeys, and so does sliding the face forward (a chin poke) instead of lifting the head.",
+  g3:"★ Head tilt is measured on the line between the two eyes (it stays visible when the head turns a little and isn't fooled by glasses or by raising one eyebrow). No tilt allows up to 10° (head really straight), With tilt up to 20°. Within it both monkeys climb; beyond it only the higher side climbs. Distance check: too close or too far pauses the monkeys, and so does sliding the face forward (a chin poke) instead of lifting the head.",
   g5:"★ Show numbers is for the therapist: head lift in degrees (0 = looking straight at the phone), head tilt in degrees and an estimate of the distance. These are game estimates, not measurements.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
   sec:"seconds",best:"fastest",sec2:"seconds for six rounds",over:"Six high fives! Yum!",again:"Play again",newbest:"New record!",bestis:"Fastest: ",
@@ -113,10 +113,10 @@ const UI={
  he:{title:"בננה על הראש",sub:"הרימו את הראש כדי ששני הקופים יטפסו אל הבננות שעל הראש!",play:"שחקו",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
   g1:"הילד רואה את הפנים שלו, עם שתי בננות על הראש ושני קופים, לבן ושחור, בצידי הפנים. כל עוד הראש מורם אל הטלפון, הקופים מטפסים בצידי הפנים אל הבננות. אם הראש נוטה הצידה יותר מהזווית המותרת, רק הקוף שבצד הגבוה מטפס והשני מחכה — כך הקופים מראים כמה הראש ישר. כשהראש יורד או שהפנים יוצאות מהתמונה, שניהם עוצרים. כששני הקופים תפסו את הבננות, הם עושים כיף על הראש. שישה סבבים; הניקוד הוא הזמן שלקח.",
-  goal:"כמה גבוה",low:"קצת",mid:"ישר",high:"למעלה",level:"הטיית ראש מותרת",dist:"בדיקת מרחק",shownums:"להציג מספרים",
+  goal:"כמה גבוה",low:"קצת",mid:"ישר",high:"למעלה",level:"הטיית ראש",notilt:"בלי הטיה",withtilt:"עם הטיה",dist:"בדיקת מרחק",shownums:"להציג מספרים",
   music:"מוזיקה",amb:"צלילי ג׳ונגל",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
   g2:"★ העמידו את הטלפון ישר בגובה העיניים של הילד, במרחק של כ־30–50 ס״מ, כך שכל הפנים ומעט מקום מעל הראש נראים בתמונה. הגובה נמדד ביחס למבט ישר אל הטלפון, ולכן טלפון נמוך מדי מקל וטלפון גבוה מדי מקשה.",
-  g3:"★ הטיית הראש נמדדת על הקו שבין שתי העיניים (הוא נשאר גלוי גם כשהראש מסתובב מעט, ולא מושפע ממשקפיים או מהרמת גבה אחת). בתוך הזווית המותרת (30° כברירת מחדל) שני הקופים מטפסים; מעבר לה רק הצד הגבוה מטפס. בדיקת מרחק: קרוב מדי או רחוק מדי עוצר את הקופים, וגם דחיפת הפנים קדימה (סנטר קדימה) במקום הרמת הראש.",
+  g3:"★ הטיית הראש נמדדת על הקו שבין שתי העיניים (הוא נשאר גלוי גם כשהראש מסתובב מעט, ולא מושפע ממשקפיים או מהרמת גבה אחת). ״בלי הטיה״ מאפשר עד 10° (ראש ממש ישר), ״עם הטיה״ עד 20°. בתוך הזווית שני הקופים מטפסים; מעבר לה רק הצד הגבוה מטפס. בדיקת מרחק: קרוב מדי או רחוק מדי עוצר את הקופים, וגם דחיפת הפנים קדימה (סנטר קדימה) במקום הרמת הראש.",
   g5:"★ להציג מספרים – למטפל: הרמת הראש במעלות (0 = מבט ישר לטלפון), הטיית הראש במעלות והערכה של המרחק. אלה הערכות של המשחק, לא מדידות.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
   sec:"שניות",best:"הכי מהר",sec2:"שניות לשישה סבבים",over:"שש פעמים כיף! יאמי!",again:"עוד פעם",newbest:"שיא חדש!",bestis:"הכי מהר: ",
@@ -131,7 +131,8 @@ const DIST={min:20,max:65};            // cm
 const HFOV=62, IRIS=1.17;
 let lang=LS.get('bamboo-lang','en');if(!UI[lang])lang='en';
 let goal=LS.get('bh-goal','mid');if(!GOAL.hasOwnProperty(goal))goal='mid';
-let level=+LS.get('bh-level','30');if(![15,20,30].includes(level))level=30;   // Edgar: up to 30° of asymmetry is fine
+// 18 Nov (Edgar): two choices only — No tilt = 10°, With tilt = 20° (30° turned out to be a lot)
+let level=+LS.get('bh-level2','20');if(![10,20].includes(level))level=20;
 let distOn=LS.get('bh-dist','1')==='1',numsOn=LS.get('bh-nums','0')==='1';
 let best=0;
 const bestKey=()=>'bh-best-'+goal+level;
@@ -143,7 +144,7 @@ const syncSound=bindSound(()=>UI[lang]);
 function segs(){
   const u=UI[lang],mark=(id,v)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===String(v)));
   document.querySelectorAll('#goal-seg button').forEach(b=>b.textContent=u[b.dataset.v]);
-  document.querySelectorAll('#level-seg button').forEach(b=>b.textContent=b.dataset.v+'°');
+  document.querySelectorAll('#level-seg button').forEach(b=>{b.innerHTML='';b.append(u[b.dataset.v==='10'?'notilt':'withtilt']);const sm=document.createElement('small');sm.textContent=' '+b.dataset.v+'°';sm.style.cssText='font-size:.72em;opacity:.7';b.append(sm);});
   document.querySelectorAll('#dist-seg button,#nums-seg button').forEach(b=>b.textContent=u[b.dataset.v==='1'?'on':'off']);
   mark('goal-seg',goal);mark('level-seg',level);mark('dist-seg',+distOn);mark('nums-seg',+numsOn);
 }
@@ -162,7 +163,7 @@ function setLang(l){
 $('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
 const bindSeg=(id,fn)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{fn(b.dataset.v);segs();});
 bindSeg('goal-seg',v=>{goal=v;LS.set('bh-goal',v);loadBest();});
-bindSeg('level-seg',v=>{level=+v;LS.set('bh-level',v);loadBest();});
+bindSeg('level-seg',v=>{level=+v;LS.set('bh-level2',v);loadBest();});
 bindSeg('dist-seg',v=>{distOn=v==='1';LS.set('bh-dist',v);});
 bindSeg('nums-seg',v=>{numsOn=v==='1';LS.set('bh-nums',v);});
 
@@ -198,7 +199,7 @@ function drawMonkey(c,x,y,s,o={}){
   sticker(c,ell(0,s*.12,s*.33,s*.4),FUR,lw);
   c.fillStyle=CREAM;c.fill(ell(0,s*.2,s*.21,s*.26));
   // arms: left always on the trunk; right one reaches up for the banana
-  const L={x:-s*.3,y:-s*.62-sw},R0={x:s*.3,y:-s*.62+sw},R1={x:s*.06,y:-s*1.1};
+  const five=o.five||0,L={x:-s*.3,y:-s*.62-sw},R0={x:s*.3,y:-s*.62+sw},R1=five>0?{x:s*(.06+.6*five),y:-s*(1.1-.32*five)}:{x:s*.06,y:-s*1.1};
   const R={x:R0.x+(R1.x-R0.x)*reach,y:R0.y+(R1.y-R0.y)*reach};
   limb(c,-s*.22,-s*.12,L.x,L.y,-s*.42,-s*.32,s*.13,lw,FUR);
   limb(c,s*.22,-s*.12,R.x,R.y,s*(.42-.2*reach),-s*(.32+.25*reach),s*.13,lw,FUR);
@@ -377,7 +378,7 @@ function frame(now){
     score+=dt;$('score').textContent=Math.floor(score);
     if(celebT>=0){   // high five on top of the head → party → both slide down, new bananas
       const prev=celebT;celebT+=dt;
-      if(prev<SLAP&&celebT>=SLAP){slapSound();const F=currentFace(),s=monkeySize(F),p=bananaPoint(F,0,s);burst(p.x,p.y-s*.3,22,s*1.2);party();partySound();}
+      if(prev<SLAP&&celebT>=SLAP){slapSound();const F=currentFace(),s=monkeySize(F),p=clampY(faceTo(F,0,-F.ry*1.12),s);burst(p.x,p.y-s*.78,22,s*1.2);party();partySound();}
       if(celebT>PARTY_END){const k=Math.min(1,(celebT-PARTY_END)/DOWN);
         for(const m of mks){m.reach=0;m.happy=k<.5?1:0;m.h=1-ease(k);}bananaIn=Math.max(0,(celebT-PARTY_END-.5)/.7);
         if(k>=1){celebT=-1;mks=[newMk(),newMk()];noteStep=0;bananaIn=1;if(got>=ROUND)endGame();}}
@@ -411,15 +412,18 @@ function drawPlayers(c,F,o){
   }
   for(let i=0;i<2;i++){const d=i?1:-1,m=o.mks[i];
     let p=climbPoint(F,d,m.h,s);
-    // high five: both slide in to meet just above the middle of the head
-    if(hiK>0){const meet=clampY(faceTo(F,d*s*.42,-F.ry*1.12),s),e=ease(hiK);p={x:p.x+(meet.x-p.x)*e,y:p.y+(meet.y-p.y)*e};}
-    const dance=cel>=SLAP&&cel<PARTY_END?Math.sin(o.t*9+i)*s*.06:0;
-    const lean=F.rot-d*.45*ease(Math.max(0,Math.min(1,m.h)));
-    const reach=hiK>0?1:m.reach;
+    // 18 Nov (Edgar): no overlapping. They come together side by side above the head with room between them,
+    // slap hands once (a little high five), then hop and sway next to each other.
+    let lean=F.rot-d*.45*ease(Math.max(0,Math.min(1,m.h))),dance=0,reach=m.reach,five=0;
+    if(hiK>0){const meet=clampY(faceTo(F,d*s*.7,-F.ry*1.12),s),e=ease(hiK);p={x:p.x+(meet.x-p.x)*e,y:p.y+(meet.y-p.y)*e};
+      lean=F.rot*e+lean*(1-e);
+      const after=cel-SLAP;
+      if(after<.45){reach=1;five=Math.min(1,cel/SLAP);if(after>0)p.x+=d*s*.06*Math.sin(Math.min(1,after/.15)*Math.PI);}   // hands up and slap
+      else{reach=0;const ph=(after-.45)*7+i*Math.PI;dance=-Math.abs(Math.sin(ph))*s*.16;lean+=Math.sin(ph)*.12;}}   // hop + sway, side by side
     c.save();c.translate(p.x,p.y+dance);c.rotate(lean);c.scale(-d,1);   // each monkey faces the middle of the face
-    drawMonkey(c,0,0,s,{climb:m.ph,reach,happy:m.happy||(cel>=0?1:0),...MK_COL[i]});
+    drawMonkey(c,0,0,s,{climb:m.ph,reach,five,happy:m.happy||(cel>=0?1:0),...MK_COL[i]});
     if(m.got){   // the banana: up in the hand while waiting, tucked under the other arm for the high five
-      if(hiK>0){c.save();c.translate(-s*.32,-s*.05);c.rotate(-.5);drawBanana(c,0,0,s*.5,0);c.restore();}
+      if(hiK>0){c.save();c.translate(-s*.36,-s*.02);c.rotate(-.5);drawBanana(c,0,0,s*.5,0);c.restore();}
       else{const R={x:s*.06,y:-s*1.1},pop=Math.min(1,(o.t-m.gotT)/.3);c.save();c.translate(R.x+s*.04,R.y-s*.2);c.scale(.8+pop*.3,.8+pop*.3);drawBanana(c,0,0,s*.62,.25+Math.sin(o.t*6)*.15);c.restore();
         sticker(c,ell(R.x,R.y,s*.09,s*.08),MK_COL[i].cream,Math.max(2.5,s*.045));}
     }
