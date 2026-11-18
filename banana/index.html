@@ -80,7 +80,7 @@ html,body{background:#2E8C86}
 </div>
 
 <script type="module">
-import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,startFaceTracker,coverMap,drawMirroredVideo,playSample,loadSamples,drawKid} from '../shared/kit.js';
+import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,startFaceTracker,coverMap,drawMirroredVideo,playSample,loadSamples,drawKid,monkeyCall} from '../shared/kit.js';
 import {camLoad} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
 import {setupHowTo,seg,bigStar} from '../shared/howto.js';
@@ -94,7 +94,7 @@ const guide=makeGuide('face',{},{target:{size:r=>Math.min(r.w*.42,r.h*.26),sizeM
    default) → only the monkey on the HIGHER side climbs; the other waits where it is until the head is level again.
    Head down / face gone → both stop. When both have their bananas they meet on top of the head for a high five and a
    party, then slide back down and new bananas appear. Six rounds; the score is the time it took.
-   The original Monkey Climb (trees at the sides) stays as it is in monkey/. */
+   18 Nov (Edgar): the original Monkey Climb (trees at the sides) was deleted; Banana Head is the one monkey game. */
 
 /* ================= TEXT ================= */
 const UI={
@@ -138,8 +138,9 @@ let best=0;
 const bestKey=()=>'bh-best-'+goal+level;
 const loadBest=()=>{best=+LS.get(bestKey(),'0')||0;$('best').textContent=best?Math.round(best):'–';};
 
-S.track='natural';S.amb='pond';S.ambVol=.3;S.musicVol=.7;
-const syncSound=bindSound(()=>UI[lang]);
+// 18 Nov (Edgar): tropical, funny and goofy marimba music with monkeys far in the background, plus light jungle sounds (on by default, own setting 'bh-amb')
+S.track='jungle';S.amb='jungle';S.ambVol=.55;S.musicVol=.8;S.ambOn=LS.get('bh-amb','1')==='1';
+const syncSound=bindSound(()=>UI[lang],{ambKey:'bh-amb'});
 
 function segs(){
   const u=UI[lang],mark=(id,v)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===String(v)));
@@ -325,7 +326,7 @@ function slapSound(){noise({dur:.08,vol:.5,freq:2500,type:'highpass'});noise({du
 function partySound(){
   [0,2,4,5,7,7].forEach((n,i)=>setTimeout(()=>note(n,.2),i*90));
   [523,659,784,1047].forEach((f,i)=>tone({f0:f,dur:1.1,type:'triangle',vol:.09,at:.6+i*.02}));
-  ook(.7,1);ook(1.1,1.25);ook(1.5,.9);
+  setTimeout(()=>monkeyCall(1,.75,-.3),650);setTimeout(()=>monkeyCall(1,.65,.3),1050);   // 18 Nov: real monkey cheers
   for(let i=0;i<10;i++)tone({f0:110,f1:70,dur:.09,type:'sine',vol:.18,at:.05+i*.055});
   SFX.chime();setTimeout(()=>SFX.chime(),700);}
 function endGame(){

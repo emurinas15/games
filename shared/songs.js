@@ -248,7 +248,35 @@ export const STYLES = {
     else if (i === 2 || i === 6) ev.push(['~cajonS', 0, .55, 0, 0]);
     else ev.push(['~cajonS', 0, .12, 0, 0, sw]);          // ghost taps
     if (i === 0 && k % 16 === 0) ev.push(['~tamb', 0, .3, 0, 0]);   // tambourine every 8 beats (2 bars), very gentle
-    return ev.map(e => (e[2] *= 1.05, e)); } }
+    return ev.map(e => (e[2] *= 1.05, e)); } },
+  /* Banana Head (18 Nov, Edgar): tropical, funny and goofy — bouncy marimba melody with little 'slide-up' grace notes,
+     staccato bassoon 'boop' bass doubled by a plucky acoustic bass, low marimba off-beat chords (calypso), bongos and a
+     shaker, a goofy xylophone run + slide whistle at the end of every 8 bars, and monkeys 'ooh-ooh-ah-ah' far in the
+     background now and then (every 8 bars, alternating sides). Same core melody, C major. */
+  jungle: { bpm: 116, play(s) {
+    const { mel, ch, root, i, sec } = at(s), ev = [], k = ((s % STEPS) + STEPS) % STEPS, b8 = k % 64, sw = i % 2 ? .03 : 0;
+    if (sec === 'end' && k >= STEPS - 8) {   // ending: one big 'ta-daa' and a monkey cheer
+      if (i === 0) { for (const n of ch) ev.push(['marimba', n + 12, .14, 1.4, .35]); ev.push(['marimba', 72, .28, 1.6, .35]);
+        ev.push(['bassoon', root, .3, .6, .15]); ev.push(['acoustic_bass', root, .2, 1.2, .1]); ev.push(['~bongo', 300, .7, 0, 0]); ev.push(['~ape', 1, .5, 0, 0, .35, .5]); }
+      return ev; }
+    if (mel != null) {
+      if (i % 4 === 0 && mel > 70) { ev.push(['marimba', mel - 1, .1, .1, .2]); ev.push(['marimba', mel, .3, .55, .25, .055]); }   // goofy slide-up
+      else ev.push(['marimba', mel, .28, .5, .25, sw]);
+    }
+    if (i === 0) { ev.push(['bassoon', root, .3, .22, .12]); ev.push(['acoustic_bass', root, .2, .4, .08]); }
+    if (i === 3) ev.push(['bassoon', root + 7, .22, .16, .12, sw]);
+    if (i === 4) { ev.push(['bassoon', root + 12 > 55 ? root : root + 12, .26, .2, .12]); ev.push(['acoustic_bass', root + 7, .14, .3, .08]); }
+    if (i === 2 || i === 6) for (const n of ch) ev.push(['marimba', n, .075, .25, .2]);          // off-beat chords
+    if (i === 7) for (const n of ch.slice(1)) ev.push(['marimba', n, .045, .2, .2, sw]);
+    // bongos (pitch in Hz) and a soft shaker on every eighth
+    const bg = { 0: [190, .55], 2: [300, .45], 3: [300, .3], 5: [300, .35], 6: [190, .5], 7: [340, .3] }[i];
+    if (bg) ev.push(['~bongo', bg[0], bg[1], 0, 0, sw]);
+    ev.push(['~shaker', 0, i % 2 ? .45 : .25, 0, 0, sw]);
+    if (b8 === 56) [72, 74, 76, 77, 79, 81, 83, 84].forEach((n, j) => ev.push(['xylophone', n, .1 + j * .012, .2, .2, j * .045]));   // goofy run up
+    if (b8 === 62) ev.push(['~slidewhistle', 0, .5, 0, 0]);
+    if (b8 === 20) ev.push(['~ape', 0, .32, 0, 0, 0, (k / 64) % 2 ? .6 : -.6]);                  // monkeys far away
+    if (b8 === 44 && sec[0] === 'B') ev.push(['~ape', 2, .28, 0, 0, 0, (k / 64) % 2 ? -.6 : .6]);
+    return ev; } }
 };
 export const STEPS = PLAN.length * 32;   // 256 eighth-notes = 32 bars
 function at(s) {

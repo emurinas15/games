@@ -217,6 +217,30 @@ const DRUM_FX = {
     const o = a.createOscillator(), og = a.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(230, t); o.frequency.exponentialRampToValueAtTime(170, t + .05);
     og.gain.setValueAtTime(.0001, t); og.gain.exponentialRampToValueAtTime(.18 * v, t + .004); og.gain.exponentialRampToValueAtTime(.0001, t + .09);
     o.connect(og); og.connect(bus); o.start(t); o.stop(t + .1); },
+  // Banana Head jungle (18 Nov): hand bongo (m = pitch in Hz) — quick pitch drop + a little skin slap
+  '~bongo'(t, v, bus, hz = 300) { const a = S.AC, o = a.createOscillator(), g = a.createGain(), w = a.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(hz * 1.45, t); o.frequency.exponentialRampToValueAtTime(hz, t + .025);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.42 * v, t + .003); g.gain.exponentialRampToValueAtTime(.0001, t + (hz > 250 ? .13 : .2));
+    w.gain.value = .25; o.connect(g); g.connect(bus); g.connect(w); w.connect(S.BUS.rev); o.start(t); o.stop(t + .25);
+    const s = noiseBuf(a, .025, 6), f = a.createBiquadFilter(), ng = a.createGain(); f.type = 'bandpass'; f.frequency.value = hz * 6; f.Q.value = 1.2; ng.gain.value = .18 * v;
+    s.connect(f); f.connect(ng); ng.connect(bus); s.start(t); },
+  // soft shaker: a short swell of bright seeds
+  '~shaker'(t, v, bus) { const a = S.AC, n = Math.floor(a.sampleRate * .08), b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < n; i++) { const x = i / n; d[i] = (Math.random() * 2 - 1) * Math.min(1, x / .3) * Math.pow(1 - x, 2); }
+    const s = a.createBufferSource(); s.buffer = b; const f = a.createBiquadFilter(), g = a.createGain(); f.type = 'highpass'; f.frequency.value = 6500; g.gain.value = .16 * v;
+    s.connect(f); f.connect(g); g.connect(bus); s.start(t); },
+  // goofy slide whistle: whoop up, then a little droop down
+  '~slidewhistle'(t, v, bus) { const a = S.AC, o = a.createOscillator(), g = a.createGain(), vib = a.createOscillator(), vd = a.createGain(), w = a.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(520, t); o.frequency.exponentialRampToValueAtTime(1700, t + .32); o.frequency.exponentialRampToValueAtTime(1250, t + .42); o.frequency.exponentialRampToValueAtTime(760, t + .7);
+    vib.frequency.value = 7; vd.gain.value = 18; vib.connect(vd); vd.connect(o.frequency);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.09 * v, t + .04); g.gain.setValueAtTime(.09 * v, t + .55); g.gain.exponentialRampToValueAtTime(.0001, t + .75);
+    w.gain.value = .35; o.connect(g); g.connect(bus); g.connect(w); w.connect(S.BUS.rev); o.start(t); vib.start(t); o.stop(t + .8); vib.stop(t + .8);
+    const s = noiseBuf(a, .7, 1), f = a.createBiquadFilter(), ng = a.createGain(); f.type = 'bandpass'; f.frequency.value = 2500; f.Q.value = .8;
+    ng.gain.setValueAtTime(.0001, t); ng.gain.exponentialRampToValueAtTime(.025 * v, t + .05); ng.gain.exponentialRampToValueAtTime(.0001, t + .7);
+    s.connect(f); f.connect(ng); ng.connect(bus); s.start(t); },
+  // a playful monkey call, voiced (buzzy source through two vowel formants). m: 0 = 'hoo-hoo-hoo-ah-ah' hoot series,
+  // 1 = happy cheer 'ooh-ooh-ah-ah-ah', 2 = curious 'ooh-ooh?'. Soft, rounded and a bit far away (reverb, no harsh screech).
+  '~ape'(t, v, bus, kind = 0, pan = 0) { APE(t, v, bus, kind, pan); },
   '~bubble'(t, v, bus, p = 1) { const a = S.AC, o = a.createOscillator(), g = a.createGain(), w = a.createGain();
     o.type = 'sine'; o.frequency.setValueAtTime(380 * p, t); o.frequency.exponentialRampToValueAtTime(1300 * p, t + .07);
     g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.3 * v, t + .006); g.gain.exponentialRampToValueAtTime(.0001, t + .09);
@@ -267,7 +291,7 @@ function playEvent([inst, m, v, len, wet, delay, pan, str], t) {
     const src = a.createBufferSource(); src.buffer = b; const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = .7;
     const g = a.createGain(); g.gain.value = v * 2; src.connect(f); f.connect(g); g.connect(S.BUS.music); src.start(t); return; }
   if (SPIDER_FX[inst]) { SPIDER_FX[inst](t, v, S.BUS.music); return; }
-  if (DRUM_FX[inst]) { DRUM_FX[inst](t, v, S.BUS.music, m); return; }
+  if (DRUM_FX[inst]) { DRUM_FX[inst](t, v, S.BUS.music, m, pan); return; }
   const g = playSample(S.AC, inst, m, t, v / .7, S.BUS.music, len);
   if (g) { if (wet) { const w = S.AC.createGain(); w.gain.value = wet; g.connect(w); w.connect(S.BUS.rev); } return; }
   if (m < 55) bass(m, t, v, Math.min(1, len)); else kalimba(m, t, v);
@@ -335,10 +359,71 @@ function lavaAmb(a,B){
   const life=()=>{if(!alive)return;const t=a.currentTime+.05,n=1+Math.floor(Math.random()*2);for(let k=0;k<n;k++)blub(t+k*.12);timers[1]=setTimeout(life,500+Math.random()*1300);};life();
   return ()=>{alive=false;timers.forEach(clearTimeout);try{src.stop(a.currentTime+.05)}catch(e){}};
 }
+/* monkey voice: one syllable = buzzy pitch glide f0a→f0b through formants that move from vowel A to vowel B */
+const VOW = { oo: [330, 780], oh: [470, 900], ah: [780, 1250], eh: [560, 1650] };
+function apeSyl(a, out, t, f0a, f0b, dur, va, vb, vol) {
+  const o = a.createOscillator(), vib = a.createOscillator(), vd = a.createGain(); o.type = 'sawtooth';
+  o.frequency.setValueAtTime(f0a, t); o.frequency.exponentialRampToValueAtTime(f0b, t + dur * .75);
+  vib.frequency.value = 9 + Math.random() * 3; vd.gain.value = f0a * .025; vib.connect(vd); vd.connect(o.frequency);
+  const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2600; o.connect(lp);
+  const e = a.createGain(); e.gain.setValueAtTime(.0001, t); e.gain.exponentialRampToValueAtTime(vol, t + Math.min(.04, dur * .3));
+  e.gain.setValueAtTime(vol, t + dur * .6); e.gain.exponentialRampToValueAtTime(.0001, t + dur); e.connect(out);
+  [[0, 1, 7], [1, .45, 9]].forEach(([fi, gv, q]) => { const f = a.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = q;
+    f.frequency.setValueAtTime(VOW[va][fi], t); f.frequency.linearRampToValueAtTime(VOW[vb][fi], t + dur * .8);
+    const g = a.createGain(); g.gain.value = gv * 2.2; lp.connect(f); f.connect(g); g.connect(e); });
+  o.start(t); vib.start(t); o.stop(t + dur + .02); vib.stop(t + dur + .02);
+}
+function APE(t, v, bus, kind = 0, pan = 0) {
+  const a = S.AC; if (!a) return; let out = a.createGain(); out.gain.value = v;
+  const w = a.createGain(); w.gain.value = .55; out.connect(w); w.connect(S.BUS.rev);   // a little far away
+  if (pan && a.createStereoPanner) { const p = a.createStereoPanner(); p.pan.value = pan; out.connect(p); p.connect(bus); } else out.connect(bus);
+  const p = .9 + Math.random() * .25, V = .12;
+  if (kind === 0) {        // hoo · hoo · hoo-hoo-hoo (rising, faster) · ah-ah
+    let tt = t; [0, .1, .2, .3, .42].forEach((k, n) => { const d = .2 - n * .022; apeSyl(a, out, tt, 300 * p * (1 + k), 380 * p * (1 + k), d, 'oo', 'oh', V * (.7 + n * .07)); tt += d + .1 - n * .014; });
+    apeSyl(a, out, tt + .04, 560 * p, 640 * p, .16, 'oh', 'ah', V * 1.1); apeSyl(a, out, tt + .26, 600 * p, 520 * p, .2, 'ah', 'ah', V);
+  } else if (kind === 1) { // happy cheer
+    apeSyl(a, out, t, 380 * p, 520 * p, .14, 'oo', 'oh', V); apeSyl(a, out, t + .2, 400 * p, 560 * p, .14, 'oo', 'oh', V);
+    [0, 1, 2].forEach(n => apeSyl(a, out, t + .42 + n * .17, 600 * p, 680 * p - n * 40, .13, 'eh', 'ah', V * 1.05));
+  } else {                 // curious 'ooh-ooh?'
+    apeSyl(a, out, t, 330 * p, 380 * p, .18, 'oo', 'oo', V); apeSyl(a, out, t + .28, 340 * p, 520 * p, .26, 'oo', 'oh', V);
+  }
+  setTimeout(() => { try { out.disconnect(); } catch (e) {} }, (t - a.currentTime + 3) * 1000);
+}
+export const monkeyCall = (kind = 1, v = .7, pan = 0) => { const a = audio(); if (a && S.BUS.sfx) APE(a.currentTime + .02, v, S.BUS.sfx, kind, pan); };
+/* jungle (Banana Head, 18 Nov): kept LIGHT — a faint leaf rustle, tropical bird calls now and then, and a monkey far away
+   every so often. No heavy drone. */
+function jungleAmb(a, B) {
+  const len = a.sampleRate * 4, buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const src = a.createBufferSource(); src.buffer = buf; src.loop = true;
+  const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2400; bp.Q.value = .5;
+  const g = a.createGain(); g.gain.value = .02; src.connect(bp); bp.connect(g); g.connect(B); src.start();
+  const timers = []; let alive = true;
+  const rustle = () => { if (!alive) return; g.gain.setTargetAtTime(.008 + Math.random() * .035, a.currentTime, .5); timers[0] = setTimeout(rustle, 600 + Math.random() * 1500); }; rustle();
+  const pan = (node, x) => { if (!a.createStereoPanner) { node.connect(B); return; } const p = a.createStereoPanner(); p.pan.value = x; node.connect(p); p.connect(B); };
+  const whistle = (t, f1, f2, f3, dur, vol, x) => { const o = a.createOscillator(), e = a.createGain(); o.type = 'sine';
+    o.frequency.setValueAtTime(f1, t); o.frequency.exponentialRampToValueAtTime(f2, t + dur * .45); o.frequency.exponentialRampToValueAtTime(f3, t + dur);
+    e.gain.setValueAtTime(.0001, t); e.gain.exponentialRampToValueAtTime(vol, t + .03); e.gain.setValueAtTime(vol, t + dur * .7); e.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(e); pan(e, x); const w = a.createGain(); w.gain.value = .5; e.connect(w); w.connect(S.BUS.rev); o.start(t); o.stop(t + dur + .02); };
+  const birds = [
+    (t, x) => { whistle(t, 1700, 2600, 1500, .32, .035, x); whistle(t + .4, 1700, 2600, 1500, .32, .03, x); },                 // 'wee-oo wee-oo'
+    (t, x) => { for (let k = 0; k < 6; k++) whistle(t + k * .07, 3100, 3500, 3000, .06, .02, x); },                         // little trill
+    (t, x) => { whistle(t, 2200, 2250, 2100, .14, .03, x); whistle(t + .2, 2900, 3000, 2800, .14, .028, x); whistle(t + .4, 2400, 2450, 2300, .2, .025, x); },   // three-note song
+    (t, x) => { whistle(t, 600, 640, 560, .3, .03, x); whistle(t + .45, 560, 600, 520, .4, .028, x); },                      // soft 'hoo-hoo' dove
+    (t, x) => { whistle(t, 1200, 2400, 900, .22, .03, x); }                                                                     // a quick 'whoop'
+  ];
+  const life = () => { if (!alive) return; const t = a.currentTime + .05, x = Math.random() * 1.6 - .8;
+    birds[Math.floor(Math.random() * birds.length)](t, x);
+    timers[1] = setTimeout(life, 1400 + Math.random() * 2600); }; timers[1] = setTimeout(life, 600);
+  const monkeys = () => { if (!alive) return; APE(a.currentTime + .05, .3 + Math.random() * .15, B, Math.random() < .5 ? 0 : 2, Math.random() * 1.6 - .8);
+    timers[2] = setTimeout(monkeys, 9000 + Math.random() * 8000); }; timers[2] = setTimeout(monkeys, 4000);
+  return () => { alive = false; timers.forEach(clearTimeout); try { src.stop(a.currentTime + .05); } catch (e) {} };
+}
 function ambStart() {
   const a = S.AC, B = S.BUS.amb;
   if (S.amb === 'none') return;
   if (S.amb === 'lava') { S.ambNode = { stop: lavaAmb(a, B) }; return; }
+  if (S.amb === 'jungle') { S.ambNode = { stop: jungleAmb(a, B) }; return; }
   if (S.amb !== 'night') { S.ambNode = { stop: pondAmb(a, B) }; return; }
   const len = a.sampleRate * 3, buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
   let l = 0; for (let i = 0; i < len; i++) { l = (l + .02 * (Math.random() * 2 - 1)) / 1.02; d[i] = l * 3.5; }
