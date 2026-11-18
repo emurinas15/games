@@ -184,3 +184,37 @@ export function drawMeadow(c, W, H, t) {
   c.fillStyle = '#8DD06E'; c.fillRect(0, H * .84, W, H * .16);
   c.fillStyle = '#A3DB82'; c.beginPath(); c.ellipse(W * .3, H * .93, W * .35, H * .05, 0, 0, 7); c.fill();
 }
+
+/* a column of thorny bramble (sticker style): from y0 to y1 at x, about w wide. Two twisted stems with thorns, leaves, a berry. */
+export function drawThorns(c, x, y0, y1, w, t, from = 'top') {
+  if (y1 - y0 < 4) return;
+  c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+  const len = y1 - y0, lw = Math.max(3, w * .09), n = Math.max(2, Math.round(len / (w * .9)));
+  const stem = ph => { const p = []; for (let i = 0; i <= 24; i++) { const k = i / 24, y = y0 + len * k; p.push([x + Math.sin(k * n * Math.PI + ph + Math.sin(t * 1.3) * .15) * w * .22, y]); } return p; };
+  for (const [ph, col] of [[0, '#7A5A3A'], [Math.PI, '#5E8F3E']]) {
+    const pts = stem(ph);
+    c.strokeStyle = INK; c.lineWidth = w * .2 + lw; c.beginPath(); pts.forEach(([a, b], i) => i ? c.lineTo(a, b) : c.moveTo(a, b)); c.stroke();
+    c.strokeStyle = col; c.lineWidth = w * .2; c.stroke();
+    // thorns
+    for (let i = 1; i < 24; i += 2) {
+      const [a, b] = pts[i], side = (i % 4 === 1 ? 1 : -1), th = new Path2D(), s = w * .2;
+      th.moveTo(a, b - s * .5); th.quadraticCurveTo(a + side * s * .9, b - s * .2, a + side * s * 1.5, b + (from === 'top' ? s * .6 : -s * .6)); th.quadraticCurveTo(a + side * s * .6, b + s * .2, a, b + s * .5); th.closePath();
+      sticker(c, th, '#E8D6A8', Math.max(1.6, lw * .45));
+    }
+  }
+  // a few leaves and a berry so it reads as a plant
+  for (let i = 0; i < n; i++) {
+    const ly = y0 + len * (i + .5) / n, d = i % 2 ? 1 : -1, p = new Path2D();
+    c.save(); c.translate(x + d * w * .2, ly); c.rotate(d * .6 + Math.sin(t * 2 + i) * .08); c.scale(d, 1);
+    p.moveTo(0, 0); p.quadraticCurveTo(w * .3, -w * .28, w * .7, 0); p.quadraticCurveTo(w * .3, w * .28, 0, 0); sticker(c, p, '#7DCB6B', Math.max(1.6, lw * .5)); c.restore();
+  }
+  const by = from === 'top' ? y1 - w * .15 : y0 + w * .15;
+  sticker(c, ell(x - w * .12, by, w * .14, w * .14), '#8B5CC9', Math.max(1.6, lw * .5)); sticker(c, ell(x + w * .08, by + w * .08, w * .12, w * .12), '#A274E0', Math.max(1.6, lw * .5));
+  c.restore();
+}
+
+/* little "ouch" stars around the bee */
+export function drawDizzy(c, x, y, s, t) {
+  for (let i = 0; i < 3; i++) { const a = t * 6 + i * 2.1, px = x + Math.cos(a) * s * 1.3, py = y - s * 1.1 + Math.sin(a) * s * .35;
+    c.save(); c.translate(px, py); c.rotate(a); const p = new Path2D(); for (let k = 0; k < 10; k++) { const r = k % 2 ? s * .12 : s * .28, b = k / 10 * Math.PI * 2 - Math.PI / 2; k ? p.lineTo(Math.cos(b) * r, Math.sin(b) * r) : p.moveTo(Math.cos(b) * r, Math.sin(b) * r); } p.closePath(); sticker(c, p, '#FFD84D', 2); c.restore(); }
+}

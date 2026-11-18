@@ -61,10 +61,12 @@ body.casting .toast{visibility:hidden}
     <div class="g-body">
       <p id="t-g1"></p>
       <div class="g-row"><span id="t-heights">Flowers</span>
-        <div class="seg multi" id="lvl-seg"><button data-v="high"></button><button data-v="mid"></button><button data-v="low"></button></div></div>
-      <div class="g-row"><span id="t-hold">Hold</span>
+        <div class="seg multi" id="lvl-seg"><button data-v="high"></button><button data-v="mid"></button></div></div>
+      <div class="g-row"><span id="t-thorns">Thorns</span>
+        <div class="seg" id="thorn-seg"><button data-v="off"></button><button data-v="on"></button><button data-v="hard"></button></div></div>
+      <div class="g-row"><span id="t-hold">Hold the squat</span>
         <div class="seg" id="hold-seg"><button data-v="1"></button><button data-v="1.5"></button><button data-v="3"></button></div></div>
-      <div class="g-row"><span id="t-sens">Jump size</span>
+      <div class="g-row"><span id="t-sens">Move size</span>
         <div class="seg" id="sens-seg"><button data-v="small"></button><button data-v="normal"></button></div></div>
       <div class="g-row"><span id="t-music">Music</span>
         <div class="seg" id="music-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
@@ -87,60 +89,64 @@ body.casting .toast{visibility:hidden}
 </div>
 
 <script type="module">
-/* Bee & Flowers — Edgar, 18 Nov 2026.
-   A bee sits on the child's head. Help it reach the flowers:
-     high flower (hangs from a vine)  -> stand under it and JUMP
-     middle flower (on a tall stem)   -> stand by it and SQUAT, hold 1.5 s
-     low flower (in the grass)        -> stand by it and get DOWN ON THE FLOOR (all fours / push-up / tummy), hold 1.5 s
-   When it counts, the bee flies off the head and homes in on the flower (aiming is loose on purpose: the movement is what
-   counts, a little "cheating" with the head is fine and funny). Flowers appear left / centre / right, so the child must
-   move across the room. 1 minute.
-   · 1 player: as many flowers as possible (best score kept on this device only).
-   · 2 players: the screen is split in two; both get a flower of the same height at the same moment; the first bee to
-     reach its flower wins the point.
-   Whole body in view, 2–3 m from a big screen (📺 cast) or a tablet. Heights are read from the body (see detect.js), so
-   walking closer to the screen or farther away doesn't fake a squat or a jump. Nothing is recorded or sent. */
-import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,camLoad,timeoutP} from '../shared/kit.js';
+/* Bee & Flowers — Edgar, 18 Nov 2026 (v2, same evening).
+   v1 needed the whole body and the floor in view: the phone had to be far away, and a phone leaning back can't see the
+   floor. v2 = UPPER BODY ONLY (like Jump Race): from the belt up, so a phone or tablet in a normal room works.
+   A bee sits on the child's head. Move from side to side, then:
+     high flower (hangs from a vine)   -> stand under it and JUMP — the bee finds it
+     low flower (on a stem)            -> stand by it and SQUAT, hold 1.5 s — the bee pollinates it
+   When it counts, the bee flies off the head and homes in on the flower (aiming is loose on purpose).
+   Thorns (grown-ups option, from the 3rd flower): a thorn column between the child and the flower.
+     from the top, down to just below the bee       -> walk a little bent over to pass under it (high flowers)
+     from the bottom, up to between squat and stand  -> walk upright to the flower, squat only when you're there
+     Hard: from the bottom, higher than the bee     -> jump over it
+   If the bee touches the thorns: "ouch", the flower wilts, a new one comes.
+   1 minute. 1 player: most flowers (best kept on this device only). 2 players: each child has their own half and their
+   own flowers (not a mirror); most flowers wins. Nothing is recorded or sent. */
+import {INK,$,LS,S,audio,tone,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,camLoad,timeoutP} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
 import {setupCast} from '../shared/cast.js';
 import {setupHowTo,bigStar,ease} from '../shared/howto.js';
 import {makeBody,stepBody} from './detect.js';
-import {drawBee,drawFlower,drawHolder,drawSpot,drawKid,drawGarden,drawMeadow,BOWS} from './art.js';
+import {drawBee,drawFlower,drawHolder,drawKid,drawGarden,drawMeadow,drawThorns,drawDizzy,BOWS} from './art.js';
 
-const ROUND=60,LEVELS=['high','mid','low'];
+const ROUND=60,LEVELS=['high','mid'],THORN_FROM=2;
 const UI={
  en:{title:"Bee & Flowers",sub:"Help the bee on your head reach the flowers!",play:"Play",solo:"1 player",duo:"2 players",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
-  g1:"A bee sits on the child's head. Flowers appear high, in the middle or low, on the left, in the middle or on the right. High flower: stand under it and jump. Middle flower: squat next to it and hold. Low flower: get down on the floor (on all fours, in a push-up position or on the tummy) and hold. Then the bee flies to the flower. The game reads the movement from the whole body, so walking closer to the screen or farther away doesn't count. 1 minute. 2 players: both get a flower at the same time; the first bee to reach its flower wins the point.",
-  heights:"Flowers",high:"High",mid:"Middle",low:"Low",hold:"Hold",sec:s=>s+" s",
-  sens:"Jump size",small:"Small jumps",normal:"Normal",music:"Music",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
-  g2:"★ Best on a big screen (📺) or a tablet. Put the phone or tablet on the floor or a low shelf, about 2–3 m away, so the camera sees the whole child, head to feet, with room above the head for jumps. 2 players: stand side by side, a little farther back.",
-  g3:"★ Turn off flower heights the child can't do yet (for example, no low flowers). Hold sets how long a squat or the floor position must be held.",
+  g1:"A bee sits on the child's head. Flowers appear on the left, in the middle or on the right. High flower: walk under it and jump. Low flower: walk to it, squat and hold. Then the bee flies to the flower. The camera only needs the upper body. Walking closer to the screen or farther away doesn't count as a squat or a jump. 1 minute. 2 players: each child has their own half of the screen and their own flowers; most flowers wins.",
+  heights:"Flowers",high:"High (jump)",mid:"Low (squat)",thorns:"Thorns",off:"Off",on:"On",hard:"Hard",hold:"Hold the squat",sec:s=>s+" s",
+  sens:"Move size",small:"Small",normal:"Normal",music:"Music",sfx:"Sound effects",mute:"Sound on or off",
+  g2:"★ Stand the phone or tablet up sideways (leaning back a little is fine), about 1.5–2 m away, so the camera sees the child from the belt up, with room above the head for jumps. A big screen (📺) is great too. 2 players: side by side, a little farther back.",
+  g3:"★ Thorns (from the 3rd flower): a thorny plant between the child and the flower. From the top: walk a little bent over to pass under it. From the bottom: walk upright to the flower and squat only when you get there. Hard: some thorns must be jumped over — hard for most children.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
-  ready:"Getting ready…",go:"Go!",turn:"Turn the phone sideways to play",nocam:"No camera here. Tap where the flower is to play.",aria:"Game area",
-  hJump:"Jump!",hMid:"Squat down!",hLow:"Down on the floor!",hGo:"Go to the flower!",feet:"Step back — show me your feet!",where:"Where are you?",
-  blue:"Blue",pink:"Pink",winL:"Blue wins!",winR:"Pink wins!",tie:"A tie!",flowers:"flowers",best:n=>"Best: "+n+" 🌼",newBest:"New record!",great:"Great job!",
-  playagain:"Play again",menu:"Menu",needOne:"Keep at least one flower height"},
+  ready:"Getting ready…",go:"Go!",turn:"Turn the phone sideways to play",nocam:"No camera here. Tap to play.",aria:"Game area",
+  two:"Two players, side by side!",closer:"Come a little closer",back:"Move back a little",lower:"Lower the phone a little",
+  hJump:"Jump!",hMid:"Squat down!",hGo:"Go to the flower!",tTop:"Bend down under the thorns!",tLow:"Walk tall over the thorns!",tTall:"Jump over the thorns!",ouch:"Ouch!",where:"Where are you?",
+  blue:"Blue",pink:"Pink",winL:"Blue wins!",winR:"Pink wins!",tie:"A tie!",best:n=>"Best: "+n+" 🌼",newBest:"New record!",great:"Great job!",
+  playagain:"Play again",menu:"Menu",needOne:"Keep at least one flower"},
  he:{title:"הדבורה והפרחים",sub:"עזרו לדבורה שעל הראש להגיע לפרחים!",play:"שחקו",solo:"שחקן אחד",duo:"2 שחקנים",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
-  g1:"דבורה יושבת על הראש של הילד. פרחים מופיעים למעלה, באמצע או למטה, משמאל, באמצע או מימין. פרח גבוה: עומדים מתחתיו וקופצים. פרח באמצע: מתכופפים לסקוואט לידו ומחזיקים. פרח נמוך: יורדים לרצפה (על ארבע, בתנוחת שכיבת סמיכה או על הבטן) ומחזיקים. ואז הדבורה עפה לפרח. המשחק קורא את התנועה מכל הגוף, כך שהתקרבות למסך או התרחקות ממנו לא נספרות. דקה אחת. 2 שחקנים: שניהם מקבלים פרח באותו רגע; הדבורה שמגיעה ראשונה לפרח שלה זוכה בנקודה.",
-  heights:"פרחים",high:"גבוה",mid:"אמצע",low:"נמוך",hold:"החזקה",sec:s=>s+" שנ׳",
-  sens:"גודל קפיצה",small:"קפיצות קטנות",normal:"רגיל",music:"מוזיקה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
-  g2:"★ הכי טוב על מסך גדול (📺) או טאבלט. הניחו את הטלפון או הטאבלט על הרצפה או על מדף נמוך, במרחק 2–3 מטר, כך שהמצלמה רואה את כל הילד, מהראש עד כפות הרגליים, עם מקום מעל הראש לקפיצות. 2 שחקנים: עומדים זה לצד זה, קצת יותר רחוק.",
-  g3:"★ כבו גבהים שהילד עדיין לא מצליח (למשל בלי פרחים נמוכים). ״החזקה״ קובע כמה זמן מחזיקים את הסקוואט או את התנוחה על הרצפה.",
+  g1:"דבורה יושבת על הראש של הילד. פרחים מופיעים משמאל, באמצע או מימין. פרח גבוה: הולכים מתחתיו וקופצים. פרח נמוך: הולכים אליו, מתכופפים לסקוואט ומחזיקים. ואז הדבורה עפה לפרח. המצלמה צריכה לראות רק את פלג הגוף העליון. התקרבות למסך או התרחקות ממנו לא נספרות כסקוואט או כקפיצה. דקה אחת. 2 שחקנים: לכל ילד חצי מסך ופרחים משלו; מי שאוסף יותר פרחים מנצח.",
+  heights:"פרחים",high:"גבוה (קפיצה)",mid:"נמוך (סקוואט)",thorns:"קוצים",off:"בלי",on:"עם",hard:"קשה",hold:"החזקת סקוואט",sec:s=>s+" שנ׳",
+  sens:"גודל תנועה",small:"קטן",normal:"רגיל",music:"מוזיקה",sfx:"צלילים במשחק",mute:"הפעלת או השתקת קול",
+  g2:"★ העמידו את הטלפון או הטאבלט לרוחב (מותר שיהיה נטוי קצת אחורה), במרחק 1.5–2 מטר, כך שהמצלמה רואה את הילד מהחגורה ומעלה, עם מקום מעל הראש לקפיצות. גם מסך גדול (📺) מצוין. 2 שחקנים: זה לצד זה, קצת יותר רחוק.",
+  g3:"★ קוצים (מהפרח השלישי): צמח קוצני בין הילד לפרח. מלמעלה: הולכים קצת כפופים כדי לעבור מתחתיו. מלמטה: הולכים זקוף עד הפרח ומתכופפים רק כשמגיעים. קשה: על חלק מהקוצים צריך לקפוץ — קשה לרוב הילדים.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
-  ready:"מתכוננים…",go:"יוצאים!",turn:"סובבו את הטלפון לרוחב כדי לשחק",nocam:"אין כאן מצלמה. הקישו איפה שהפרח כדי לשחק.",aria:"אזור המשחק",
-  hJump:"קופצים!",hMid:"מתכופפים!",hLow:"יורדים לרצפה!",hGo:"הולכים לפרח!",feet:"זוזו אחורה — תראו לי את הרגליים!",where:"איפה אתם?",
-  blue:"כחול",pink:"ורוד",winL:"הכחול ניצח!",winR:"הוורוד ניצח!",tie:"תיקו!",flowers:"פרחים",best:n=>"שיא: "+n+" 🌼",newBest:"שיא חדש!",great:"כל הכבוד!",
-  playagain:"עוד פעם",menu:"תפריט",needOne:"צריך להשאיר לפחות גובה אחד"}
+  ready:"מתכוננים…",go:"יוצאים!",turn:"סובבו את הטלפון לרוחב כדי לשחק",nocam:"אין כאן מצלמה. הקישו כדי לשחק.",aria:"אזור המשחק",
+  two:"שני שחקנים, זה לצד זה!",closer:"התקרבו קצת",back:"התרחקו קצת",lower:"הנמיכו קצת את הטלפון",
+  hJump:"קופצים!",hMid:"מתכופפים!",hGo:"הולכים לפרח!",tTop:"מתכופפים מתחת לקוצים!",tLow:"הולכים זקוף מעל הקוצים!",tTall:"קופצים מעל הקוצים!",ouch:"אאוץ׳!",where:"איפה אתם?",
+  blue:"כחול",pink:"ורוד",winL:"הכחול ניצח!",winR:"הוורוד ניצח!",tie:"תיקו!",best:n=>"שיא: "+n+" 🌼",newBest:"שיא חדש!",great:"כל הכבוד!",
+  playagain:"עוד פעם",menu:"תפריט",needOne:"צריך להשאיר לפחות פרח אחד"}
 };
 
 let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
 let mode=LS.get('bee-mode','solo'); if(!['solo','duo'].includes(mode))mode='solo';
-let levels=(LS.get('bee-lv','high,mid,low')||'').split(',').filter(l=>LEVELS.includes(l)); if(!levels.length)levels=[...LEVELS];
+let levels=(LS.get('bee-lv2','high,mid')||'').split(',').filter(l=>LEVELS.includes(l)); if(!levels.length)levels=[...LEVELS];
+let thorns=LS.get('bee-thorns','off'); if(!['off','on','hard'].includes(thorns))thorns='off';
 let hold=+LS.get('bee-hold','1.5'); if(![1,1.5,3].includes(hold))hold=1.5;
-let sens=LS.get('bee-sens','normal'); if(!['small','normal'].includes(sens))sens='normal';
-let best=+LS.get('bee-best','0')||0;
+let sens=LS.get('bee-size','normal'); if(!['small','normal'].includes(sens))sens='normal';
+let best=+LS.get('bee-best2','0')||0;
 const QS=new URLSearchParams(location.search),FAKE=QS.has('fake'),SPEED=FAKE?(+QS.get('speed')||1):1;   // ?fake = no camera, tap to play (testing)
 S.track='meadow'; S.amb='none'; S.ambOn=false;   // pizzicato strings + harp + flute (songs.js)
 const syncSound=bindSound(()=>UI[lang]);
@@ -150,6 +156,7 @@ const cast=setupCast({canvas:$('c'),button:$('cast'),lang:()=>lang,sound:()=>(au
 function segs(){
   const u=UI[lang];
   document.querySelectorAll('#lvl-seg button').forEach(b=>{b.textContent=u[b.dataset.v];b.setAttribute('aria-pressed',levels.includes(b.dataset.v));});
+  document.querySelectorAll('#thorn-seg button').forEach(b=>{b.textContent=u[b.dataset.v];b.setAttribute('aria-pressed',b.dataset.v===thorns);});
   document.querySelectorAll('#hold-seg button').forEach(b=>{b.textContent=u.sec(b.dataset.v);b.setAttribute('aria-pressed',+b.dataset.v===hold);});
   document.querySelectorAll('#sens-seg button').forEach(b=>{b.textContent=u[b.dataset.v];b.setAttribute('aria-pressed',b.dataset.v===sens);});
   document.querySelectorAll('#modes .lv').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===mode));
@@ -159,7 +166,7 @@ let lastRes=null;
 function setLang(l){
   lang=l;LS.set('bamboo-lang',l);const u=UI[l];
   document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
-  for(const k of ['title','sub','play','privacy','grown','g1','heights','hold','sens','music','sfx','g2','g3','legal','solo','duo'])
+  for(const k of ['title','sub','play','privacy','grown','g1','heights','thorns','hold','sens','music','sfx','g2','g3','legal','solo','duo'])
     {const e=$('t-'+k);if(e)e.textContent=u[k];}
   $('t-privacy2').textContent=u.privacy;$('menu').textContent=u.menu;document.title=u.title+' · Bamboo Physio';
   $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
@@ -169,9 +176,10 @@ function setLang(l){
 $('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
 document.querySelectorAll('#lvl-seg button').forEach(b=>b.onclick=()=>{const v=b.dataset.v;
   if(levels.includes(v)){if(levels.length===1){toast(UI[lang].needOne,2500);return;}levels=levels.filter(x=>x!==v);}else levels=LEVELS.filter(x=>x===v||levels.includes(x));
-  LS.set('bee-lv',levels.join(','));SFX.tink();segs();});
+  LS.set('bee-lv2',levels.join(','));SFX.tink();segs();});
+document.querySelectorAll('#thorn-seg button').forEach(b=>b.onclick=()=>{thorns=b.dataset.v;LS.set('bee-thorns',thorns);SFX.tink();segs();});
 document.querySelectorAll('#hold-seg button').forEach(b=>b.onclick=()=>{hold=+b.dataset.v;LS.set('bee-hold',String(hold));SFX.tink();segs();});
-document.querySelectorAll('#sens-seg button').forEach(b=>b.onclick=()=>{sens=b.dataset.v;LS.set('bee-sens',sens);SFX.tink();segs();});
+document.querySelectorAll('#sens-seg button').forEach(b=>b.onclick=()=>{sens=b.dataset.v;LS.set('bee-size',sens);SFX.tink();segs();});
 document.querySelectorAll('#modes .lv').forEach(b=>b.onclick=()=>{mode=b.dataset.m;LS.set('bee-mode',mode);SFX.tink();segs();});
 
 /* ================= CANVAS ================= */
@@ -187,6 +195,7 @@ const FX={
   sip(k=0){const f=[660,740][k]||660;tone({f0:f,f1:f*1.6,dur:.12,type:'sine',vol:.22});SFX.sparkle();},
   bud(){tone({f0:420,f1:620,dur:.1,type:'triangle',vol:.1});},
   grow(p){tone({f0:500+p*600,dur:.07,type:'sine',vol:.07});},
+  ouch(){tone({f0:900,f1:420,dur:.25,type:'triangle',vol:.2});tone({f0:300,f1:200,dur:.3,type:'sine',vol:.12,at:.08});},
   wilt(){tone({f0:440,f1:300,dur:.35,type:'triangle',vol:.1});},
   whistle(){tone({f0:1900,f1:2100,dur:.5,type:'sine',vol:.14});tone({f0:2000,f1:2250,dur:.5,type:'sine',vol:.08});},
   win(){[784,988,1175,1568].forEach((f,i)=>tone({f0:f,dur:.28,type:'triangle',vol:.28,at:i*.08}));}
@@ -202,9 +211,8 @@ async function startCam(){
   video.srcObject=stream;await video.play();
   const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
   const files=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
-  // the child stands far back -> small in the picture: 'full' model first, lower confidence (as in Floor Is Lava)
   const opts=(d,k)=>({baseOptions:{modelAssetPath:`https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_${k}/float16/1/pose_landmarker_${k}.task`,delegate:d},
-    runningMode:'VIDEO',numPoses:2,minPoseDetectionConfidence:.4,minPosePresenceConfidence:.4,minTrackingConfidence:.4});
+    runningMode:'VIDEO',numPoses:2,minPoseDetectionConfidence:.45,minPosePresenceConfidence:.45,minTrackingConfidence:.45});
   let err=null;
   for(const [d,k] of [['GPU','full'],['GPU','lite'],['CPU','lite']]){try{tracker=await timeoutP(vision.PoseLandmarker.createFromOptions(files,opts(d,k)),d==='GPU'?30000:120000);break;}catch(e){err=e;}}
   if(!tracker)throw err||new Error('model');
@@ -215,18 +223,19 @@ function track(now){
   let res;try{res=tracker.detectForVideo(video,now);}catch(e){return false;}
   const m=vmap(),L=res.landmarks||[];
   people=L.map(lm=>{const p=lm.map(q=>({x:m.ox+(1-q.x)*m.vw*m.s,y:m.oy+q.y*m.vh*m.s,v:q.visibility??1}));
-    return {lm:p,nose:p[0],sw:Math.hypot(p[11].x-p[12].x,p[11].y-p[12].y),cx:(p[11].x+p[12].x)/2};}).filter(p=>p.lm[11].v>.4&&p.lm[12].v>.4);
+    return {lm:p,nose:p[0],sw:Math.hypot(p[11].x-p[12].x,p[11].y-p[12].y),cx:(p[11].x+p[12].x)/2};}).filter(p=>p.lm[0].v>.5);
   people.sort((a,b)=>a.cx-b.cx);
   if(mode==='solo'&&people.length>1)people=[people.reduce((a,b)=>b.sw>a.sw?b:a)];   // 1 player: the closest person
   return true;
 }
-const seen=(p,i)=>p.lm[i].v>.4;
-const obsOf=p=>p?{x:p.nose.x,y:p.nose.y,size:p.sw,feet:(seen(p,27)||seen(p,29)||seen(p,31))&&(seen(p,28)||seen(p,30)||seen(p,32))}:null;
+/* setup check for 2 players (as Jump Race): each one close enough, head with room above it */
+function fit(p){ if(p.lm[0].v<.5)return 'find'; if(p.sw<W*.08)return 'closer'; if(p.sw>W*.3)return 'back'; if(p.nose.y<H*.25)return 'lower'; return ''; }
 
 /* ================= PLAYERS / LANES ================= */
 function lanes(){return mode==='duo'?[{x:0,w:W/2},{x:W/2,w:W/2}]:[{x:0,w:W}];}
-function makePlayer(k){return {k,body:makeBody(),score:0,flower:null,bee:{x:W/2,y:H/2,vx:0,vy:0,st:'head',t:0,from:null,to:null,dir:1,mood:'happy'},
-  hx:null,hy:null,ref:null,holdT:0,okT:0,lastPose:'none',feetT:0,seenT:-9,pop:-9,fake:{x:0,pose:'stand',jumpT:-9}};}
+function makePlayer(k){return {k,body:makeBody(),score:0,n:0,flower:null,col:null,bee:{x:W/2,y:H/2,st:'head',t:0,from:null,to:null,dir:1,mood:'happy'},
+  hx:null,headX:null,headY:null,ref:null,holdT:0,okT:0,lastPose:'none',seenT:-9,pop:-9,ouchT:-9,nextT:0,near:false,
+  fake:{x:0,pose:'stand',jumpT:-9,jumpQ:false}};}
 let players=[];
 function personFor(k){   // which tracked person plays in lane k
   if(mode==='solo')return people[0]||null;
@@ -234,36 +243,53 @@ function personFor(k){   // which tracked person plays in lane k
   const p=people[0];if(!p)return null;return (p.cx<W/2?0:1)===k?p:null;
 }
 
-/* ================= FLOWERS ================= */
-let state='menu',tNow=0,countT=0,lastCount=9,elapsed=0,guide=null,guides=[],pops=[],lastSec=99,levelHist=[],nextT=0,roundWinner=-1;
-function pickLevel(){
-  let opts=levels.filter(l=>!(levelHist.length>=2&&levelHist.at(-1)===l&&levelHist.at(-2)===l));if(!opts.length)opts=levels;
-  const l=opts[Math.floor(Math.random()*opts.length)];levelHist.push(l);return l;
+/* ================= FLOWERS + THORNS ================= */
+let state='menu',tNow=0,countT=0,lastCount=9,elapsed=0,guide=null,setupT=0,pops=[],lastSec=99;
+const beeOff=P=>flowerSize(P)*.55;                      // the bee sits this far above the top of the head
+const beeStandY=P=>(P.ref?P.ref.standY:H*.3)-beeOff(P);
+const U=P=>P.ref?P.ref.u:H*.25;
+function pickLevel(P){
+  const h=P.hist||(P.hist=[]);let opts=levels.filter(l=>!(h.length>=2&&h.at(-1)===l&&h.at(-2)===l));if(!opts.length)opts=levels;
+  const l=opts[Math.floor(Math.random()*opts.length)];h.push(l);return l;
 }
-function spawn(){
-  const lv=pickLevel(),L=lanes();roundWinner=-1;
-  players.forEach(P=>{
-    const ln=L[P.k],px=P.hx??ln.x+ln.w/2,slots=[.2,.5,.8].map(f=>ln.x+ln.w*f);
-    // somewhere the child has to walk to (not where they stand now) — never the same slot twice in a row
-    let far=slots.filter(x=>Math.abs(x-px)>ln.w*.22&&(!P.flower||Math.abs(x-P.flower.x)>2));if(!far.length)far=slots;
-    const x=far[Math.floor(Math.random()*far.length)];
-    P.flower={lv,x,y:0,open:0,born:tNow,st:'wait',t:0,sway:0};P.holdT=0;P.okT=0;
-  });
+function spawn(P){
+  const lv=pickLevel(P),ln=lanes()[P.k],px=P.hx??ln.x+ln.w/2,slots=[.15,.5,.85].map(f=>ln.x+ln.w*f);
+  // somewhere the child has to walk to, never the same slot twice in a row
+  let far=slots.filter(x=>Math.abs(x-px)>ln.w*.22&&(!P.flower||Math.abs(x-P.flower.x)>2));if(!far.length)far=slots;
+  const x=far[Math.floor(Math.random()*far.length)];
+  P.flower={lv,x,y:0,open:0,born:tNow,st:'wait',t:0};P.holdT=0;P.okT=0;P.n++;P.col=null;P.bee.mood='happy';
+  // a thorn column between the child and the flower (grown-ups option, from the 3rd flower)
+  const u=U(P);
+  if(thorns!=='off'&&P.n>THORN_FROM&&Math.random()<.75&&Math.abs(x-px)>u*1.4){
+    let kind=lv==='high'?'top':'low';
+    if(thorns==='hard'&&lv==='mid'&&Math.random()<.5)kind='tall';
+    P.col={kind,x:(x+px)/2,side:Math.sign(px-x),w:Math.max(26,u*.42),t:0,hit:false,passed:false};
+  }
   FX.bud();
 }
-/* where the flower sits on the screen: from the child's own standing size (so it fits the child, near or far) */
+/* thorn column top/bottom on screen, from the child's standing size */
+function colSpan(P){
+  const c=P.col,by=beeStandY(P),u=U(P);
+  if(c.kind==='top')return [-20,by+u*.4];            // the bee must come down ~0.4 shoulder widths: walk a little bent over
+  if(c.kind==='low')return [by+u*.6,H+20];           // upright (even a bit hunched) passes, squatting doesn't
+  return [by-u*.15,H+20];                            // tall (Hard): only a jump clears it
+}
+/* where the flower sits: from the child's own standing size (fits near or far) */
 function placeFlower(P,dt){
-  const f=P.flower,R=P.ref||{floor:H*.92,h:H*.55};
-  const y=f.lv==='high'?Math.max(96+flowerSize(P),R.floor-R.h*1.3):f.lv==='mid'?R.floor-R.h*.6:R.floor-R.h*.17;
+  const f=P.flower,by=beeStandY(P),u=U(P),sz=flowerSize(P);
+  const y=f.lv==='high'?Math.max(96+sz,by-u*.75):Math.min(H-sz*1.4,by+u*1.25);
   f.y=f.y?f.y+(y-f.y)*Math.min(1,dt*2):y;
 }
-const flowerSize=P=>Math.max(26,Math.min(70,(P.ref?P.ref.h:H*.5)*.13));
-const reach=P=>{const ln=lanes()[P.k];return ln.w*.16+(P.ref?P.ref.h*.15:30);};   // loose on purpose
+const flowerSize=P=>Math.max(24,Math.min(64,(P.ref?P.ref.u:H*.25)*.36));
+const reach=P=>lanes()[P.k].w*.09+U(P)*.45;   // loose on purpose
 
 function success(P){
   const f=P.flower;if(!f||f.st!=='wait')return;
   f.st='hit';f.t=0;P.holdT=0;const b=P.bee;b.st='fly';b.t=0;b.from={x:b.x,y:b.y};b.to={x:f.x,y:f.y};FX.buzz();
-  if(mode==='duo'&&roundWinner<0){roundWinner=P.k;players.forEach(Q=>{if(Q!==P&&Q.flower&&Q.flower.st==='wait'){Q.flower.st='lost';Q.flower.t=0;Q.bee.mood='sad';Q.holdT=0;}});}
+}
+function ouch(P){
+  const f=P.flower;if(!f||f.st!=='wait')return;
+  P.col.hit=true;P.ouchT=tNow;f.st='lost';f.t=0;P.holdT=0;P.bee.mood='sad';FX.ouch();setTimeout(FX.wilt,250);
 }
 
 /* ================= GAME ================= */
@@ -273,36 +299,37 @@ async function play(){
   if(!camOK&&!FAKE){toast(UI[lang].ready,0);state='loading';
     try{await camLoad(startCam);$('toast').classList.remove('on');}
     catch(e){console.warn(e);toast(UI[lang].nocam,6000);}}
-  players=lanes().map((_,k)=>makePlayer(k));elapsed=0;pops=[];lastRes=null;lastSec=99;levelHist=[];
+  players=lanes().map((_,k)=>makePlayer(k));elapsed=0;pops=[];lastRes=null;lastSec=99;
   players.forEach(P=>{const ln=lanes()[P.k];P.fake.x=ln.x+ln.w/2;});
   $('stopx').classList.add('on');musicStart();
-  guide=null;guides=[];
-  const gt={en:{find:'Stand in front of the camera'},he:{find:'עמדו מול המצלמה'}};
-  if(camOK){if(mode==='solo'){guide=makeGuide('full',{},gt);guide.reset();}else{guides=[makeGuide('full',{},gt),makeGuide('full',{},gt)];guides.forEach(g=>g.reset());}}
+  guide=null;setupT=0;
+  if(camOK&&mode==='solo'){guide=makeGuide('reach',{},{en:{find:'Stand in front of the camera'},he:{find:'עמדו מול המצלמה'}});guide.reset();}
   state=camOK?'setup':'count';countT=tNow;lastCount=9;
 }
 $('play').onclick=play;$('again').onclick=()=>play();
 $('menu').onclick=()=>{$('end').hidden=true;$('start').hidden=false;state='menu';segs();};
 $('stopx').onclick=()=>endGame(true);
 
-/* no camera (or ?fake): tap where the flower is. Tap high = jump there; press and hold low/middle = get down there. */
+/* no camera (or ?fake): a cartoon child follows your finger. Tap above its head = jump; hold a little lower = walk bent
+   over; hold low = squat. */
 let press=null;
 cv.addEventListener('pointerdown',e=>{if(camOK||state!=='play')return;press={x:e.clientX,y:e.clientY};fakeAt(press,true);});
 cv.addEventListener('pointermove',e=>{if(press){press={x:e.clientX,y:e.clientY};fakeAt(press,false);}});
 addEventListener('pointerup',()=>{press=null;players.forEach(P=>P.fake.pose='stand');});
 function fakeAt(p,down){
-  const k=mode==='duo'&&p.x>W/2?1:0,P=players[k];if(!P)return;P.fake.x=p.x;
-  const R=P.ref,fl=R?R.floor:H*.92,h=R?R.h:H*.55,r=(fl-p.y)/h;
-  if(r>1.05){P.fake.pose='stand';if(down){P.fake.jumpT=tNow;P.fake.jumpQ=true;}} else P.fake.pose=r>.4?'mid':'low';
+  const k=mode==='duo'&&p.x>W/2?1:0,P=players[k];if(!P||!P.ref)return;P.fake.x=p.x;
+  const r=(p.y-P.ref.standY)/P.ref.u;
+  if(r<-.3){P.fake.pose='stand';if(down){P.fake.jumpT=tNow;P.fake.jumpQ=true;}}
+  else P.fake.pose=r<.3?'stand':r<.8?'bent':'squat';
 }
 
 function endGame(quit){
-  state='over';musicStop();$('stopx').classList.remove('on');if(guide)guide.hide();guides.forEach(g=>g.hide());
+  state='over';musicStop();$('stopx').classList.remove('on');if(guide)guide.hide();
   if(quit){state='menu';$('start').hidden=false;segs();return;}
   FX.whistle();
   const a=players[0].score,b=players[1]?players[1].score:0;
   lastRes={mode,a,b,newBest:false};
-  if(mode==='solo'&&a>best){lastRes.newBest=best>0;best=a;LS.set('bee-best',String(best));}
+  if(mode==='solo'&&a>best){lastRes.newBest=best>0;best=a;LS.set('bee-best2',String(best));}
   if(mode==='solo'||a!==b){setTimeout(FX.win,500);confetti();}
   fillEnd();$('end').hidden=false;
 }
@@ -314,67 +341,73 @@ function fillEnd(){
   $('t-again').textContent=u.playagain;$('t-privacy2').textContent=u.privacy;
 }
 function confetti(){for(let i=0;i<40;i++)pops.push({x:W*(.2+Math.random()*.6),y:H*.35,vx:(Math.random()-.5)*W*.9,vy:-H*(.4+Math.random()*.7),life:1.6+Math.random()*.6,c:['#FFD84D','#FF9FB0','#7DCB6B','#B79CF2'][i%4]});}
-function petals(x,y,lv){const cs={high:'#FF9FB0',mid:'#FFB547',low:'#B79CF2'};for(let i=0;i<14;i++){const a=i/14*6.28;pops.push({x,y,vx:Math.cos(a)*H*.35,vy:Math.sin(a)*H*.35-H*.2,life:.9+Math.random()*.4,c:i%2?'#FFD84D':cs[lv],petal:1});}}
+function petals(x,y,lv){const cs={high:'#FF9FB0',mid:'#FFB547'};for(let i=0;i<14;i++){const a=i/14*6.28;pops.push({x,y,vx:Math.cos(a)*H*.35,vy:Math.sin(a)*H*.35-H*.2,life:.9+Math.random()*.4,c:i%2?'#FFD84D':cs[lv],petal:1});}}
 
 const portraitPlay=()=>H>W*1.05&&['setup','count','play'].includes(state);
 
-/* one frame for one player: read the body, move the bee, check the flower */
-function stepPlayer(P,dt,now,fresh,learn){
+/* one frame for one player: read the body, move the bee, check thorns and the flower */
+function stepPlayer(P,dt,now,fresh){
   let pose='none',jumped=false;
   if(camOK){
     const p=personFor(P.k);
-    if(p&&fresh){const r=stepBody(P.body,p.lm,now,{jump:sens,learn});pose=r.pose;jumped=r.jumped;P.seenT=tNow;
-      P.feetT=P.body.feet?0:P.feetT+dt;
-      if(P.body.head){P.hx=P.body.x;const hd=P.body.head;P.headX=hd.x;P.headY=hd.y;}
-      if(P.body.R0&&P.body.floor){const h=P.body.R0*P.body.sw;
-        if(!P.ref)P.ref={floor:P.body.floor,h};
-        else if(pose==='stand'&&P.body.feet){const k=Math.min(1,dt*1.5);P.ref.floor+=(P.body.floor-P.ref.floor)*k;P.ref.h+=(h-P.ref.h)*k;}}}
-    else if(!p){pose='none';}
-    else pose=P.lastPose;
+    if(p&&fresh){const r=stepBody(P.body,p.lm,now,{size:sens});pose=r.pose;jumped=r.jumped;
+      if(P.body.head&&P.body.u){P.seenT=tNow;P.hx=P.body.x;P.headX=P.body.head.x;P.headY=P.body.head.y;
+        if(!P.ref)P.ref={standY:P.body.standY,u:P.body.u};else{const k=Math.min(1,dt*3);P.ref.standY+=(P.body.standY-P.ref.standY)*k;P.ref.u+=(P.body.u-P.ref.u)*k;}}}
+    else if(p)pose=P.lastPose;
   } else {   // tap / no-camera: a cartoon child stands in for the camera
-    const F=P.fake,R=P.ref||(P.ref={floor:H*.92,h:Math.min(H*.55,H*.92-H*.11-60)});
-    P.hx=F.x;pose=F.pose;jumped=!!F.jumpQ;F.jumpQ=false;P.seenT=tNow;
-    const lift=tNow-F.jumpT<.45?Math.sin((tNow-F.jumpT)/.45*Math.PI)*R.h*.25:0;
-    P.headX=F.x;P.headY=R.floor-R.h*(pose==='stand'?1:pose==='mid'?.7:.26)-lift;
+    const F=P.fake;if(!P.ref)P.ref={standY:H*.3,u:H*.24};const R=P.ref;
+    P.hx=F.x;pose=F.pose==='squat'?'squat':'stand';jumped=F.jumpQ;F.jumpQ=false;P.seenT=tNow;
+    const lift=tNow-F.jumpT<.45?Math.sin((tNow-F.jumpT)/.45*Math.PI)*R.u*.55:0;
+    P.headX=F.x;P.headY=R.standY+R.u*(F.pose==='squat'?1.25:F.pose==='bent'?.6:0)-lift;
   }
   P.lastPose=pose;
   const f=P.flower,b=P.bee,sz=flowerSize(P);
   // the bee
-  const onHead=b.st==='head'&&P.headX!=null&&tNow-P.seenT<1;
+  const onHead=P.headX!=null&&tNow-P.seenT<1;
   if(b.st==='head'){
-    const tx=onHead?P.headX:(lanes()[P.k].x+lanes()[P.k].w/2),ty=onHead?P.headY-sz*.55:H*.35;
-    const k=Math.min(1,dt*14);b.x+=(tx-b.x)*k;b.y+=(ty+Math.sin(tNow*5+P.k)*sz*.08-b.y)*k;
+    const tx=onHead?P.headX:(lanes()[P.k].x+lanes()[P.k].w/2),ty=onHead?P.headY-beeOff(P):H*.3;
+    const k=Math.min(1,dt*16);b.x+=(tx-b.x)*k;b.y+=(ty+Math.sin(tNow*5+P.k)*sz*.06-b.y)*k;
     if(f)b.dir=f.x>b.x?1:-1;
   } else if(b.st==='fly'){
     b.t+=dt;const T=.85,k=ease(Math.min(1,b.t/T)),to=b.to;
-    // a happy little loop on the way
-    const mx=(b.from.x+to.x)/2,my=Math.min(b.from.y,to.y)-sz*2.2;
+    const mx=(b.from.x+to.x)/2,my=Math.min(b.from.y,to.y)-sz*2.2;   // a happy little loop on the way
     const x=(1-k)*(1-k)*b.from.x+2*(1-k)*k*mx+k*k*to.x,y=(1-k)*(1-k)*b.from.y+2*(1-k)*k*my+k*k*(to.y-sz*.7);
     b.dir=to.x>=b.x?1:-1;b.x=x+Math.sin(k*Math.PI*2)*sz*.4*(1-k);b.y=y;
-    if(b.t>=T){b.st='sip';b.t=0;b.mood='sip';P.score++;P.pop=tNow;FX.sip(P.k);petals(f.x,f.y,f.lv);if(f)f.st='sipped';}
+    if(b.t>=T){b.st='sip';b.t=0;b.mood='sip';P.score++;P.pop=tNow;FX.sip(P.k);if(f){petals(f.x,f.y,f.lv);f.st='sipped';}}
   } else if(b.st==='sip'){
-    b.t+=dt;b.x=f?f.x+Math.sin(b.t*14)*sz*.08:b.x;b.y=f?f.y-sz*.75:b.y;
+    b.t+=dt;if(f){b.x=f.x+Math.sin(b.t*14)*sz*.08;b.y=f.y-sz*.75;}
     if(b.t>=.7){b.st='home';b.t=0;b.mood='happy';b.from={x:b.x,y:b.y};}
   } else if(b.st==='home'){
-    b.t+=dt;const T=.55,k=ease(Math.min(1,b.t/T)),tx=P.headX??b.from.x,ty=(P.headY??b.from.y)-sz*.55;
+    b.t+=dt;const T=.55,k=ease(Math.min(1,b.t/T)),tx=P.headX??b.from.x,ty=(P.headY??b.from.y)-beeOff(P);
     b.x=b.from.x+(tx-b.from.x)*k;b.y=b.from.y+(ty-b.from.y)*k-Math.sin(k*Math.PI)*sz;
-    if(b.t>=T){b.st='head';}
+    if(b.t>=T)b.st='head';
   }
   if(!f)return;
   f.t+=dt;placeFlower(P,dt);
+  // thorns: the bee on the head must not touch them on the way
+  const c=P.col;
+  if(c){c.t+=dt;
+    if(f.st==='wait'&&b.st==='head'&&onHead&&!c.hit){
+      const [y0,y1]=colSpan(P),r=sz*.45;
+      if(Math.abs(b.x-c.x)<c.w*.45+r*.6&&b.y+r*.5>y0&&b.y-r*.5<y1)ouch(P);
+      else if(Math.sign(b.x-c.x)===-c.side&&Math.abs(b.x-c.x)>c.w)c.passed=true;
+    }}
   if(f.st==='wait'){
-    const near=P.hx!=null&&Math.abs(P.hx-f.x)<reach(P);P.near=near;
+    const near=P.hx!=null&&Math.abs(P.hx-f.x)<reach(P)&&(!c||c.passed||Math.sign(P.hx-c.x)===-c.side);P.near=near;
     if(f.lv==='high'){f.open=Math.min(.35,f.t*2);if(near&&jumped&&b.st==='head')success(P);}
     else{
-      const ok=near&&pose===f.lv&&b.st==='head';
+      const ok=near&&pose==='squat'&&b.st==='head';
       if(ok){P.holdT+=dt;P.okT=tNow;if(Math.floor(P.holdT/.3)!==Math.floor((P.holdT-dt)/.3))FX.grow(P.holdT/hold);}
       else if(tNow-P.okT>.35)P.holdT=Math.max(0,P.holdT-dt*1.5);   // a short wobble doesn't reset the hold
       f.open=Math.min(1,.15+.85*P.holdT/hold);
       if(P.holdT>=hold)success(P);
     }
-  } else if(f.st==='hit'){f.open=Math.min(1,f.open+dt*3);}
-  else if(f.st==='sipped'){f.open=1;}
-  else if(f.st==='lost'){f.open=Math.max(0,f.open-dt);}
+  } else if(f.st==='hit')f.open=Math.min(1,f.open+dt*3);
+  else if(f.st==='sipped')f.open=1;
+  else if(f.st==='lost')f.open=Math.max(0,f.open-dt);
+  // next flower for this child once the bee is back (or the thorn "ouch" is over)
+  const done=(f.st==='sipped'&&b.st==='head')||(f.st==='lost'&&tNow-P.ouchT>1.3);
+  if(done){if(!P.nextT)P.nextT=tNow+.35;if(tNow>=P.nextT){P.nextT=0;spawn(P);}}
 }
 
 let last=performance.now();
@@ -383,20 +416,17 @@ function frame(now){
   let fresh=false;if(camOK)fresh=track(now);
   if(portraitPlay()){render(dt);requestAnimationFrame(frame);return;}
   if(state==='setup'){
-    if(guide){if(guide.update(dt,obsOf(people[0]),{x:0,y:0,w:W,h:H})==='done'){state='count';countT=tNow;lastCount=9;}}
-    else{const L=lanes(),d=guides.map((g,k)=>g.update(dt,obsOf(personFor(k)),{x:L[k].x,y:0,w:L[k].w,h:H})==='done');if(d.every(x=>x)){state='count';countT=tNow;lastCount=9;}}
+    if(guide){const p=people[0];if(guide.update(dt,p?{x:p.nose.x,y:p.nose.y,size:p.sw,arms:true}:null,{x:0,y:0,w:W,h:H})==='done'){state='count';countT=tNow;lastCount=9;}}
+    else{if(people.length>=2&&people.every(p=>!fit(p))){setupT+=dt;if(setupT>1){state='count';countT=tNow;lastCount=9;}}else setupT=Math.max(0,setupT-dt);}
   }
   else if(state==='count'){
     const n=3-Math.floor(tNow-countT);if(n!==lastCount){lastCount=n;if(n>0)SFX.tick();}
-    players.forEach(P=>stepPlayer(P,dt,now,fresh,true));   // learn how tall each child stands
-    if(tNow-countT>=3){state='play';elapsed=0;SFX.boing();spawn();}
+    players.forEach(P=>stepPlayer(P,dt,now,fresh));   // learn how tall each child stands
+    if(tNow-countT>=3){state='play';elapsed=0;SFX.boing();players.forEach(spawn);}
   }
   else if(state==='play'){
     elapsed+=dt;
-    players.forEach(P=>stepPlayer(P,dt,now,fresh,false));
-    // next flower once every bee is back on its head (2 players: after the round was won)
-    const allDone=players.every(P=>!P.flower||P.flower.st!=='wait'),allHome=players.every(P=>P.bee.st==='head');
-    if(allDone&&allHome){if(!nextT)nextT=tNow+.35;if(tNow>=nextT){nextT=0;players.forEach(P=>P.bee.mood='happy');spawn();}}
+    players.forEach(P=>stepPlayer(P,dt,now,fresh));
     const left=Math.ceil(ROUND-elapsed);if(left<=5&&left<lastSec&&left>0)SFX.tick();lastSec=left;
     if(elapsed>=ROUND)endGame(false);
   }
@@ -408,7 +438,7 @@ function frame(now){
 function drawMirrored(){const m=vmap();ctx.save();ctx.translate(W,0);ctx.scale(-1,1);ctx.drawImage(video,W-m.ox-m.vw*m.s,m.oy,m.vw*m.s,m.vh*m.s);ctx.restore();}
 function bubble(txt,x,y,fs,fill='#fff'){
   ctx.save();ctx.font=`700 ${fs}px Fredoka,sans-serif`;ctx.direction=lang==='he'?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';
-  const w=ctx.measureText(txt).width+fs*1.4,h=fs*1.9;x=Math.max(w/2+6,Math.min(W-w/2-6,x));
+  const w=ctx.measureText(txt).width+fs*1.4,h=fs*1.9;x=Math.max(w/2+6,Math.min(W-w/2-6,x));y=Math.max(h/2+4,Math.min(H-h/2-6,y));
   ctx.fillStyle=INK;ctx.beginPath();ctx.roundRect(x-w/2,y-h/2+4,w,h,h/2);ctx.fill();
   ctx.fillStyle=fill;ctx.strokeStyle=INK;ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,h/2);ctx.fill();ctx.stroke();
   ctx.fillStyle=INK;ctx.fillText(txt,x,y+1);ctx.restore();
@@ -425,33 +455,47 @@ function drawTurnPhone(){
   ctx.strokeStyle=INK;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.arc(cx,cy,s*.85,-Math.PI*.9,-Math.PI*.55);ctx.stroke();
   bubble(UI[lang].turn,W/2,H*.72,Math.max(18,Math.min(26,W*.05)));
 }
+function drawColOf(P){
+  const c=P.col,f=P.flower;if(!c||!f)return;
+  let a=1;if(f.st!=='wait'){a=Math.max(0,1-(f.st==='lost'?Math.max(0,tNow-P.ouchT-.6):f.t)*2);}if(a<=0)return;
+  const [y0,y1]=colSpan(P),grow=ease(Math.min(1,c.t*3)),shake=c.hit?Math.sin(tNow*50)*Math.max(0,1-(tNow-P.ouchT)*2)*6:0;
+  ctx.save();ctx.globalAlpha=a;
+  if(c.kind==='top')drawThorns(ctx,c.x+shake,y0,y0+(y1-y0)*grow,c.w,tNow,'top');
+  else drawThorns(ctx,c.x+shake,y1-(y1-y0)*grow,y1,c.w,tNow,'bottom');
+  ctx.restore();
+}
 function drawFlowerOf(P){
-  const f=P.flower;if(!f)return;const sz=flowerSize(P),R=P.ref||{floor:H*.92,h:H*.55};
-  let a=1;if(f.st==='lost')a=Math.max(0,1-f.t*1.5);if(f.st==='sipped'){const b=P.bee;if(b.st==='home'||b.st==='head')a=Math.max(0,1-(b.st==='head'?1:b.t/.55));}
+  const f=P.flower;if(!f)return;const sz=flowerSize(P);
+  let a=1;if(f.st==='lost')a=Math.max(0,1-f.t*1.2);if(f.st==='sipped'){const b=P.bee;if(b.st==='home'||b.st==='head')a=Math.max(0,1-(b.st==='head'?1:b.t/.55));}
   if(a<=0)return;
   ctx.save();ctx.globalAlpha=a;
-  if(f.st==='wait')drawSpot(ctx,f.x,R.floor,reach(P),P.near,tNow);
   const grow=f.st==='wait'?Math.min(1,f.t*4):1,s=sz*(.4+.6*ease(grow))*(f.st==='sipped'?1.15:1);
-  drawHolder(ctx,f.x,f.y,s,f.lv,R.floor,tNow);
+  if(f.st==='wait'&&P.near){const g=ctx.createRadialGradient(f.x,f.y,0,f.x,f.y,s*2.4);g.addColorStop(0,`rgba(255,236,140,${.55+.15*Math.sin(tNow*8)})`);g.addColorStop(1,'rgba(255,236,140,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(f.x,f.y,s*2.4,0,7);ctx.fill();}
+  drawHolder(ctx,f.x,f.y,s,f.lv,H+10,tNow);
   drawFlower(ctx,f.x,f.y,s,f.lv,f.open,tNow,{happy:f.st!=='lost',sway:f.lv==='high'?Math.sin(tNow*1.3)*.08:0});
   ctx.restore();
-  // hint: what to do (words for the grown-up; the picture says it for the child)
+  // hint (words for the grown-up; the picture says it for the child)
   if(state==='play'&&f.st==='wait'&&f.t>.8&&P.bee.st==='head'&&P.holdT<.05){
-    const u=UI[lang],fs=Math.max(15,Math.min(24,W*.028));
-    const txt=!P.near?u.hGo:f.lv==='high'?u.hJump:f.lv==='mid'?u.hMid:u.hLow;
-    const by=f.lv==='high'?f.y+s*1.7:f.y-s*2.4;
-    bubble(txt,f.x,by,fs,P.near?'#FFF3C4':'#fff');
+    const u=UI[lang],fs=Math.max(15,Math.min(22,W*.026)),c=P.col;
+    if(c&&!c.passed&&!c.hit){const [y0,y1]=colSpan(P);bubble(c.kind==='top'?u.tTop:c.kind==='low'?u.tLow:u.tTall,c.x,c.kind==='top'?y1+fs*2.2:y0-fs*2.2,fs,'#FFF3C4');}
+    else{const txt=!P.near?u.hGo:f.lv==='high'?u.hJump:u.hMid;bubble(txt,f.x,f.lv==='high'?f.y+s*1.7:f.y-s*2.3,fs,P.near?'#FFF3C4':'#fff');}
   }
 }
 function drawBeeOf(P){
   const b=P.bee,sz=flowerSize(P)*.62,away=state==='play'&&b.st==='head'&&tNow-P.seenT>1;
   drawBee(ctx,b.x,b.y,sz,tNow+P.k,{dir:b.dir,mood:b.mood,bow:mode==='duo'?BOWS[P.k]:null,tilt:b.st==='fly'?Math.sin(b.t*10)*.25:Math.sin(tNow*3)*.06});
-  // pollen trail toward the flower while the child still has to walk there
+  if(tNow-P.ouchT<1.2){drawDizzy(ctx,b.x,b.y,sz,tNow);if(tNow-P.ouchT<.9)bigText(UI[lang].ouch,b.x,b.y-sz*2.4,Math.max(22,sz*1.1),'#FF9FB0');}
+  // pollen dots float toward the flower while the child still has to walk there
   const f=P.flower;
-  if(state==='play'&&f&&f.st==='wait'&&!P.near&&b.st==='head'&&!away){
+  if(state==='play'&&f&&f.st==='wait'&&!P.near&&b.st==='head'&&!away&&!P.col){
     const n=5;for(let i=0;i<n;i++){const k=((tNow*.6+i/n)%1),x=b.x+(f.x-b.x)*k,y=b.y+(f.y-b.y)*k-Math.sin(k*Math.PI)*sz*2;
       ctx.fillStyle=`rgba(255,216,77,${.85*(1-k)})`;ctx.beginPath();ctx.arc(x,y,sz*.16*(1-k*.5),0,7);ctx.fill();}}
   if(away)bubble(UI[lang].where,b.x,b.y-sz*2.2,Math.max(15,Math.min(22,W*.025)));
+}
+function drawFakeKid(P){
+  const R=P.ref;if(!R)return;const F=P.fake,s=R.u*.55,lift=tNow-F.jumpT<.45?Math.sin((tNow-F.jumpT)/.45*Math.PI)*R.u*.55:0;
+  const drop=F.pose==='squat'?R.u*1.25:F.pose==='bent'?R.u*.6:0,col=mode==='duo'?['#BFE3FF','#FFD1DC'][P.k]:'#BFE3FF';
+  drawKid(ctx,F.x,R.standY+2.35*s+drop,s,'stand',col,tNow,lift);
 }
 function render(dt){
   ctx.setTransform(DPR,0,0,DPR,0,0);
@@ -464,12 +508,14 @@ function render(dt){
   if(mode==='duo'&&state!=='setup'){ctx.save();ctx.setLineDash([2,14]);ctx.lineCap='round';ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(W/2,90);ctx.lineTo(W/2,H-20);ctx.stroke();ctx.restore();}
   if(state==='setup'){
     if(guide)guide.draw(ctx,{x:0,y:0,w:W,h:H},lang);
-    else{const L=lanes();guides.forEach((g,k)=>g.draw(ctx,{x:L[k].x,y:0,w:L[k].w,h:H},lang));}
+    else{bubble(u.two,W/2,H*.16,fs);
+      const bad=people.map(fit).find(x=>x);if(bad&&bad!=='find')bubble(u[bad],W/2,H*.16+fs*2.4,fs*.8,'#FFF3C4');
+      people.forEach((p,k)=>{const h={x:p.nose.x,y:p.nose.y-p.sw*.9};drawBee(ctx,h.x,Math.max(fs,h.y),fs*.9,tNow+k,{bow:BOWS[Math.min(1,k)],mood:fit(p)?'happy':'sip'});});
+      if(setupT>0){const n=Math.ceil(Math.min(1,setupT)*5);for(let i=0;i<5;i++)sticker(ctx,ell(W/2+(i-2)*fs*1.3,H-fs*1.4,fs*.45,fs*.45),i<n?'#FFD84D':'#fff',3);}}
     return drawPops(dt);
   }
-  // fake / no camera: a cartoon child stands where the tap is
-  if(!camOK)players.forEach(P=>{const R=P.ref;if(!R)return;const F=P.fake,lift=tNow-F.jumpT<.45?Math.sin((tNow-F.jumpT)/.45*Math.PI)*R.h*.25:0;
-    drawKid(ctx,F.x,R.floor,R.h/2.35,F.pose,mode==='duo'?['#BFE3FF','#FFD1DC'][P.k]:'#BFE3FF',tNow,lift);});
+  if(!camOK)players.forEach(drawFakeKid);   // no camera: a cartoon child stands where the finger is
+  players.forEach(drawColOf);
   players.forEach(drawFlowerOf);
   players.forEach(drawBeeOf);
   if(state==='count'){const n=3-Math.floor(tNow-countT),k=(tNow-countT)%1;
@@ -478,11 +524,9 @@ function render(dt){
     if(state==='play'&&elapsed<.9)bigText(u.go,W/2,H*.3,Math.min(110,H*.17),'#FFD84D',1+.3*Math.max(0,1-elapsed*4));
     const left=Math.max(0,Math.ceil(ROUND-elapsed));
     if(state==='play')bubble('⏱ '+left,W/2,64+fs*.2,fs,left<=10?'#FFE3E8':'#fff');
-    // flower counts
     const cols=mode==='duo'?['#DDF3FF','#FFE3E8']:['#FFF3C4'];
-    players.forEach((P,k)=>{const pk=Math.max(0,1-(tNow-P.pop)*3),x=mode==='duo'?W/2+(k?1:-1)*fs*5.2:W/2+fs*4.6,y=64+fs*.2;   // next to the clock, away from the flowers
-      ctx.save();ctx.translate(x,y);ctx.scale(1+.35*pk,1+.35*pk);ctx.translate(-x,-y);bubble('🌼 '+P.score,x,y,fs,cols[k]);ctx.restore();
-      if(state==='play'&&camOK&&P.feetT>1.2&&tNow-P.seenT<1)bubble(u.feet,mode==='duo'?lanes()[k].x+lanes()[k].w/2:W/2,H*.62,fs*.8,'#FFF3C4');});
+    players.forEach((P,k)=>{const pk=Math.max(0,1-(tNow-P.pop)*3),x=mode==='duo'?W/2+(k?1:-1)*fs*5.2:W/2+fs*4.6,y=64+fs*.2;   // next to the clock
+      ctx.save();ctx.translate(x,y);ctx.scale(1+.35*pk,1+.35*pk);ctx.translate(-x,-y);bubble('🌼 '+P.score,x,y,fs,cols[k]);ctx.restore();});
   }
   drawPops(dt);
 }
@@ -491,15 +535,14 @@ function drawPops(dt){
   for(const p of pops){p.vy+=H*1.2*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.life*5);ctx.globalAlpha=Math.min(1,p.life*2);
     if(p.petal)sticker(ctx,ell(0,0,9,6),p.c,2);else sticker(ctx,starPath(12),p.c||'#FFD84D',2.5);ctx.restore();}
 }
-/* menu: three flowers in the meadow, the bee visits them in turn */
+/* menu: two flowers and a thorn plant in the meadow; the bee visits the flowers in turn */
 function drawDemo(){
-  const card=$('start').hidden?$('end'):$('start'),ct=card&&!card.hidden?card.getBoundingClientRect().top:H;
   const gy=H*.86,s=Math.max(18,Math.min(W*.04,H*.06));
-  const fl=[{x:W*.2,y:H*.3,lv:'high'},{x:W*.86,y:gy-s*4,lv:'mid'},{x:W*.5,y:gy-s*.4,lv:'low'}];
-  if(ct<gy-s*4.5)fl[2].x=W*.25;
-  fl.forEach(f=>{drawHolder(ctx,f.x,f.y,s,f.lv,gy,tNow);drawFlower(ctx,f.x,f.y,s,f.lv,1,tNow);});
-  const P=3.2,i=Math.floor(tNow/P)%3,k=(tNow%P)/P,a=fl[(i+2)%3],b=fl[i],m=ease(Math.min(1,k/.55));
-  const x=a.x+(b.x-a.x)*m,y=a.y+(b.y-a.y)*m-s*.8-Math.sin(m*Math.PI)*H*.15;
+  const fl=[{x:W*.2,y:H*.3,lv:'high'},{x:W*.82,y:gy-s*3,lv:'mid'}];
+  drawThorns(ctx,W*.5,gy-s*2.2,H+10,s*.9,tNow,'bottom');
+  fl.forEach(f=>{drawHolder(ctx,f.x,f.y,s,f.lv,H+10,tNow);drawFlower(ctx,f.x,f.y,s,f.lv,1,tNow);});
+  const P=3.2,i=Math.floor(tNow/P)%2,k=(tNow%P)/P,a=fl[1-i],b=fl[i],m=ease(Math.min(1,k/.55));
+  const x=a.x+(b.x-a.x)*m,y=a.y+(b.y-a.y)*m-s*.8-Math.sin(m*Math.PI)*H*.3;
   drawBee(ctx,x,y,s*.75,tNow,{dir:b.x>=a.x?1:-1,mood:k>.6?'sip':'happy'});
 }
 /* card icons */
@@ -514,27 +557,30 @@ function icons(){
 {
   const SZ=(w,h)=>Math.min(w*.09,h*.17);
   function ground(c,w,h){c.fillStyle='rgba(141,208,110,.7)';c.beginPath();c.ellipse(w/2,h*.9,w*.46,h*.06,0,0,7);c.fill();}
-  function scene(c,w,h,t,k,lv,pose){   // the child walks to the flower, does the move, the bee flies in
-    const s=SZ(w,h),gy=h*.9,fx=w*.7,fy=lv==='high'?h*.24:lv==='mid'?gy-s*2.3:gy-s*.9;ground(c,w,h);
-    const walk=ease(Math.min(1,k/.3)),x=w*.3+(fx-w*.3)*walk,act=k>.38&&k<.78,lift=lv==='high'&&act?Math.sin(Math.min(1,(k-.38)/.2)*Math.PI)*s*1.2*((k-.38)<.2?1:0):0;
-    const p=lv==='high'||!act?'stand':pose;
-    drawHolder(c,fx,fy,s*.9,lv,gy,t);drawFlower(c,fx,fy,s*.9,lv,act||k>.78?Math.min(1,(k-.38)*3):.15,t);
-    const r=drawKid(c,x,gy,s,p,'#BFE3FF',t,lift);
+  // the child walks to the flower (stays upright over the thorns), does the move, the bee flies in
+  function scene(c,w,h,t,k,lv,thorn){
+    const s=SZ(w,h),gy=h*.9,fx=w*.78,fy=lv==='high'?h*.2:gy-s*1.4;ground(c,w,h);
+    if(thorn)drawThorns(c,w*.52,gy-s*1.5,gy,s*.6,t,'bottom');
+    const walk=ease(Math.min(1,k/.35)),x=w*.25+(fx-w*.25)*walk,act=k>.4&&k<.78;
+    const lift=lv==='high'&&act&&k<.58?Math.sin((k-.4)/.18*Math.PI)*s*1.2:0;
+    drawHolder(c,fx,fy,s*.9,lv,gy,t);drawFlower(c,fx,fy,s*.9,lv,act||k>.78?Math.min(1,(k-.4)*3):.15,t);
+    const r=drawKid(c,x,gy,s,lv==='mid'&&act?'mid':'stand','#BFE3FF',t,lift);
     const fly=ease(Math.max(0,Math.min(1,(k-.7)/.15))),hx=x,hy=r.headY-s*.5;
     drawBee(c,hx+(fx-hx)*fly,hy+(fy-s*.6-hy)*fly-Math.sin(fly*Math.PI)*s,s*.38,t,{mood:k>.86?'sip':'happy'});
   }
   setupHowTo({lang:()=>lang,play:()=>play(),steps:[
-    {dur:3.2,cap:{en:'High flower? Jump! 🦘',he:'פרח גבוה? קופצים! 🦘'},draw(c,w,h,t,k){scene(c,w,h,t,k,'high','stand');}},
-    {dur:3.6,cap:{en:'Middle flower? Squat and hold 🐸',he:'פרח באמצע? סקוואט ומחזיקים 🐸'},draw(c,w,h,t,k){scene(c,w,h,t,k,'mid','mid');}},
-    {dur:3.6,cap:{en:'Low flower? Down on the floor! 🐛',he:'פרח נמוך? יורדים לרצפה! 🐛'},draw(c,w,h,t,k){scene(c,w,h,t,k,'low','low');}},
+    {dur:3.2,cap:{en:'High flower? Go under it and jump! 🦘',he:'פרח גבוה? הולכים מתחתיו וקופצים! 🦘'},draw(c,w,h,t,k){scene(c,w,h,t,k,'high');}},
+    {dur:3.6,cap:{en:'Low flower? Squat and hold 🐸',he:'פרח נמוך? סקוואט ומחזיקים 🐸'},draw(c,w,h,t,k){scene(c,w,h,t,k,'mid');}},
+    {dur:3.6,cap:{en:'Thorns? Walk tall, squat at the flower 🌵',he:'קוצים? הולכים זקוף, מתכופפים ליד הפרח 🌵'},draw(c,w,h,t,k){scene(c,w,h,t,k,'mid',true);}},
     {dur:2.4,cap:{en:'Most flowers in 1 minute! ⭐',he:'כמה שיותר פרחים בדקה! ⭐'},draw(c,w,h,t,k){const s=SZ(w,h),gy=h*.9;ground(c,w,h);
       const r=drawKid(c,w/2,gy,s,'stand','#BFE3FF',t,Math.abs(Math.sin(t*4))*s*.4);drawBee(c,w/2,r.headY-s*.5,s*.38,t,{mood:'sip'});
       for(let i=0;i<8;i++){const a=i/8*6.3,rr=h*(.08+k*.3);bigStar(c,w/2+Math.cos(a)*rr*1.6,h*.45+Math.sin(a)*rr,15*(1.2-k*.6),a+k*3);}}}
   ]});
 }
 
-// test hook (?fake runs): where the first flower is
-window.__f=()=>{const P=players[0];return P&&P.flower?{x:P.flower.x,y:P.flower.y,lv:P.flower.lv,st:P.flower.st,score:P.score}:null;};
+// test hook (?fake runs): the first child's flower and thorns
+window.__P=()=>players;
+window.__f=()=>{const P=players[0];return P&&P.flower?{x:P.flower.x,y:P.flower.y,lv:P.flower.lv,st:P.flower.st,score:P.score,col:P.col&&{kind:P.col.kind,x:P.col.x,span:colSpan(P)},standY:P.ref.standY,u:P.ref.u}:null;};
 setLang(lang);icons();
 document.fonts&&document.fonts.ready.then(icons);
 requestAnimationFrame(frame);
