@@ -127,7 +127,8 @@ const SPOTS={
   near:{nose:1,cheekA:205,cheekB:425,forehead:8,chin:200},
   far: {nose:1,cheekA:50, cheekB:280,forehead:151,chin:152}};
 const LABEL=k=>k.startsWith('cheek')?'cheek':k;
-const ROUND=6, TOL=.09;   // catch zone = 9% of face width
+const ROUND=6, TOL=.135;   // catch zone = 13.5% of face width (18 Nov, Edgar: 50% larger than 9%, a little easier)
+const HOLD_K=.75;          // 18 Nov (Edgar): hold 25% shorter — the 3/5/8 buttons now mean 2¼ / 3¾ / 6 s
 const TRAVEL={near:.2,far:.32}; // how far (in face widths) the child must move each spot toward the middle // catch zone = 15% of face width
 
 let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
@@ -136,8 +137,8 @@ let holdSec=+LS.get('gs-hold','5'); if(![3,5,8].includes(holdSec))holdSec=5;
 let stillOn=LS.get('gs-still','1')==='1';
 let guideOn=LS.get('gs-guide','1')==='1';
 let move=LS.get('gs-move','mixed');if(!['mixed','center','flex','ext','rot'].includes(move))move='mixed';
-let best=+LS.get('gs-best-'+move+far+holdSec,'0')||0;
-const loadBest=()=>{best=+LS.get('gs-best-'+move+far+holdSec,'0')||0;$('best').textContent=best?Math.round(best):'–';};
+let best=+LS.get('gs-best2-'+move+far+holdSec,'0')||0;
+const loadBest=()=>{best=+LS.get('gs-best2-'+move+far+holdSec,'0')||0;$('best').textContent=best?Math.round(best):'–';};
 
 S.track='lullaby'; S.amb='night';
 const syncSound=bindSound(()=>UI[lang]);
@@ -145,7 +146,7 @@ const syncSound=bindSound(()=>UI[lang]);
 function segs(){
   const u=UI[lang],mark=(id,v)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===String(v)));
   document.querySelectorAll('#far-seg button').forEach(b=>b.textContent=b.dataset.v==='far'?u.farv:u.near);
-  document.querySelectorAll('#hold-seg button').forEach(b=>b.textContent=b.dataset.v+(lang==='he'?' שנ׳':' s'));
+  document.querySelectorAll('#hold-seg button').forEach(b=>b.textContent=({3:'2¼',5:'3¾',8:'6'}[b.dataset.v])+(lang==='he'?' שנ׳':' s'));
   document.querySelectorAll('#still-seg button,#guide-seg button').forEach(b=>b.textContent=u[b.dataset.v==='1'?'on':'off']);
   document.querySelectorAll('#move-seg button').forEach(b=>b.textContent=u[b.dataset.v]);mark('move-seg',move);
   mark('far-seg',far);mark('hold-seg',holdSec);mark('still-seg',+stillOn);mark('guide-seg',+guideOn);
@@ -282,7 +283,7 @@ const CLIMB=[72,74,76,79,81,84,86,88];
 function guideNote(i){const m=CLIMB[Math.min(7,i)];if(!playSample(S.AC,'kalimba',m,S.AC.currentTime+.01,.16,S.BUS.sfx))tone({f0:440*Math.pow(2,(m-69)/12),dur:.25,type:'triangle',vol:.12});}
 function endGame(){
   state='over';musicStop();tooClose=false;$('toast').classList.remove('on');$('hud').classList.remove('on');showWhere();msg('');
-  lastNew=!best||score<best;if(lastNew){best=score;LS.set('gs-best-'+move+far+holdSec,best.toFixed(1));}
+  lastNew=!best||score<best;if(lastNew){best=score;LS.set('gs-best2-'+move+far+holdSec,best.toFixed(1));}
   fillEnd(lastNew);$('end').hidden=false;SFX.chime();
 }
 function fillEnd(nb){const u=UI[lang];$('final').textContent=Math.round(score);$('newbest').hidden=!nb;$('newbest').textContent=u.newbest;
@@ -337,9 +338,9 @@ function frame(now){
           stillBad=stillOn&&calib&&Math.hypot(G.c.x-calib.x,G.c.y-calib.y)>G.w*.55;
           if(stillBad){if(msgNow!==UI[lang].stillmsg)msg(UI[lang].stillmsg);}else if(msgNow===UI[lang].stillmsg)msg('');
           const inside=Math.hypot(sp.x-T.x,sp.y-T.y)<G.w*TOL+6;
-          if(inside&&!stillBad){const before=Math.floor(prog*8);prog+=dt/holdSec;
+          if(inside&&!stillBad){const before=Math.floor(prog*8);prog+=dt/(holdSec*HOLD_K);
             if(guideOn&&Math.floor(prog*8)>before&&prog<1)guideNote(Math.floor(prog*8));}
-          else{prog=Math.max(0,prog-dt/(holdSec*1.5));
+          else{prog=Math.max(0,prog-dt/(holdSec*HOLD_K*1.5));
             if(guideOn&&!stillBad&&tNow>guideT){const d=Math.min(1.5,Math.hypot(sp.x-T.x,sp.y-T.y)/G.w);   // sound hint: faster and higher when closer
               tone({f0:520+(1.5-d)*420,dur:.07,type:'sine',vol:.09});guideT=tNow+.16+d*.6;}}
           if(prog>=1){
