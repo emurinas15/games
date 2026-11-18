@@ -135,6 +135,15 @@ export const STYLES = {
     ev.push(['acoustic_guitar_nylon', ch[[0, 1, 2, 1, 0, 2, 1, 2][i]], .07, .9, .3]);
     if (i === 0 || i === 4) ev.push(['acoustic_bass', root, .2, 1.1, .1]);
     return ev; } },
+  /* Bee & Flowers (18 Nov): a sunny garden — bouncy pizzicato strings melody (the bee hopping from flower to flower),
+     rippling harp on the chords, a soft flute an octave up in the B sections, plucked acoustic bass */
+  meadow: { bpm: 108, play(s) {
+    const { mel, ch, root, i, sec } = at(s), ev = [];
+    if (mel != null) { ev.push(['pizzicato_strings', mel - 12, .3, .5, .25]); if (sec[0] === 'B') ev.push(['flute', mel, .1, .7, .4]); }
+    if (i % 2 === 1) ev.push(['orchestral_harp', ch[[0, 1, 2, 1][(i - 1) / 2]], .09, 1.2, .4]);
+    if (i === 0) ev.push(['acoustic_bass', root, .22, .5, .08]);
+    if (i === 4) ev.push(['acoustic_bass', root + 7, .16, .4, .08]);
+    return ev; } },
   /* Floor Is Lava (13 Nov, v3): 80s hard rock / heavy metal guitars (Edgar: "more distortion — Poison, Guns N' Roses,
      Metallica"). Both guitars go through kit.js's drive amp. Rhythm: power chords (root+5th+octave) on distortion guitar,
      double-tracked hard left/right, palm-muted eighths with galloping 16ths, an open ringing chord each bar.
