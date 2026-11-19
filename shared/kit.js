@@ -287,19 +287,31 @@ const DRUM_FX = {
 };
 /* one note of a styled arrangement (see songs.js): real sample, or a synth stand-in */
 /* guitar amp for the rock track: drive (tanh waveshaper) -> cabinet filters -> music bus (stereo kept) */
-const AMP_INST = { distortion_guitar: 1, overdriven_guitar: 1 };
+const AMP_INST = { distortion_guitar: 1, overdriven_guitar: 1, electric_guitar_clean: 1 };
 function amp(key) { const B = S.BUS, a = S.AC; B.amps = B.amps || {}; if (B.amps[key]) return B.amps[key];
-  const sh = a.createWaveShaper(), n = 2048, c = new Float32Array(n), k = 9;
-  for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; c[i] = Math.tanh(k * x) / Math.tanh(k); }
+  const C = AMP_CFG[key] || AMP_CFG.overdriven_guitar;
+  const sh = a.createWaveShaper(), n = 2048, c = new Float32Array(n), k = C.k, as = C.asym || 0;
+  // asym > 0: a little uneven clipping like a valve amp (warmer, less fizzy)
+  for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1, y = x + as * x * x; c[i] = Math.tanh(k * y) / Math.tanh(k) - as * .5 * Math.tanh(k * as) / Math.tanh(k); }
   sh.curve = c; sh.oversample = '4x';
   const hp = a.createBiquadFilter(), lp = a.createBiquadFilter(), mid = a.createBiquadFilter(), post = a.createGain();
-  hp.type = 'highpass'; hp.frequency.value = 90; lp.type = 'lowpass'; lp.frequency.value = 4800; lp.Q.value = .8;
-  mid.type = 'peaking'; mid.frequency.value = 1400; mid.gain.value = 3; mid.Q.value = .9; post.gain.value = AMP_POST[key];
-  sh.connect(hp); hp.connect(mid); mid.connect(lp); lp.connect(post); post.connect(B.music);
+  hp.type = 'highpass'; hp.frequency.value = C.hp || 90; lp.type = 'lowpass'; lp.frequency.value = C.lp || 4800; lp.Q.value = .8;
+  mid.type = 'peaking'; mid.frequency.value = C.midF || 1400; mid.gain.value = C.midG ?? 3; mid.Q.value = .9; post.gain.value = C.post;
+  let last = lp;
+  if (C.lp2) { const l2 = a.createBiquadFilter(); l2.type = 'lowpass'; l2.frequency.value = C.lp2; l2.Q.value = .5; lp.connect(l2); last = l2; }   // speaker-cab roll-off
+  sh.connect(hp); hp.connect(mid); mid.connect(lp); last.connect(post); post.connect(B.music);
   const w = a.createGain(); w.gain.value = .12; post.connect(w); w.connect(B.rev);
   if (LIVE) { const hw = a.createGain(); hw.gain.value = .5; post.connect(hw); hw.connect(hall()); }   // live: guitars fill the arena
   return (B.amps[key] = sh); }
-const AMP_POST = { distortion_guitar: .07, overdriven_guitar: .1 };
+/* amp settings per guitar sample. 19 Nov (Edgar: the Lava riff "doesn't even sound like a guitar — use AC/DC guitars"):
+   the soundfont's overdriven guitar is already distorted, so the amp distorted it twice into a buzz. The AC/DC sound is
+   a clean electric guitar into a Marshall turned up only to crunch: low gain, valve-like uneven clipping, strong mids,
+   a speaker cabinet that cuts the fizz. That is 'electric_guitar_clean' here. */
+const AMP_CFG = {
+  distortion_guitar: { k: 9, post: .07 },
+  overdriven_guitar: { k: 9, post: .1 },
+  electric_guitar_clean: { k: 3.2, asym: .18, hp: 110, midF: 900, midG: 4.5, lp: 3800, lp2: 5200, post: .14 }
+};
 /* real-guitar feel (14 Nov, Sprout folk): each note a little off the grid and in loudness, a hair out of tune,
    strings spread across the stereo field, a new note on a string stops the one ringing on it (like a real string),
    and a 'wooden body' EQ (warm low-mids, a bit of presence, softer fizz) instead of the flat dry sample */
