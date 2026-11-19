@@ -218,3 +218,15 @@ export function drawDizzy(c, x, y, s, t) {
   for (let i = 0; i < 3; i++) { const a = t * 6 + i * 2.1, px = x + Math.cos(a) * s * 1.3, py = y - s * 1.1 + Math.sin(a) * s * .35;
     c.save(); c.translate(px, py); c.rotate(a); const p = new Path2D(); for (let k = 0; k < 10; k++) { const r = k % 2 ? s * .12 : s * .28, b = k / 10 * Math.PI * 2 - Math.PI / 2; k ? p.lineTo(Math.cos(b) * r, Math.sin(b) * r) : p.moveTo(Math.cos(b) * r, Math.sin(b) * r); } p.closePath(); sticker(c, p, '#FFD84D', 2); c.restore(); }
 }
+
+/* a beehive (sticker style), hanging from a little branch. (x,y) = middle of the hive, s = half height */
+export function drawHive(c, x, y, s, t) {
+  c.save(); c.lineCap = 'round';
+  c.strokeStyle = INK; c.lineWidth = s * .14; c.beginPath(); c.moveTo(x, y - s * .95); c.lineTo(x, y - s * 1.5); c.stroke();
+  c.strokeStyle = '#8B6B45'; c.lineWidth = s * .07; c.stroke();
+  const rows = [[-.75, .42], [-.4, .7], [-.02, .86], [.36, .8], [.7, .55]];
+  for (let i = rows.length - 1; i >= 0; i--) { const [ry, rw] = rows[i]; sticker(c, ell(x, y + ry * s, s * rw, s * .27), i % 2 ? '#F6C453' : '#FFD777', Math.max(2, s * .07)); }
+  c.fillStyle = 'rgba(255,255,255,.4)'; c.fill(ell(x - s * .35, y - s * .45, s * .16, s * .07, -.3));
+  sticker(c, ell(x, y + s * .3, s * .2, s * .16), INK, 1);
+  c.restore();
+}
