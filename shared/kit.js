@@ -173,7 +173,45 @@ export const SPIDER_FX = {
 /* small synth rock kit (Floor Is Lava rock and roll) */
 function noiseBuf(a, dur, shape) { const n = Math.floor(a.sampleRate * dur), b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0);
   for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, shape); const s = a.createBufferSource(); s.buffer = b; return s; }
+/* ---- LIVE CONCERT mode (19 Nov, Floor Is Lava: Edgar "make it sound like a live concert, it's very flat").
+   A style with live:true gets: a big arena echo (2.8 s, 25 ms pre-delay, darker tail) on everything — guitar amps,
+   drums, bass, voices — plus crowd sounds: '~crowd' (murmuring crowd bed, m = seconds), '~cheer' (crowd roar swell
+   with whistles), '~clap' (a crowd clapping on the beat). */
+let LIVE = false;
+function hall() { const B = S.BUS, a = S.AC; if (B.hall) return B.hall;
+  const len = Math.floor(a.sampleRate * 2.8), pre = Math.floor(a.sampleRate * .025), b = a.createBuffer(2, len, a.sampleRate);
+  for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); let lp = 0;
+    for (let i = pre; i < len; i++) { const k = (i - pre) / (len - pre), cut = .55 - .45 * k;   // darker as it fades, like a big room
+      lp += ((Math.random() * 2 - 1) - lp) * cut; d[i] = lp * Math.pow(1 - k, 2.2) * (i < pre + 600 ? (i - pre) / 600 : 1); } }
+  const cv = a.createConvolver(); cv.buffer = b; const g = a.createGain(); g.gain.value = .55; cv.connect(g); g.connect(B.music);
+  return (B.hall = cv); }
+function liveBus() { const B = S.BUS, a = S.AC; if (B.live) return B.live;
+  const g = a.createGain(); g.connect(B.music); const w = a.createGain(); w.gain.value = .38; g.connect(w); w.connect(hall()); return (B.live = g); }
+let CROWD = null;
+function crowdBuf(a) { if (CROWD) return CROWD;   // 6 s of stereo crowd murmur: noise shaped by many overlapping voice-rate wobbles
+  const n = a.sampleRate * 6, b = a.createBuffer(2, n, a.sampleRate);
+  for (let c = 0; c < 2; c++) { const d = b.getChannelData(c), V = [];
+    for (let j = 0; j < 14; j++) V.push({ r: 2.5 + Math.random() * 6, p: Math.random() * 7, r2: .3 + Math.random() * .8 });
+    for (let i = 0; i < n; i++) { const t = i / a.sampleRate; let e = 0;
+      for (const v of V) e += Math.max(0, Math.sin(t * v.r * 6.283 + v.p)) * (.6 + .4 * Math.sin(t * v.r2 * 6.283 + v.p * 2));
+      d[i] = (Math.random() * 2 - 1) * (.25 + e / 14) * Math.min(1, i / 2000, (n - i) / 2000); } }
+  return (CROWD = b); }
+function crowdVoice(a, t, dur, v, bus, shape) {   // shape(k) 0..1 over the duration
+  const s = a.createBufferSource(); s.buffer = crowdBuf(a); const hp = a.createBiquadFilter(), lp = a.createBiquadFilter(), pk = a.createBiquadFilter(), g = a.createGain();
+  hp.type = 'highpass'; hp.frequency.value = 280; lp.type = 'lowpass'; lp.frequency.value = 2600; pk.type = 'peaking'; pk.frequency.value = 900; pk.gain.value = 5;
+  g.gain.setValueAtTime(.0001, t); for (let i = 1; i <= 12; i++) g.gain.linearRampToValueAtTime(Math.max(.0001, v * shape(i / 12)), t + dur * i / 12);
+  s.connect(hp); hp.connect(pk); pk.connect(lp); lp.connect(g); g.connect(bus); s.start(t, Math.random() * 3, dur + .1); }
 const DRUM_FX = {
+  '~crowd'(t, v, bus, m = 2.2) { crowdVoice(S.AC, t, m, .5 * v, bus, k => Math.min(1, k * 4, (1 - k) * 4)); },
+  '~cheer'(t, v, bus) { const a = S.AC; crowdVoice(a, t, 3.2, 1.1 * v, bus, k => k < .15 ? k / .15 : Math.pow(1 - (k - .15) / .85, 1.6));
+    for (let j = 0; j < 4; j++) { const t0 = t + .1 + Math.random() * 1.2, o = a.createOscillator(), g = a.createGain(), p = a.createStereoPanner ? a.createStereoPanner() : null;   // whistles
+      o.type = 'sine'; const f = 1900 + Math.random() * 700; o.frequency.setValueAtTime(f * .8, t0); o.frequency.linearRampToValueAtTime(f * 1.15, t0 + .18); o.frequency.linearRampToValueAtTime(f, t0 + .6);
+      g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(.05 * v, t0 + .05); g.gain.exponentialRampToValueAtTime(.0001, t0 + .65);
+      o.connect(g); if (p) { p.pan.value = Math.random() * 1.6 - .8; g.connect(p); p.connect(bus); } else g.connect(bus); o.start(t0); o.stop(t0 + .7); } },
+  '~clap'(t, v, bus) { const a = S.AC;   // a crowd clapping together, each hand a little early or late
+    for (let j = 0; j < 14; j++) { const t0 = t + (Math.random() - .5) * .045, s = noiseBuf(a, .03, 6), f = a.createBiquadFilter(), g = a.createGain(), p = a.createStereoPanner ? a.createStereoPanner() : null;
+      f.type = 'bandpass'; f.frequency.value = 900 + Math.random() * 1400; f.Q.value = 1.1; g.gain.value = .16 * v * (.6 + Math.random() * .6);
+      s.connect(f); f.connect(g); if (p) { p.pan.value = Math.random() * 1.8 - .9; g.connect(p); p.connect(bus); } else g.connect(bus); s.start(Math.max(a.currentTime, t0)); } },
   '~kick'(t, v, bus) { const a = S.AC, o = a.createOscillator(), g = a.createGain();
     o.type = 'sine'; o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(48, t + .12);
     g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.55 * v, t + .004); g.gain.exponentialRampToValueAtTime(.0001, t + .32);
@@ -259,6 +297,7 @@ function amp(key) { const B = S.BUS, a = S.AC; B.amps = B.amps || {}; if (B.amps
   mid.type = 'peaking'; mid.frequency.value = 1400; mid.gain.value = 3; mid.Q.value = .9; post.gain.value = AMP_POST[key];
   sh.connect(hp); hp.connect(mid); mid.connect(lp); lp.connect(post); post.connect(B.music);
   const w = a.createGain(); w.gain.value = .12; post.connect(w); w.connect(B.rev);
+  if (LIVE) { const hw = a.createGain(); hw.gain.value = .5; post.connect(hw); hw.connect(hall()); }   // live: guitars fill the arena
   return (B.amps[key] = sh); }
 const AMP_POST = { distortion_guitar: .07, overdriven_guitar: .1 };
 /* real-guitar feel (14 Nov, Sprout folk): each note a little off the grid and in loudness, a hair out of tune,
@@ -291,14 +330,15 @@ function playEvent([inst, m, v, len, wet, delay, pan, str], t) {
     const src = a.createBufferSource(); src.buffer = b; const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = .7;
     const g = a.createGain(); g.gain.value = v * 2; src.connect(f); f.connect(g); g.connect(S.BUS.music); src.start(t); return; }
   if (SPIDER_FX[inst]) { SPIDER_FX[inst](t, v, S.BUS.music); return; }
-  if (DRUM_FX[inst]) { DRUM_FX[inst](t, v, S.BUS.music, m, pan); return; }
-  const g = playSample(S.AC, inst, m, t, v / .7, S.BUS.music, len);
+  if (DRUM_FX[inst]) { DRUM_FX[inst](t, v, LIVE ? liveBus() : S.BUS.music, m, pan); return; }
+  const g = playSample(S.AC, inst, m, t, v / .7, LIVE ? liveBus() : S.BUS.music, len);
   if (g) { if (wet) { const w = S.AC.createGain(); w.gain.value = wet; g.connect(w); w.connect(S.BUS.rev); } return; }
   if (m < 55) bass(m, t, v, Math.min(1, len)); else kalimba(m, t, v);
 }
 function musicTick() {
   const a = S.AC, M = S.mu; if (!M.on || !a) return;
   const style = STYLES[S.track];
+  LIVE = !!(style && style.live);
   if (style) {
     const sd = 60 / (S.bpmFixed ? S.bpm() : style.bpm) / 2;
     if (M.next < a.currentTime - .5) M.next = a.currentTime + .05;

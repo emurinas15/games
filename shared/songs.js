@@ -190,13 +190,20 @@ export const STYLES = {
      same root (the classic "rock pedal" move) — double-tracked left/right; bass on steady root 8ths; big simple
      backbeat (kick 1 & 3, snare 2 & 4, steady 8th hats); lead guitar on the tune kept back; soft gang choir on the
      tune in the choruses; open ringing chord + crash at each chorus bar; snare fill into sections. Major key. */
-  lavaAC: { bpm: 126, play(s) {
+  /* 19 Nov (Edgar: "can it sound like a live concert? it's very flat"): live:true → kit adds the arena echo; plus a
+     crowd murmur under every bar (louder in choruses), the crowd clapping on 2 and 4 in choruses, a roar with
+     whistles into each chorus and at the end, and drums a hair off the grid like a real drummer. */
+  lavaAC: { bpm: 126, live: true, play(s) {
     const { mel, root, i, sec } = at(s), ev = [], k = ((s % STEPS) + STEPS) % STEPS % 32, fillIn = k >= 28;
     const chorus = sec === 'B' || sec === 'B2', r = root > 52 ? root - 12 : root < 40 ? root + 12 : root;
     const I = [r, r + 7, r + 12], IV = [r, r + 5, r + 9];
     const hit = (ch, v, len) => { for (const n of ch) { ev.push(['overdriven_guitar', n, v, len, .05, 0, -.75]); ev.push(['overdriven_guitar', n, v * .95, len, .05, .014, .75]); } };
-    if (sec === 'end' && k >= 24) return k === 24 ? [...I.flatMap(n => [['overdriven_guitar', n, .4, 2.4, .25, 0, -.75], ['overdriven_guitar', n, .4, 2.4, .25, .014, .75]]),
-      ['electric_bass_pick', root, .3, 1.8, .02], ['~crash', 0, .5, 0, 0], ['~kick', 0, .45, 0, 0]] : [];
+    if (sec === 'end' && k >= 24) return k === 24 ? [...I.flatMap(n => [['overdriven_guitar', n, .4, 3.2, .25, 0, -.75], ['overdriven_guitar', n, .4, 3.2, .25, .014, .75]]),
+      ['electric_bass_pick', root, .3, 2.4, .02], ['~crash', 0, .5, 0, 0], ['~kick', 0, .45, 0, 0], ['~cheer', 0, 1.3, 0, 0, .3]] : [];
+    // the crowd
+    if (i === 0) ev.push(['~crowd', 2.1, chorus ? .75 : .45, 0, 0]);
+    if (chorus && (i === 2 || i === 6)) ev.push(['~clap', 0, .9, 0, 0]);
+    if (k === 0 && (chorus || s % STEPS === 0)) ev.push(['~cheer', 0, chorus ? .7 : .9, 0, 0]);
     // the riff: I . . IV I . IV I   (rests are what make it swing)
     if (chorus && i === 0) hit(I, .38, .55);                           // ringing chord on the bar in the chorus
     else if (i === 0 || i === 4) hit(I, .36, .2);
@@ -207,7 +214,7 @@ export const STYLES = {
       if (chorus) ev.push(['choir_aahs', mel - 12, .26, .3, .3]);        // gang voices
     }
     if (i !== 1 && i !== 5) ev.push(['electric_bass_pick', root, i % 2 ? .18 : .23, .16, .02]);
-    const D = (n, v, d = 0) => ev.push([n, 0, v * (n === '~kick' ? .44 : .52), 0, 0, d]);   // drums a touch louder (Edgar likes them pronounced)
+    const D = (n, v, d = 0) => ev.push([n, 0, v * (n === '~kick' ? .44 : .52) * (.9 + Math.random() * .2), 0, 0, d + Math.random() * .008]);   // live drummer feel   // drums a touch louder (Edgar likes them pronounced)
     if (!fillIn) {
       if (i === 0 || i === 4 || (chorus && i === 5)) D('~kick', 1);
       if (i === 2 || i === 6) D('~snare80', 1.5);
