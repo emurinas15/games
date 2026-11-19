@@ -185,6 +185,37 @@ export const STYLES = {
     if (k === 0) ev.push(['~crash', 0, .45, 0, 0]);
     const out = sec === 'end' && k >= 24 ? (k === 24 ? [['trumpet', 84, .36, 1.2, .3], ['tuba', 36, .3, 1, .1], ['~crash', 0, .5, 0, 0], ...ch.map(n => ['trombone', n < 53 ? n + 12 : n, .1, 1, .2])] : []) : ev;
     return out.map(e => (e[2] *= .44, e)); } },   // level-matched to the other games' music (offline RMS)
+  /* Floor Is Lava v6 (19 Nov, Edgar: "try AC/DC style"): classic hard-rock riff band. 126 bpm, straight 8ths.
+     Crunchy (overdriven, not heavy) open power-chord riff with rests between the hits — I chord, then the IV over the
+     same root (the classic "rock pedal" move) — double-tracked left/right; bass on steady root 8ths; big simple
+     backbeat (kick 1 & 3, snare 2 & 4, steady 8th hats); lead guitar on the tune kept back; soft gang choir on the
+     tune in the choruses; open ringing chord + crash at each chorus bar; snare fill into sections. Major key. */
+  lavaAC: { bpm: 126, play(s) {
+    const { mel, root, i, sec } = at(s), ev = [], k = ((s % STEPS) + STEPS) % STEPS % 32, fillIn = k >= 28;
+    const chorus = sec === 'B' || sec === 'B2', r = root > 52 ? root - 12 : root < 40 ? root + 12 : root;
+    const I = [r, r + 7, r + 12], IV = [r, r + 5, r + 9];
+    const hit = (ch, v, len) => { for (const n of ch) { ev.push(['overdriven_guitar', n, v, len, .05, 0, -.75]); ev.push(['overdriven_guitar', n, v * .95, len, .05, .014, .75]); } };
+    if (sec === 'end' && k >= 24) return k === 24 ? [...I.flatMap(n => [['overdriven_guitar', n, .4, 2.4, .25, 0, -.75], ['overdriven_guitar', n, .4, 2.4, .25, .014, .75]]),
+      ['electric_bass_pick', root, .3, 1.8, .02], ['~crash', 0, .5, 0, 0], ['~kick', 0, .45, 0, 0]] : [];
+    // the riff: I . . IV I . IV I   (rests are what make it swing)
+    if (chorus && i === 0) hit(I, .38, .55);                           // ringing chord on the bar in the chorus
+    else if (i === 0 || i === 4) hit(I, .36, .2);
+    else if (i === 3 || i === 6) hit(IV, .32, .12);
+    else if (i === 7) hit(I, .3, .09);
+    if (mel != null) {
+      ev.push(['overdriven_guitar', mel - 12, .16, .2, .2]);              // lead, kept back
+      if (chorus) ev.push(['choir_aahs', mel - 12, .26, .3, .3]);        // gang voices
+    }
+    if (i !== 1 && i !== 5) ev.push(['electric_bass_pick', root, i % 2 ? .18 : .23, .16, .02]);
+    const D = (n, v, d = 0) => ev.push([n, 0, v * (n === '~kick' ? .44 : .52), 0, 0, d]);   // drums a touch louder (Edgar likes them pronounced)
+    if (!fillIn) {
+      if (i === 0 || i === 4 || (chorus && i === 5)) D('~kick', 1);
+      if (i === 2 || i === 6) D('~snare80', 1.5);
+      D('~hat', i % 2 ? .3 : .45);
+      if (chorus && i === 0) D('~crash', .7);
+    } else { D('~snare80', .9 + (k - 28) * .15); if (k >= 30) D('~snare80', .8 + (k - 28) * .15, 60 / 126 / 4); if (k === 28) D('~kick', 1); }
+    if (k === 0) D('~crash', .8);
+    return ev; } },
   /* Floor Is Lava v5 (16 Nov, Edgar: "fun young teen rock — 2000s teen rock"): pop-punk. Fast (170), bright overdriven
      power chords double-tracked left/right — palm-muted 8ths in the verses, open ringing strums in the choruses —
      picked bass on 8ths, a lead guitar on the tune in the verses, a "whoa-oh" gang choir on the tune in the choruses,
