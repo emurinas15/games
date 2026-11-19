@@ -61,6 +61,8 @@ body.casting .toast{visibility:hidden}
       <p id="t-g1"></p>
       <div class="g-row"><span id="t-endj">End with a jump</span>
         <div class="seg" id="endj-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-side">Beehives (1 player)</span>
+        <div class="seg" id="side-seg"><button data-v="both"></button><button data-v="left"></button><button data-v="right"></button></div></div>
       <div class="g-row"><span id="t-tall">Thorns to jump over</span>
         <div class="seg" id="tall-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
       <div class="g-row"><span id="t-music">Music</span>
@@ -107,13 +109,13 @@ const ROUND=90,BAND=[.4,.6];
 const UI={
  en:{title:"Bee & Flowers",sub:"Carry the bee on your head through the thorns to the flower!",play:"Play",solo:"1 player",duo:"2 players",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
-  g1:"Go to the beehive at the side of the screen: a bee sits on your head and follows it. Carry it to the flower on the other side without touching the thorns: duck under the ones hanging from the top, stay tall over the ones growing from the bottom, squeeze through the gaps. The flower hangs high, so the course ends with a jump. Touch the flower and the bee stays there; go back to the hive for a new bee and the next level. If a thorn touches the bee, it flies back to the hive. 90 seconds. 2 players: each starts at their own side, the flowers are in the middle.",
-  endj:"End with a jump",tall:"Thorns to jump over",on:"On",off:"Off",music:"Music",sfx:"Sound effects",mute:"Sound on or off",
+  g1:"Go to the beehive at the side of the screen: a bee sits on your head and follows it. Carry it to the flower on the other side without touching the thorns: duck under the ones hanging from the top, stay tall over the ones growing from the bottom, squeeze through the gaps. The flower hangs high, so the course ends with a jump. Touch the flower and the bee stays there; the next bee waits in the hive on that side, so the child goes back and forth (grown-ups can choose one side only). If a thorn touches the bee, it flies back to the hive. 90 seconds. 2 players: each starts at their own side, the flowers are in the middle.",
+  endj:"End with a jump",side:"Beehives (1 player)",both:"Both sides",left:"Left",right:"Right",tall:"Thorns to jump over",on:"On",off:"Off",music:"Music",sfx:"Sound effects",mute:"Sound on or off",
   g2:"★ Stand the phone or tablet up sideways, at about chest height of the child, so the camera sees the head and shoulders. The game starts only when the head is in the sunny stripe in the middle of the screen: step closer or farther until it is. Walking much closer or farther during the game makes the bee let go.",
   g3:"★ \"Thorns to jump over\" (from level 3) adds thorns that only a jump clears — hard for most children.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
   ready:"Getting ready…",go:"Go!",turn:"Turn the phone sideways to play",nocam:"No camera here. Drag your finger to move the head.",aria:"Game area",
-  band:"Put your head in the sunny stripe",two:"Two players: both heads in the sunny stripe",high:"Head too high — step back a little",low:"Head too low — come a little closer",
+  band:"Put your head in the sunny stripe",two:"Two players: both heads in the sunny stripe",high_back:"Head too high — step back a little",high_tilt:"Head too high — tilt the phone down a little",low_closer:"Head too low — come a little closer",low_tilt:"Head too low — tilt the phone up a little",like:"Stand like this",
   closer:"Come a little closer",back:"Step back a little",find:"Stand in front of the camera",
   hive:"Go get a bee!",again:"Back to the hive for a new bee!",letgo:"The bee let go — come back to it",
   ouch:"Ouch!",level:n=>"Level "+n,
@@ -121,13 +123,13 @@ const UI={
   playagain:"Play again",menu:"Menu"},
  he:{title:"הדבורה והפרחים",sub:"העבירו את הדבורה שעל הראש בין הקוצים אל הפרח!",play:"שחקו",solo:"שחקן אחד",duo:"2 שחקנים",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
-  g1:"הולכים לכוורת בצד המסך: דבורה יושבת על הראש ונעה איתו. מעבירים אותה אל הפרח בצד השני בלי לגעת בקוצים: מתכופפים מתחת לקוצים שתלויים מלמעלה, נשארים זקופים מעל הקוצים שצומחים מלמטה, ועוברים ברווחים. הפרח תלוי גבוה, אז המסלול נגמר בקפיצה. נוגעים בפרח והדבורה נשארת שם; חוזרים לכוורת לדבורה חדשה ולשלב הבא. אם קוץ נוגע בדבורה, היא עפה בחזרה לכוורת. 90 שניות. 2 שחקנים: כל אחד מתחיל בצד שלו, הפרחים באמצע.",
-  endj:"סיום בקפיצה",tall:"קוצים לקפוץ מעליהם",on:"פועל",off:"כבוי",music:"מוזיקה",sfx:"צלילים במשחק",mute:"הפעלת או השתקת קול",
+  g1:"הולכים לכוורת בצד המסך: דבורה יושבת על הראש ונעה איתו. מעבירים אותה אל הפרח בצד השני בלי לגעת בקוצים: מתכופפים מתחת לקוצים שתלויים מלמעלה, נשארים זקופים מעל הקוצים שצומחים מלמטה, ועוברים ברווחים. הפרח תלוי גבוה, אז המסלול נגמר בקפיצה. נוגעים בפרח והדבורה נשארת שם; הדבורה הבאה מחכה בכוורת שבאותו צד, כך שהילד הולך הלוך ושוב (מבוגרים יכולים לבחור צד אחד בלבד). אם קוץ נוגע בדבורה, היא עפה בחזרה לכוורת. 90 שניות. 2 שחקנים: כל אחד מתחיל בצד שלו, הפרחים באמצע.",
+  endj:"סיום בקפיצה",side:"כוורות (שחקן אחד)",both:"שני הצדדים",left:"שמאל",right:"ימין",tall:"קוצים לקפוץ מעליהם",on:"פועל",off:"כבוי",music:"מוזיקה",sfx:"צלילים במשחק",mute:"הפעלת או השתקת קול",
   g2:"★ העמידו את הטלפון או הטאבלט לרוחב, בערך בגובה החזה של הילד, כך שהמצלמה רואה את הראש והכתפיים. המשחק מתחיל רק כשהראש בפס השמש באמצע המסך: מתקרבים או מתרחקים עד שהוא שם. התקרבות או התרחקות גדולה באמצע המשחק גורמת לדבורה לעזוב.",
   g3:"★ \"קוצים לקפוץ מעליהם\" (משלב 3) מוסיף קוצים שרק קפיצה עוברת מעליהם — קשה לרוב הילדים.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
   ready:"מתכוננים…",go:"יוצאים!",turn:"סובבו את הטלפון לרוחב כדי לשחק",nocam:"אין כאן מצלמה. גררו את האצבע כדי להזיז את הראש.",aria:"אזור המשחק",
-  band:"שימו את הראש בפס השמש",two:"2 שחקנים: שני הראשים בפס השמש",high:"הראש גבוה מדי — התרחקו קצת",low:"הראש נמוך מדי — התקרבו קצת",
+  band:"שימו את הראש בפס השמש",two:"2 שחקנים: שני הראשים בפס השמש",high_back:"הראש גבוה מדי — התרחקו קצת",high_tilt:"הראש גבוה מדי — הטו קצת את הטלפון למטה",low_closer:"הראש נמוך מדי — התקרבו קצת",low_tilt:"הראש נמוך מדי — הטו קצת את הטלפון למעלה",like:"עמדו ככה",
   closer:"התקרבו קצת",back:"התרחקו קצת",find:"עמדו מול המצלמה",
   hive:"לכו להביא דבורה!",again:"חוזרים לכוורת לדבורה חדשה!",letgo:"הדבורה עזבה — חזרו אליה",
   ouch:"אאוץ׳!",level:n=>"שלב "+n,
@@ -138,6 +140,7 @@ const UI={
 let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
 let mode=LS.get('bee-mode','solo'); if(!['solo','duo'].includes(mode))mode='solo';
 let endJump=LS.get('bee-endj','1')!=='0', tallOn=LS.get('bee-tall','0')==='1';
+let side=LS.get('bee-side','both'); if(!['both','left','right'].includes(side))side='both';   // 1 player: hives on both sides (alternate) or one side only
 let best=+LS.get('bee-best3','0')||0;
 const QS=new URLSearchParams(location.search),FAKE=QS.has('fake'),SPEED=FAKE?(+QS.get('speed')||1):1;   // ?fake = no camera, drag a finger as the head (testing)
 S.track='meadow'; S.amb='none'; S.ambOn=false;
@@ -149,6 +152,7 @@ function segs(){
   const u=UI[lang];
   document.querySelectorAll('#endj-seg button').forEach(b=>{b.textContent=u[b.dataset.v==='1'?'on':'off'];b.setAttribute('aria-pressed',(b.dataset.v==='1')===endJump);});
   document.querySelectorAll('#tall-seg button').forEach(b=>{b.textContent=u[b.dataset.v==='1'?'on':'off'];b.setAttribute('aria-pressed',(b.dataset.v==='1')===tallOn);});
+  document.querySelectorAll('#side-seg button').forEach(b=>{b.textContent=u[b.dataset.v];b.setAttribute('aria-pressed',b.dataset.v===side);});
   document.querySelectorAll('#modes .lv').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===mode));
   $('best').textContent=mode==='solo'&&best?u.best(best):'';
 }
@@ -156,7 +160,7 @@ let lastRes=null;
 function setLang(l){
   lang=l;LS.set('bamboo-lang',l);const u=UI[l];
   document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
-  for(const k of ['title','sub','play','privacy','grown','g1','endj','tall','music','sfx','g2','g3','legal','solo','duo'])
+  for(const k of ['title','sub','play','privacy','grown','g1','endj','side','tall','music','sfx','g2','g3','legal','solo','duo'])
     {const e=$('t-'+k);if(e)e.textContent=u[k];}
   $('t-privacy2').textContent=u.privacy;$('menu').textContent=u.menu;document.title=u.title+' · Bamboo Physio';
   $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
@@ -166,6 +170,7 @@ function setLang(l){
 $('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
 document.querySelectorAll('#endj-seg button').forEach(b=>b.onclick=()=>{endJump=b.dataset.v==='1';LS.set('bee-endj',endJump?'1':'0');SFX.tink();segs();});
 document.querySelectorAll('#tall-seg button').forEach(b=>b.onclick=()=>{tallOn=b.dataset.v==='1';LS.set('bee-tall',tallOn?'1':'0');SFX.tink();segs();});
+document.querySelectorAll('#side-seg button').forEach(b=>b.onclick=()=>{side=b.dataset.v;LS.set('bee-side',side);SFX.tink();segs();});
 document.querySelectorAll('#modes .lv').forEach(b=>b.onclick=()=>{mode=b.dataset.m;LS.set('bee-mode',mode);SFX.tink();segs();});
 
 /* ================= CANVAS ================= */
@@ -216,12 +221,16 @@ function track(now){
   return true;
 }
 /* is this head where it should be? (setup) */
+const SIZE=()=>mode==='duo'?[.16,.3,.6]:[.08,.15,.34];   // shoulder width ÷ lane width: min, ideal, max
+/* the head height comes first (Edgar, 19 Nov: head above the stripe but the hint said "come closer").
+   Which way to fix it depends on the size: big + head high = too close; small + head high = phone pointing too low. */
 function fit(p,lane){
   if(!p)return 'find';
-  if(p.sw<lane.w*(mode==='duo'?.16:.08))return 'closer';
-  if(p.sw>lane.w*(mode==='duo'?.6:.34))return 'back';
-  if(p.nose.y<H*BAND[0])return 'high';
-  if(p.nose.y>H*BAND[1])return 'low';
+  const [mn,mid,mx]=SIZE(),r=p.sw/lane.w;
+  if(p.nose.y<H*BAND[0])return r>=mid*.85?'high_back':'high_tilt';
+  if(p.nose.y>H*BAND[1])return r<=mid*1.15?'low_closer':'low_tilt';
+  if(r<mn)return 'closer';
+  if(r>mx)return 'back';
   return '';
 }
 
@@ -231,7 +240,7 @@ function lanes(){return mode==='duo'?[{x:0,w:W/2,dir:1},{x:W/2,w:W/2,dir:-1}]:[{
 let players=[];
 function makePlayer(k){
   const ln=lanes()[k];
-  return {k,ln,score:0,level:1,course:[],flower:null,ref:null,head:null,size:1,seenT:-9,badT:0,distBad:'',
+  return {k,ln,dir:ln.dir,score:0,level:1,course:[],flower:null,ref:null,head:null,size:1,seenT:-9,badT:0,distBad:'',
     bee:{st:'hive',x:0,y:0,t:0,from:null,mood:'happy',dir:ln.dir},old:null,pop:-9,ouchT:-9,fake:{x:0,y:0}};
 }
 function personFor(k){
@@ -241,44 +250,60 @@ function personFor(k){
 }
 const U=P=>P.ref.u;
 const beeR=P=>P.ref.u*.24;
-const hiveX=P=>P.ln.dir>0?P.ln.x+P.ln.w*.07:P.ln.x+P.ln.w*.93;
-const flowerX=P=>mode==='duo'?(P.ln.dir>0?P.ln.x+P.ln.w*.9:P.ln.x+P.ln.w*.1):P.ln.x+P.ln.w*.93;
+// P.dir 1: hive on the left, flower on the right; -1: the other way round. 1 player "both sides": flips every level,
+// so the next bee waits where the child already is and the child goes back and forth.
+const hiveX=P=>P.dir>0?P.ln.x+P.ln.w*.07:P.ln.x+P.ln.w*.93;
+const flowerX=P=>mode==='duo'?(P.dir>0?P.ln.x+P.ln.w*.9:P.ln.x+P.ln.w*.1):(P.dir>0?P.ln.x+P.ln.w*.93:P.ln.x+P.ln.w*.07);
 const beeStand=P=>P.ref.top-beeR(P)*1.1;     // the bee sits on top of the head while standing
-const home=P=>({x:hiveX(P)+P.ln.dir*U(P)*.6,y:beeStand(P)});   // where the new bee waits, next to the hive
-function newCourse(P){
-  const L=P.level,u=U(P),by=beeStand(P),hx=hiveX(P),fx=flowerX(P),a=hx+(fx-hx)*.16,b=fx-(fx-hx)*.16;
-  const n=Math.max(1,Math.min(L<2?1:L<4?2:3,Math.floor(Math.abs(b-a)/(u*1.25))));
-  const duck=u*(.5+Math.min(5,L)*.09);            // how deep the child must duck: deeper every level ("really duck")
-  const pool=['top'];if(L>=2)pool.push('low');if(L>=3)pool.push('gap');if(L>=3&&tallOn)pool.push('tall');
-  const course=[];let usedTall=false;
-  for(let i=0;i<n;i++){
-    let kind=pool[Math.floor(Math.random()*pool.length)];
-    if(i>0&&kind===course[i-1].kind&&Math.random()<.6)kind=pool[Math.floor(Math.random()*pool.length)];
-    if(kind==='tall'){if(usedTall)kind='top';usedTall=true;}
-    const x=a+(b-a)*(i+.5)/n,w=Math.max(24,u*.4),parts=[];
-    if(kind==='top')parts.push([-30,by+duck,'top']);                      // duck under
-    else if(kind==='low')parts.push([by+u*.55,H+30,'bottom']);            // stay tall over it
-    else if(kind==='tall')parts.push([by-u*.12,H+30,'bottom']);           // only a jump clears it
-    else{const g=by+duck*.75;parts.push([-30,g,'top']);parts.push([g+Math.max(beeR(P)*3.4,u*.95),H+30,'bottom']);}   // squeeze through the gap
-    course.push({kind,x,w,parts,t:0});
+const home=P=>({x:hiveX(P)+P.dir*U(P)*.6,y:beeStand(P)});   // where the new bee waits, next to the hive
+/* the course for each level (Edgar, 19 Nov: gentler climb, gaps one at a time).
+   top d   = hangs from the top; the bee must come down d shoulder widths (+ its own size) to pass under
+   low     = grows from the bottom; stay tall over it
+   gap c,g = a hole centred c shoulder widths below the standing bee, g shoulder widths tall
+   tall    = grows higher than the bee: only a jump clears it (grown-ups option, from level 5) */
+function plan(L){
+  const R=(a,b)=>a+Math.random()*(b-a);
+  switch(L){
+    case 1:return [['top',.45]];
+    case 2:return [['low']];
+    case 3:return [['top',.55],['low']];
+    case 4:return [['gap',.75,1.3]];                         // first gap: big and easy
+    case 5:return [['top',.65],['gap',.75,1.2]];
+    case 6:{const c=R(.7,.85);return [['gap',c,1.15],['gap',c,1.15]];}   // two gaps, same height
+    case 7:return Math.random()<.5?[['gap',.55,1.05],['gap',1,1.05]]:[['gap',1,1.05],['gap',.55,1.05]];   // two heights
+    default:{const out=[];for(let i=0;i<3;i++)out.push(Math.random()<.75?['gap',R(.5,1.1),1]:['top',R(.7,.9)]);return out;}
   }
+}
+function newCourse(P){
+  const L=P.level,u=U(P),by=beeStand(P),hx=hiveX(P),fx=flowerX(P),a=hx+(fx-hx)*.16,b=fx-(fx-hx)*.16,r=beeR(P);
+  let items=plan(L);
+  if(tallOn&&L>=5){const i=items.findIndex(t=>t[0]!=='gap');if(i>=0&&Math.random()<.6)items[i]=['tall'];}
+  const n=Math.max(1,Math.min(items.length,Math.floor(Math.abs(b-a)/(u*1.25))));items=items.slice(0,n);
+  const course=items.map(([kind,p1,p2],i)=>{
+    const x=a+(b-a)*(i+.5)/n,w=Math.max(24,u*.4),parts=[];
+    if(kind==='top')parts.push([-30,by+u*p1,'top']);                       // duck under
+    else if(kind==='low')parts.push([by+u*.55,H+30,'bottom']);             // stay tall over it
+    else if(kind==='tall')parts.push([by-u*.12,H+30,'bottom']);            // only a jump clears it
+    else{const g=Math.max(u*p2,r*3.4),top=by+u*p1-g/2;parts.push([-30,top,'top']);parts.push([top+g,H+30,'bottom']);}   // squeeze through the gap
+    return {kind,x,w,parts,t:0};
+  });
   P.course=course;
   // the flower: high at the end (jump), or at head height
   const fs=flowerSize(P);
   P.flower={x:fx,y:endJump?Math.max(96+fs,by-u*.62):by-u*.05,t:0,st:'wait',open:.6};
-  const h0=home(P);P.bee={st:'hive',x:h0.x,y:h0.y,t:0,mood:'happy',dir:P.ln.dir,from:null};
+  const h0=home(P);P.bee={st:'hive',x:h0.x,y:h0.y,t:0,mood:'happy',dir:P.dir,from:null};
 }
 const flowerSize=P=>Math.max(22,Math.min(64,U(P)*.34));
 
 /* ================= GAME ================= */
-let state='menu',tNow=0,countT=0,lastCount=9,elapsed=0,setupT=0,pops=[],lastSec=99;
+let badT=0,state='menu',tNow=0,countT=0,lastCount=9,elapsed=0,setupT=0,pops=[],lastSec=99;
 async function play(){
   audio();SFX.go();
   $('start').hidden=true;$('end').hidden=true;
   if(!camOK&&!FAKE){toast(UI[lang].ready,0);state='loading';
     try{await camLoad(startCam);$('toast').classList.remove('on');}
     catch(e){console.warn(e);toast(UI[lang].nocam,6000);}}
-  players=lanes().map((_,k)=>makePlayer(k));elapsed=0;pops=[];lastRes=null;lastSec=99;setupT=0;
+  players=lanes().map((_,k)=>makePlayer(k));if(mode==='solo'&&side==='right')players[0].dir=-1;elapsed=0;pops=[];lastRes=null;lastSec=99;setupT=0;badT=0;
   $('stopx').classList.add('on');musicStart();
   if(camOK)state='setup';
   else{players.forEach(P=>{P.ref={top:H*.5-H*.2*.45,u:H*.2,size:1};P.fake={x:P.ln.x+P.ln.w/2,y:H*.5};});startCount();}
@@ -368,7 +393,7 @@ function stepPlayer(P,dt){
   } else if(b.st==='sip'){
     b.t+=dt;b.x=f.x+Math.sin(b.t*14)*r*.15;b.y=f.y-flowerSize(P)*.65;f.open=Math.min(1,f.open+dt*2);
     if(b.t>=1.1){   // the bee stays with the flower; a new course + bee wait at the hive
-      P.old={f:{...f},bee:{...b},t:0};P.level++;newCourse(P);FX.buzz();
+      P.old={f:{...f},bee:{...b},t:0};P.level++;if(mode==='solo'&&side==='both')P.dir=-P.dir;newCourse(P);FX.buzz();
     }
   }
 }
@@ -385,6 +410,7 @@ function frame(now){
       if(setupT>1.2){players.forEach(P=>{const c=P.cal.slice(-20),sw=c.reduce((a,p)=>a+p.sw,0)/c.length,hy=c.reduce((a,p)=>a+p.hy,0)/c.length;
         const u=sw;P.ref={sw,u,top:hy-u*.45};P.head=null;});startCount();}}
     else{setupT=Math.max(0,setupT-dt*2);players.forEach(P=>P.cal=[]);}
+    badT=setupT>0?0:badT+dt;   // 5 s without a good position -> show where to stand
   }
   else if(state==='count'){
     const n=3-Math.floor(tNow-countT);if(n!==lastCount){lastCount=n;if(n>0)SFX.tick();}
@@ -431,7 +457,18 @@ function drawSetup(fs){
   L.forEach((ln,k)=>{const p=personFor(k),why=fit(p,ln),cx=ln.x+ln.w/2;
     if(why&&(why!=='find'||mode==='solo'||people.length))bubble(u[why],cx,H*.86,fs*.8,'#FFF3C4');
     if(p){const ok=!why;drawBee(ctx,p.hx,p.hy-p.sw*.75,Math.max(14,p.sw*.16),tNow+k,{mood:ok?'sip':'happy',bow:mode==='duo'?BOWS[k]:null,dir:ln.dir});}});
+  if(badT>5)L.forEach((ln,k)=>drawGhost(ln,k,personFor(k),fs));
   if(setupT>0){const n=Math.ceil(Math.min(1,setupT/1.2)*5);for(let i=0;i<5;i++)sticker(ctx,ell(W/2+(i-2)*fs*1.3,H-fs*1.3,fs*.42,fs*.42),i<n?'#FFD84D':'#fff',3);}
+}
+/* after 5 s without a good position: a see-through cartoon child walks from where the player is now to the right spot
+   (right size = right distance, head in the stripe), on a loop, with "Stand like this" */
+function drawGhost(ln,k,p,fs){
+  const mid=SIZE()[1]*ln.w,T=2.6,q=(tNow%T)/T,m=ease(Math.min(1,q/.6));
+  const to={x:ln.x+ln.w/2,y:H*(BAND[0]+BAND[1])/2,sw:mid};
+  const from=p?{x:p.nose.x,y:p.nose.y,sw:p.sw}:{x:ln.dir>0?ln.x-mid:ln.x+ln.w+mid,y:to.y,sw:mid};
+  const sw=from.sw+(to.sw-from.sw)*m,x=from.x+(to.x-from.x)*m,ny=from.y+(to.y-from.y)*m,s=sw/.9,bob=q<.6?Math.abs(Math.sin(q*30))*s*.06:0;
+  ctx.save();ctx.globalAlpha=.6;drawKid(ctx,x,ny+1.65*s-bob,s,'stand',mode==='duo'?['#BFE3FF','#FFD1DC'][k]:'#BFE3FF',tNow);ctx.restore();
+  if(q>.6)bubble(UI[lang].like,to.x,to.y-s*2.1,fs*.85,'#FFF3C4');
 }
 function drawCourse(P){
   for(const c of P.course){const grow=ease(Math.min(1,c.t*2.5)),shake=c.hitT&&tNow-c.hitT<.5?Math.sin(tNow*50)*(1-(tNow-c.hitT)*2)*6:0;
@@ -443,7 +480,7 @@ function drawPlayer(P){
   drawHive(ctx,hiveX(P),beeStand(P)+U(P)*.15,Math.min(U(P)*.42,P.ln.w*.06),tNow);
   // the old flower (with its bee) fades away after a delivery
   if(P.old){const a=Math.max(0,1-P.old.t/1.2);ctx.save();ctx.globalAlpha=a;drawHolder(ctx,P.old.f.x,P.old.f.y,fs,'high',H,tNow);drawFlower(ctx,P.old.f.x,P.old.f.y,fs,'high',1,tNow);
-    drawBee(ctx,P.old.bee.x,P.old.bee.y,r,tNow,{mood:'sip',dir:P.ln.dir,bow:mode==='duo'?BOWS[P.k]:null});ctx.restore();}
+    drawBee(ctx,P.old.bee.x,P.old.bee.y,r,tNow,{mood:'sip',dir:P.dir,bow:mode==='duo'?BOWS[P.k]:null});ctx.restore();}
   drawCourse(P);
   if(f){const s=fs*Math.min(1,.4+f.t*2);drawHolder(ctx,f.x,f.y,s,'high',H,tNow);drawFlower(ctx,f.x,f.y,s,'high',f.st==='got'?1:.6+.1*Math.sin(tNow*3),tNow);}
   // the bee
@@ -453,7 +490,7 @@ function drawPlayer(P){
   if(state!=='play')return;
   const tx=Math.max(110,Math.min(W-110,P.ln.x+P.ln.w/2)),tfs=Math.max(15,Math.min(22,W*.026));
   if(b.st==='hive'){
-    bubble(P.score&&tNow-P.pop<4?u.again:u.hive,hiveX(P)+P.ln.dir*Math.min(P.ln.w*.2,170),beeStand(P)-U(P)*1.2,tfs,'#FFF3C4');
+    bubble(P.score&&tNow-P.pop<4?u.again:u.hive,hiveX(P)+P.dir*Math.min(P.ln.w*.2,170),beeStand(P)-U(P)*1.2,tfs,'#FFF3C4');
     // little pollen dots drifting from where the head is toward the hive
     const h=P.head;if(h&&Math.abs(h.x-b.x)>U(P)){for(let i=0;i<5;i++){const k=((tNow*.6+i/5)%1),x=h.x+(b.x-h.x)*k,y=h.y-r+(b.y-h.y+r)*k-Math.sin(k*Math.PI)*r*2;ctx.fillStyle=`rgba(255,216,77,${.85*(1-k)})`;ctx.beginPath();ctx.arc(x,y,r*.18,0,7);ctx.fill();}}
   } else if(b.st==='wait')bubble(P.distBad?u[P.distBad]:u.letgo,b.x,b.y-r*3,tfs,'#FFF3C4');
@@ -526,7 +563,7 @@ function icons(){
 }
 
 // test hooks (?fake runs)
-window.__P=()=>players;
+window.__P=()=>players;window.__setup=()=>{state="setup";badT=6;people=[];players=lanes().map((_,k)=>makePlayer(k));};
 setLang(lang);icons();
 document.fonts&&document.fonts.ready.then(icons);
 requestAnimationFrame(frame);
