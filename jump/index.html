@@ -369,6 +369,17 @@ function drawStage(){
   bigText(String(n),R.x+R.w/2,R.y+fs*1.4+Math.min(R.w*.35,R.h*.16)*.95,Math.min(R.w*.35,R.h*.16),'#fff',1+.3*(aCount?ph:0));
 }
 function headPoint(p){const lm=p.lm;return {x:p.nose.x,y:p.nose.y-Math.max(p.sw*.9,40)};}
+function chestPoint(p){const a=p.lm[11],b=p.lm[12];return {x:(a.x+b.x)/2,y:(a.y+b.y)/2+p.sw*.6};}   // lower chest, middle of the body
+/* the running-out timer: a pie that shrinks clockwise; its colour goes from green to white as time runs out */
+function drawClock(x,y,r,f,left){
+  const mixc=(a,b,k)=>{const h=s=>[1,3,5].map(i=>parseInt(s.slice(i,i+2),16)),A=h(a),B=h(b);return 'rgb('+A.map((v,i)=>Math.round(v+(B[i]-v)*k)).join(',')+')';};
+  ctx.save();ctx.fillStyle='rgba(43,33,24,.25)';ctx.beginPath();ctx.arc(x,y+4,r+5,0,7);ctx.fill();
+  sticker(ctx,ell(x,y,r+4,r+4),'rgba(255,255,255,.55)',4);
+  if(f>0){const warn=left<=10?.15*Math.sin(tNow*10):0;ctx.fillStyle=mixc('#5CC26A','#FFFFFF',Math.min(1,1-f+warn));ctx.beginPath();ctx.moveTo(x,y);ctx.arc(x,y,r,-Math.PI/2,-Math.PI/2+f*Math.PI*2);ctx.closePath();ctx.fill();
+    ctx.strokeStyle=INK;ctx.lineWidth=2.5;ctx.stroke();}
+  ctx.restore();
+  bigText(String(left),x,y,r*.75,'#fff',left<=10?1+.08*Math.max(0,Math.sin(tNow*10)):1);
+}
 function render(dt){
   ctx.setTransform(DPR,0,0,DPR,0,0);
   const u=UI[lang],live=camOK&&video.readyState>=2&&state!=='menu'&&!(state==='over'&&!camOK);
@@ -394,13 +405,16 @@ function render(dt){
   else if(state==='play'||state==='over'){
     if(state==='play'&&elapsed<.9)bigText(u.go,cx,H*.3,Math.min(110,H*.17),'#FFD84D',1+.3*Math.max(0,1-elapsed*4));
     const left=Math.max(0,Math.ceil(ROUND-elapsed));
-    if(state==='play')bubble('⏱ '+left,cx,64+fs*.2,fs,left<=10?'#FFE3E8':'#fff');
-    // counts: big number over each player's head, plus a corner bubble in case the head is near the top
+    // 19 Nov (Edgar): a picture timer — a circle that runs out, green turning to white. vs: on the side away from the
+    // animal (right edge); 2 players: in the middle, on the line between them.
+    if(state==='play'){const r=Math.max(28,Math.min(52,H*.085)),tx=mode==='duo'?W/2:W-r-18,ty=mode==='duo'?r+62:r+70;drawClock(tx,ty,r,Math.max(0,1-elapsed/ROUND),left);}
+    // counts: big WHITE number with a black outline on the lower chest (Edgar 19 Nov: over the head it covered the face;
+    // white + black edge shows on a white shirt too)
     const cols=mode==='duo'?['#5FB7F0','#FF9FB0']:['#7DCB6B'];
     for(let k=0;k<cols.length;k++){
-      const d=dets[k],pp=mode==='duo'?people.find(p=>slotOf(p)===k):people[0],pk=Math.max(0,1-(tNow-d.pop)*3.5);
-      if(pp&&camOK){const h=headPoint(pp);bigText(String(d.n),h.x,Math.max(110,h.y),Math.min(90,H*.13),cols[k],1+.4*pk);}
-      else bigText(String(d.n),mode==='duo'?(k?W*.75:W*.25):cx,H*.45,Math.min(120,H*.2),cols[k],1+.4*pk);
+      const d=dets[k],pp=mode==='duo'?people.find(p=>slotOf(p)===k):people[0],pk=Math.max(0,1-(tNow-d.pop)*3.5),bs=Math.min(90,H*.13);
+      if(pp&&camOK){const c=chestPoint(pp);bigText(String(d.n),c.x,Math.min(H-bs*.6,c.y),bs,'#fff',1+.4*pk);}
+      else bigText(String(d.n),mode==='duo'?(k?W*.75:W*.25):cx,H*.45,Math.min(120,H*.2),'#fff',1+.4*pk);
     }
     if(mode==='duo'){bubble(String(dets[0].n),40,64+fs*.2,fs,'#DDF3FF');bubble(String(dets[1].n),W-40,64+fs*.2,fs,'#FFE3E8');}
   }

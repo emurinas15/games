@@ -198,22 +198,23 @@ export const STYLES = {
     const chorus = sec === 'B' || sec === 'B2', r = root > 52 ? root - 12 : root < 40 ? root + 12 : root;
     // 19 Nov: real open-chord voicings, strummed low to high (a downstroke), on a crunchy clean electric (AC/DC tone):
     // I = root–5th–octave–3rd–5th (like an open A), IV over the same bass note (like D/A: A–A–D–F#).
-    const I = [r, r + 7, r + 12, r + 16, r + 19], IV = [r, r + 12, r + 17, r + 21];
-    const G = 'electric_guitar_clean';
-    const hit = (ch, v, len) => ch.forEach((n, j) => { const d = j * .007; ev.push([G, n, v, len, .05, d, -.7]); ev.push([G, n, v * .95, len, .05, d + .016, .7]); });
-    if (sec === 'end' && k >= 24) return k === 24 ? [...I.flatMap((n, j) => [[G, n, .4, 3.2, .25, j * .012, -.7], [G, n, .4, 3.2, .25, j * .012 + .016, .7]]),
+    // 19 Nov evening: punchy distortion power chords (root–5th–octave) — I, and the IV power chord on top for the move
+    const I = [r, r + 7, r + 12], IV = [r + 5, r + 12, r + 17];
+    const G = 'distortion_guitar';
+    const hit = (ch, v, len) => ch.forEach((n, j) => { const d = j * .004; ev.push([G, n, v, len, .05, d, -.75]); ev.push([G, n, v * .95, len, .05, d + .012, .75]); });
+    if (sec === 'end' && k >= 24) return k === 24 ? [...I.flatMap((n, j) => [[G, n, .4, 3.2, .25, j * .008, -.75], [G, n, .4, 3.2, .25, j * .008 + .012, .75]]),
       ['electric_bass_pick', root, .3, 2.4, .02], ['~crash', 0, .5, 0, 0], ['~kick', 0, .45, 0, 0], ['~cheer', 0, 1.3, 0, 0, .3]] : [];
     // the crowd
     if (i === 0) ev.push(['~crowd', 2.1, chorus ? .75 : .45, 0, 0]);
     if (chorus && (i === 2 || i === 6)) ev.push(['~clap', 0, .9, 0, 0]);
     if (k === 0 && (chorus || s % STEPS === 0)) ev.push(['~cheer', 0, chorus ? .7 : .9, 0, 0]);
     // the riff: I . . IV I . IV I   (rests are what make it swing)
-    if (chorus && i === 0) hit(I, .38, .55);                           // ringing chord on the bar in the chorus
-    else if (i === 0 || i === 4) hit(I, .36, .2);
-    else if (i === 3 || i === 6) hit(IV, .32, .12);
-    else if (i === 7) hit(I, .3, .09);
+    if (chorus && i === 0) hit(I, .38, .5);                            // ringing chord on the bar in the chorus
+    else if (i === 0 || i === 4) hit(I, .36, .15);                    // short and tight = punch
+    else if (i === 3 || i === 6) hit(IV, .32, .1);
+    else if (i === 7) hit(I, .3, .07);
     if (mel != null) {
-      ev.push([G, mel - 12, .16, .2, .2]);                                // lead, kept back
+      ev.push([G, mel - 12, .13, .2, .2]);                                // lead, kept back
       if (chorus) ev.push(['choir_aahs', mel - 12, .26, .3, .3]);        // gang voices
     }
     if (i !== 1 && i !== 5) ev.push(['electric_bass_pick', root, i % 2 ? .18 : .23, .16, .02]);

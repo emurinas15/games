@@ -301,14 +301,17 @@ function amp(key) { const B = S.BUS, a = S.AC; B.amps = B.amps || {}; if (B.amps
   if (C.lp2) { const l2 = a.createBiquadFilter(); l2.type = 'lowpass'; l2.frequency.value = C.lp2; l2.Q.value = .5; lp.connect(l2); last = l2; }   // speaker-cab roll-off
   sh.connect(hp); hp.connect(mid); mid.connect(lp); last.connect(post); post.connect(B.music);
   const w = a.createGain(); w.gain.value = .12; post.connect(w); w.connect(B.rev);
-  if (LIVE) { const hw = a.createGain(); hw.gain.value = .5; post.connect(hw); hw.connect(hall()); }   // live: guitars fill the arena
+  if (LIVE) { const hw = a.createGain(); hw.gain.value = .3; post.connect(hw); hw.connect(hall()); }   // a bit drier = punchier   // live: guitars fill the arena
   return (B.amps[key] = sh); }
 /* amp settings per guitar sample. 19 Nov (Edgar: the Lava riff "doesn't even sound like a guitar — use AC/DC guitars"):
    the soundfont's overdriven guitar is already distorted, so the amp distorted it twice into a buzz. The AC/DC sound is
    a clean electric guitar into a Marshall turned up only to crunch: low gain, valve-like uneven clipping, strong mids,
    a speaker cabinet that cuts the fizz. That is 'electric_guitar_clean' here. */
 const AMP_CFG = {
-  distortion_guitar: { k: 9, post: .07 },
+  // 19 Nov evening (Edgar: crunch was "metallic and flat" — "just a distortion guitar, punchy, AC/DC style"): the
+  // soundfont distortion guitar is already distorted, so the amp only rounds it off (gentle soft-clip) and the cab
+  // shapes it: tight lows, a warm mid push, no fizz.
+  distortion_guitar: { k: 1.4, hp: 95, midF: 750, midG: 3, lp: 4600, lp2: 6500, post: .3 },
   overdriven_guitar: { k: 9, post: .1 },
   electric_guitar_clean: { k: 3.2, asym: .18, hp: 110, midF: 900, midG: 4.5, lp: 3800, lp2: 5200, post: .14 }
 };
