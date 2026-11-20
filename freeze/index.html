@@ -66,7 +66,7 @@
 
 <script type="module">
 import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom} from '../shared/kit.js';
-import {camLoad,timeoutP} from '../shared/kit.js';
+import {camLoad,timeoutP,setupGoal,goalText,fmtTime,goalBest} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
 import {setupCast} from '../shared/cast.js';
 import {setupHowTo,seg,bigStar} from '../shared/howto.js';
@@ -81,7 +81,7 @@ import {setupHowTo,seg,bigStar} from '../shared/howto.js';
    every limb segment (no per-body-part weighting); the statue is shown on its own pedestal, not over the player. */
 
 const UI={
- en:{title:"Freeze & Copy",sub:"Spin the animal wheel, watch it freeze — and copy the statue!",play:"Play",
+ en:{title:"Freeze & Copy",sub:"Spin the animal wheel, watch it freeze — and copy the statue!",subG:n=>"Copy "+n+" animal statues!",subG2:n=>"First to "+n+" statues wins!",statues:"statues",play:"Play",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
   g1:"Raise a hand to spin the wheel. The animal dances, freezes into a funny pose, and you copy it — hold the copy until the jar fills. After a few spins come mix-ups: half one animal, half another. A game lasts 1½ minutes — copy as many statues as you can. One player tries to beat their record; two players race to copy first.",
   body:"Body",full:"Standing",seated:"Seated",who:"Players",solo:"👤 1 player",duo:"👥 2-player race",strict:"Copy",easy:"Easy",medium:"Medium",hard:"Hard",feet:"Step back — show me your feet!",
@@ -95,7 +95,7 @@ const UI={
   great:["Great copy!","Perfect!","You're a statue!","Nailed it!"],miss:["Hehe, too tricky!","Almost!","Next one!"],winL:"← Blue wins!",winR:"Pink wins! →",
   spin:"Spin",left:"s",timeup:"Time's up!",blue:"Blue",pink:"Pink",tie:"A tie!",nobody:"Step in front of the camera!",turn:"Turn the phone sideways to play",
   nocam:"No camera here — this game needs a camera.",aria:"Game area"},
- he:{title:"קופאים ומעתיקים",sub:"מסובבים את גלגל החיות, החיה קופאת — ומעתיקים את הפסל!",play:"שחקו",
+ he:{title:"קופאים ומעתיקים",sub:"מסובבים את גלגל החיות, החיה קופאת — ומעתיקים את הפסל!",subG:n=>"מעתיקים "+n+" פסלי חיות!",subG2:n=>"מי שמגיע ראשון ל־"+n+" פסלים מנצח!",statues:"פסלים",play:"שחקו",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
   g1:"מרימים יד כדי לסובב את הגלגל. החיה רוקדת, קופאת בתנוחה מצחיקה, ומעתיקים אותה — מחזיקים עד שהצנצנת מתמלאת. אחרי כמה סיבובים מגיעים ערבובים: חצי חיה אחת וחצי חיה אחרת. משחק נמשך דקה וחצי — מעתיקים כמה שיותר פסלים. שחקן אחד מנסה לשבור את השיא שלו; שני שחקנים מתחרים מי מעתיק ראשון.",
   body:"גוף",full:"עמידה",seated:"ישיבה",who:"שחקנים",solo:"👤 שחקן אחד",duo:"👥 מרוץ לשניים",strict:"העתקה",easy:"קל",medium:"בינוני",hard:"קשה",feet:"זוזו אחורה — תראו לי את הרגליים!",
@@ -138,12 +138,16 @@ function setLang(l){
   $('t-privacy2').textContent=u.privacy;
   $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
   $('c').setAttribute('aria-label',u.aria);
-  segs();syncSound();if(!$('end').hidden)fillEnd(lastNew);
+  segs();subLine();syncSound();if(!$('end').hidden)fillEnd(lastNew);
 }
 $('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
 const segBind=(id,fn)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{fn(b.dataset.v);loadBest();segs();});
+/* 20 Nov (Edgar): play until a number of statues instead of 90 seconds (2 players: first to the goal wins) */
+const goal=setupGoal({key:'fc',min:3,max:20,step:1,def:8,unit:{en:'statues',he:'פסלים'},onChange:()=>subLine()});
+let G=0,gb=null;
+function subLine(){const n=goal.get(),u=UI[lang];$('t-sub').textContent=n?(who==='duo'?u.subG2(n):u.subG(n)):u.sub;}
 segBind('body-seg',v=>{bodyMode=v;LS.set('fc-body',v);});
-segBind('who-seg',v=>{who=v;LS.set('fc-who3',v);});
+segBind('who-seg',v=>{who=v;LS.set('fc-who3',v);subLine();});
 segBind('strict-seg',v=>{strict=v;LS.set('fc-strict',v);});
 
 /* ================= CANVAS ================= */
@@ -367,7 +371,7 @@ function duoSlots(){const mid=W/2,s=[null,null];if(people.length>=2){s[0]=people
 function say(t,dur=1.6){bigMsg=t;bigMsgT=tNow+dur;}
 function setPhase(p){phase=p;phaseT=0;}
 const pick=a=>a[Math.floor(Math.random()*a.length)];
-let gameT=0;const timeLeft=()=>Math.max(0,GAME_T-gameT),clock=()=>{const t=Math.ceil(timeLeft());return Math.floor(t/60)+':'+String(t%60).padStart(2,'0');};
+let gameT=0;const timeLeft=()=>G?1e9:Math.max(0,GAME_T-gameT),clock=()=>{const t=Math.ceil(timeLeft());return Math.floor(t/60)+':'+String(t%60).padStart(2,'0');};
 const holdTime=()=>Math.min(1.6,.9+spinN*.1);
 
 /* the animal wheel: spins until a hand goes up, then always brakes over exactly 2 s (same braking every time).
@@ -393,7 +397,7 @@ async function play(){
   $('start').hidden=true;$('end').hidden=true;
   if(!camOK){say(UI[lang].ready,99);state='loading';
     try{await camLoad(startCam);}catch(e){console.warn(e);state='menu';bigMsg='';$('start').hidden=false;toast(UI[lang].nocam,6000);return;}}
-  bigMsg='';score=[0,0];spinN=0;gameT=0;lastPicks=[];target=null;pops=[];loadBest();
+  bigMsg='';score=[0,0];spinN=0;gameT=0;G=goal.get();gb=null;lastPicks=[];target=null;pops=[];loadBest();
   $('stopx').classList.add('on');musicStart();
   const gk=bodyMode==='full'?'full':'body',gt={en:{find:'Stand in front of the camera'},he:{find:'עמדו מול המצלמה'}};
   guide=who==='duo'?null:makeGuide(gk,{},bodyMode==='full'?gt:{});if(guide)guide.reset();
@@ -406,12 +410,16 @@ function endGame(quit){
   state='over';musicStop();$('stopx').classList.remove('on');if(guide)guide.hide();guides.forEach(g=>g.hide());target=null;
   if(quit){state='menu';$('start').hidden=false;return;}
   const sc=who==='duo'?Math.max(score[0],score[1]):score[0];
-  lastNew=who==='solo'&&sc>best;if(lastNew){best=sc;LS.set(bestKey(),String(sc));}
+  lastNew=!G&&who==='solo'&&sc>best;if(lastNew){best=sc;LS.set(bestKey(),String(sc));}
+  if(G&&who==='solo'){gb=goalBest('fc-'+bodyMode+strict,G,gameT);lastNew=gb.isNew&&gb.best>0;}
   fillEnd(lastNew);$('end').hidden=false;SFX.chime();
 }
 function fillEnd(nb){const u=UI[lang];$('newbest').hidden=!nb;$('newbest').textContent=u.newbest;
   if(who==='duo'){$('final').textContent=score[0]+' – '+score[1];$('t-over').textContent=score[0]===score[1]?u.tie:(score[0]>score[1]?u.winL:u.winR);$('best-line').textContent='';}
-  else{$('final').textContent=score[0];$('t-over').textContent=u.over[Math.min(3,Math.floor(score[0]/3))];$('best-line').textContent=u.bestis+best;}}
+  else{$('final').textContent=score[0];$('t-over').textContent=u.over[Math.min(3,Math.floor(score[0]/3))];$('best-line').textContent=u.bestis+best;}
+  if(G){const T=goalText();$('t-sec2').textContent=' '+u.statues+' · '+T.inT+fmtTime(gameT);
+    if(who==='solo'){$('t-over').textContent='🎯 '+T.reached;$('best-line').textContent=gb&&gb.best?T.fast+fmtTime(gb.best):'';}}
+  else $('t-sec2').textContent=u.sec2||'';}
 
 function nextSpin(){ if(timeLeft()<=0){endGame(false);return;} state='play';setPhase('spin');wheelStart(false);target=null;meters=[0,0];winner=-1; }
 
@@ -450,7 +458,7 @@ function frame(now){
       if(winner>=0){score[who==='duo'?winner:0]++;FX.great();say(who==='duo'?(winner?u.winR:u.winL):pick(u.great),1.4);
         for(let k=0;k<14;k++)pops.push({x:W/2,y:H*.3,vx:(Math.random()-.5)*W*.8,vy:-H*(.3+Math.random()*.5),life:1.2});setPhase('cheer');}
     }
-    else if(phase==='cheer'){ if(phaseT>1.6)nextSpin(); }
+    else if(phase==='cheer'){ if(phaseT>1.6){if(G&&Math.max(score[0],score[1])>=G)endGame(false);else nextSpin();} }
   }
   render(dt);
   requestAnimationFrame(frame);
@@ -568,7 +576,7 @@ function render(dt){
         if(phase==='copy')drawCopyDots();}}
     // HUD: spin count and score(s)
     const hf=Math.max(16,Math.min(24,W*.042)),hy=H-hf*1.6;
-    {const SR=stageRect(),left=timeLeft();bubble('⏱ '+clock(),who==='duo'?W*.5:SR.x+SR.w+8+(W-SR.x-SR.w-8)/2,64+hf*.2,hf,left<=10?'#FFE3E8':'#fff');}   // one game clock, always on screen
+    {const SR=stageRect(),left=timeLeft();bubble(G?'🎯 '+G:'⏱ '+clock(),who==='duo'?W*.5:SR.x+SR.w+8+(W-SR.x-SR.w-8)/2,64+hf*.2,hf,left<=10?'#FFE3E8':'#fff');}   // one game clock, always on screen
     if(who==='duo'){bubble(String(score[0]),36,64+hf*.2,hf,'#DDF3FF');bubble(String(score[1]),W-36,64+hf*.2,hf,'#FFE3E8');}
     else bubble('★ '+score[0],W-44,64+hf*.2,hf,'#E6F7DE');
   }

@@ -73,7 +73,7 @@ details[open] summary::after{content:" ▴"}
 
 /* 16 Nov (Edgar): home screen — the game's picture (the kid, the animals) stays visible. The start card shows only the
    title and a BIG Play button; everything else (choices, how to play, privacy, for grown-ups) is below, by scrolling the card. */
-.card.home{max-height:clamp(178px,34vh,300px);padding-bottom:0}
+.card.home{max-height:min(calc(100vh - var(--safe-t) - 70px),max(var(--ht-need,0px),clamp(178px,34vh,300px)));padding-bottom:0}   /* --ht-need: set by howto.js so How to play always shows */
 .card.home h1{font-size:30px}
 .card.home .sub{font-size:15px;margin-bottom:10px}
 .card.home #play{font-size:38px;padding:14px 0 12px;margin-bottom:12px}

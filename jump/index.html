@@ -82,6 +82,7 @@ body.casting .toast{visibility:hidden}
   <h1 id="t-over"></h1>
   <div class="big-score" dir="ltr"><span id="final">0</span></div>
   <div class="vs-names" dir="ltr"><span id="n-left"></span><span id="n-right"></span></div>
+  <p class="best-line" id="goal-line" hidden></p>
   <button class="btn" id="again"><span id="t-again">Play again</span></button>
   <button class="btn2" id="menu"></button>
   <p class="note" id="t-privacy2"></p>
@@ -97,7 +98,7 @@ body.casting .toast{visibility:hidden}
    A jump is read from the upper body only (head + both shoulders), so the child can stand close and watch the
    screen; see the JUMP COUNTER notes. Body landmarks only (no audio, no rope); see project doc IP-CHECK.md. Nothing is recorded or sent. */
 import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom} from '../shared/kit.js';
-import {camLoad,timeoutP} from '../shared/kit.js';
+import {camLoad,timeoutP,setupGoal,goalText,fmtTime,goalBest} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
 import {setupCast} from '../shared/cast.js';
 import {setupHowTo,seg,bigStar} from '../shared/howto.js';
@@ -116,6 +117,7 @@ const UI={
   ready:"Getting ready…",two:"Two players, side by side!",closer:"Come a little closer",back:"Move back a little",lower:"Lower the phone a little",go:"Jump!",beat:a=>"Beat the "+a+"!",
   turn:"Turn the phone sideways to play",nocam:"No camera here. Tap the screen to jump.",aria:"Game area",
   you:"You",blue:"Blue",pink:"Pink",winL:"Blue wins!",winR:"Pink wins!",tie:"A tie!",won:a=>"You beat the "+a+"!",lost:"Almost!",tieA:"A tie! So close!",champ:"Animal champion!",
+  subG:n=>"First to "+n+" jumps wins!",jumps:"jumps",
   next:a=>"Next: "+a,again:"Try again",playagain:"Play again",menu:"Menu",left:"s"},
  he:{title:"מירוץ קפיצות",sub:"קופצים הכי הרבה שאפשר בדקה אחת!",play:"שחקו",vs:"נגד החיות",duo:"2 שחקנים",
   panda:"פנדה",duck:"ברווז",rabbit:"ארנב",
@@ -128,6 +130,7 @@ const UI={
   ready:"מתכוננים…",two:"שני שחקנים, זה לצד זה!",closer:"התקרבו קצת",back:"התרחקו קצת",lower:"הנמיכו קצת את הטלפון",go:"קופצים!",beat:a=>"נצחו את ה"+a+"!",
   turn:"סובבו את הטלפון לרוחב כדי לשחק",nocam:"אין כאן מצלמה. הקישו על המסך כדי לקפוץ.",aria:"אזור המשחק",
   you:"אתם",blue:"כחול",pink:"ורוד",winL:"הכחול ניצח!",winR:"הוורוד ניצח!",tie:"תיקו!",won:a=>"ניצחתם את ה"+a+"!",lost:"כמעט!",tieA:"תיקו! ממש קרוב!",champ:"אלופי החיות!",
+  subG:n=>"מי שמגיע ראשון ל־"+n+" קפיצות מנצח!",jumps:"קפיצות",
   next:a=>"הבא: "+a,again:"עוד ניסיון",playagain:"עוד פעם",menu:"תפריט",left:"שנ׳"}
 };
 
@@ -159,10 +162,14 @@ function setLang(l){
   $('t-privacy2').textContent=u.privacy;$('menu').textContent=u.menu;
   $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
   $('c').setAttribute('aria-label',u.aria);
-  segs();syncSound();cast.paint&&cast.paint();if(lastRes&&!$('end').hidden)fillEnd();
+  segs();subLine&&subLine();syncSound();cast.paint&&cast.paint();if(lastRes&&!$('end').hidden)fillEnd();
 }
 $('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
 document.querySelectorAll('#sens-seg button').forEach(b=>b.onclick=()=>{sens=b.dataset.v;LS.set('jr-sens',sens);segs();});
+/* 20 Nov (Edgar): play until a number of jumps instead of one minute — first to the goal wins (vs the animal too) */
+const goal=setupGoal({key:'jr',min:10,max:100,step:5,def:30,unit:{en:'jumps',he:'קפיצות'},onChange:()=>subLine()});
+let G=0,goalT=0;
+function subLine(){const n=goal.get();$('t-sub').textContent=n?UI[lang].subG(n):UI[lang].sub;}
 document.querySelectorAll('#modes .lv').forEach(b=>b.onclick=()=>{mode=b.dataset.m;LS.set('jr-mode',mode);SFX.tink();segs();});
 document.querySelectorAll('#animals .lv').forEach(b=>b.onclick=()=>{animal=b.dataset.a;LS.set('jr-animal',animal);SFX.tink();segs();});
 
@@ -258,7 +265,7 @@ async function play(){
   if(!camOK&&!FAKE){toast(UI[lang].ready,0);state='loading';
     try{await camLoad(startCam);$('toast').classList.remove('on');}
     catch(e){console.warn(e);toast(UI[lang].nocam,6000);}}
-  dets=[makeDet(),makeDet()];aCount=0;elapsed=0;pops=[];lastRes=null;lastSec=99;
+  dets=[makeDet(),makeDet()];aCount=0;elapsed=0;pops=[];lastRes=null;lastSec=99;G=goal.get();
   $('stopx').classList.add('on');musicStart();
   guide=null;
   if(camOK&&mode==='vs'){guide=makeGuide('reach',{},{en:{find:'Stand in front of the camera'},he:{find:'עמדו מול המצלמה'}});guide.reset();}
@@ -278,7 +285,8 @@ function endGame(quit){
   FX.whistle();
   const me=dets[0].n,other=mode==='duo'?dets[1].n:aCount;
   const won=me>other;
-  lastRes={mode,me,other,won,tie:me===other,animal,next:null};
+  lastRes={mode,me,other,won,tie:me===other,animal,next:null,G,secs:elapsed,gb:null};
+  if(G&&mode==='vs'&&won)lastRes.gb=goalBest('jr-'+animal,G,elapsed);
   if(mode==='vs'&&won){if(!beaten.includes(animal[0])){beaten+=animal[0];LS.set('jr-beat',beaten);}
     const i=ORDER.indexOf(animal);lastRes.next=ORDER[i+1]||null;}
   if(mode==='duo'?!lastRes.tie:won){setTimeout(FX.win,500);confetti();} else if(mode==='vs')setTimeout(FX.aww,500);
@@ -291,6 +299,8 @@ function fillEnd(){
     $('t-again').textContent=u.playagain;}
   else{$('t-over').textContent=R.won?(R.animal==='rabbit'?u.champ:u.won(an)):(R.tie?u.tieA:u.lost);$('n-left').textContent=u.you;$('n-right').textContent=an;
     $('t-again').textContent=R.next?u.next(u[R.next]):(R.won?u.playagain:u.again);}
+  const gl=$('goal-line'),T=goalText();gl.hidden=!R.G;
+  if(R.G){gl.textContent='🎯 '+R.G+' '+u.jumps+' · '+T.inT+fmtTime(R.secs)+(R.gb&&R.gb.best?' · '+(R.gb.isNew?'⭐ ':'')+T.fast+fmtTime(R.gb.best):'');}
   $('t-privacy2').textContent=u.privacy;
 }
 function confetti(){for(let i=0;i<40;i++)pops.push({x:W*(.2+Math.random()*.6),y:H*.35,vx:(Math.random()-.5)*W*.9,vy:-H*(.4+Math.random()*.7),life:1.6+Math.random()*.6,c:['#FFD84D','#FF9FB0','#7DCB6B','#5FB7F0'][i%4]});}
@@ -316,10 +326,11 @@ function frame(now){
   else if(state==='play'){
     elapsed+=dt;
     if(camOK&&fresh)people.forEach(p=>{const k=mode==='duo'?slotOf(p):0;if(k>=0)stepDet(dets[k],p,now,()=>jumpFx(k));});
-    if(mode==='vs'){const n=jumpsAt(animal,elapsed);if(n>aCount){aCount=n;({panda:FX.thud,duck:FX.quack,rabbit:FX.hop})[animal]();}
+    if(mode==='vs'){const n=G?Math.min(G,jumpsAt(animal,elapsed)):jumpsAt(animal,elapsed);if(n>aCount){aCount=n;({panda:FX.thud,duck:FX.quack,rabbit:FX.hop})[animal]();}
       if(animal==='duck'){const p=elapsed%2;if(p>=1&&p-dt<1)FX.flutter();}}
-    const left=Math.ceil(ROUND-elapsed);if(left<=5&&left<lastSec&&left>0)SFX.tick();lastSec=left;
-    if(elapsed>=ROUND)endGame(false);
+    if(G){if(dets[0].n>=G||(mode==='duo'?dets[1].n:aCount)>=G)endGame(false);}
+    else{const left=Math.ceil(ROUND-elapsed);if(left<=5&&left<lastSec&&left>0)SFX.tick();lastSec=left;
+    if(elapsed>=ROUND)endGame(false);}
   }
   render(dt);
   requestAnimationFrame(frame);
@@ -380,6 +391,13 @@ function drawClock(x,y,r,f,left){
   ctx.restore();
   bigText(String(left),x,y,r*.75,'#fff',left<=10?1+.08*Math.max(0,Math.sin(tNow*10)):1);
 }
+/* 20 Nov: goal mode — a finish flag with the goal number; the green fills up as the leader gets closer */
+function drawGoal(x,y,r,f,n){
+  ctx.save();ctx.fillStyle='rgba(43,33,24,.25)';ctx.beginPath();ctx.arc(x,y+4,r+5,0,7);ctx.fill();
+  sticker(ctx,ell(x,y,r+4,r+4),'#fff',4);
+  if(f>0){ctx.fillStyle='#8BD16B';ctx.beginPath();ctx.moveTo(x,y);ctx.arc(x,y,r,-Math.PI/2,-Math.PI/2+Math.min(1,f)*Math.PI*2);ctx.closePath();ctx.fill();ctx.strokeStyle=INK;ctx.lineWidth=2.5;ctx.stroke();}
+  ctx.restore();bigText(String(n),x,y,r*.72,'#FFD84D');
+}
 function render(dt){
   ctx.setTransform(DPR,0,0,DPR,0,0);
   const u=UI[lang],live=camOK&&video.readyState>=2&&state!=='menu'&&!(state==='over'&&!camOK);
@@ -407,7 +425,8 @@ function render(dt){
     const left=Math.max(0,Math.ceil(ROUND-elapsed));
     // 19 Nov (Edgar): a picture timer — a circle that runs out, green turning to white. vs: on the side away from the
     // animal (right edge); 2 players: in the middle, on the line between them.
-    if(state==='play'){const r=Math.max(28,Math.min(52,H*.085)),tx=mode==='duo'?W/2:W-r-18,ty=mode==='duo'?r+62:r+70;drawClock(tx,ty,r,Math.max(0,1-elapsed/ROUND),left);}
+    if(state==='play'){const r=Math.max(28,Math.min(52,H*.085)),tx=mode==='duo'?W/2:W-r-18,ty=mode==='duo'?r+62:r+70;
+      if(G)drawGoal(tx,ty,r,Math.max(dets[0].n,mode==='duo'?dets[1].n:0)/G,G);else drawClock(tx,ty,r,Math.max(0,1-elapsed/ROUND),left);}
     // counts: big WHITE number with a black outline on the lower chest (Edgar 19 Nov: over the head it covered the face;
     // white + black edge shows on a white shirt too)
     const cols=mode==='duo'?['#5FB7F0','#FF9FB0']:['#7DCB6B'];

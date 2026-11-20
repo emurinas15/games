@@ -643,3 +643,98 @@ if (typeof document !== 'undefined') setTimeout(() => {
   import(base + 'vision_bundle.mjs').catch(() => {});
   fetch(base + 'wasm/vision_wasm_internal.wasm').catch(() => {});
 }, 1500);
+
+/* ======================= SETTINGS (20 Nov, Edgar) =======================
+   The "For grown-ups" section was hidden at the bottom of the start card. Now a ⚙️ button sits in the top-right
+   corner (only while a start / end card is showing, never during play) and opens the same settings in a panel.
+   Works for every game automatically: the game's <details id="grown"> body is moved into the panel. */
+const SET_TXT = { en: { t: 'Settings', s: 'For grown-ups', x: 'Close' }, he: { t: 'הגדרות', s: 'למבוגרים', x: 'סגירה' } };
+function setupSettings() {
+  const det = document.getElementById('grown'), body = det && det.querySelector('.g-body'), tr = document.querySelector('.top .tr');
+  if (!det || !body || !tr) return;
+  const st = document.createElement('style');
+  st.textContent = `
+.gear{font-size:21px}
+.set-ov{position:fixed;inset:0;z-index:40;background:rgba(43,33,24,.45);display:flex;align-items:flex-start;justify-content:center;padding:calc(var(--safe-t) + 60px) 12px calc(var(--safe-b) + 12px)}
+.set-ov[hidden]{display:none!important}
+.set-card{position:relative;width:min(460px,100%);max-height:100%;overflow:auto;touch-action:pan-y;background:var(--cream);border:4px solid var(--ink);border-radius:30px;box-shadow:0 6px 0 var(--ink);padding:14px 16px 12px}
+.set-card h2{margin:0;text-align:center;font:900 28px/1.1 Grandstander,Fredoka,sans-serif}
+.set-card .set-sub{margin:0 0 6px;text-align:center;font:600 14px Fredoka,sans-serif;opacity:.7}
+.set-x{position:absolute;top:10px;inset-inline-end:10px;width:40px;height:40px;border-radius:50%;border:3px solid var(--ink);background:#fff;font:900 18px Fredoka,sans-serif;color:var(--ink);box-shadow:0 3px 0 var(--ink);cursor:pointer}
+.set-x:active{transform:translateY(3px);box-shadow:none}`;
+  document.head.appendChild(st);
+  const btn = document.createElement('button'); btn.className = 'snd gear'; btn.id = 'gear'; btn.type = 'button'; btn.textContent = '⚙️';
+  tr.appendChild(btn);   // far right of the top bar
+  const ov = document.createElement('div'); ov.className = 'set-ov'; ov.hidden = true;
+  ov.innerHTML = '<div class="set-card" role="dialog"><button class="set-x" type="button">✕</button><h2></h2><p class="set-sub"></p></div>';
+  const card = ov.querySelector('.set-card'); card.appendChild(body); document.body.appendChild(ov);
+  // the switches first, the long explanation under them
+  const rows = [...body.children].filter(e => e.classList.contains('g-row')), lastRow = rows[rows.length - 1];
+  if (lastRow) { let e = body.firstElementChild; const lead = []; while (e && !e.classList.contains('g-row')) { if (e.tagName === 'P') lead.push(e); e = e.nextElementSibling; }
+    lead.reverse().forEach(p => lastRow.insertAdjacentElement('afterend', p)); }
+  det.hidden = true;
+  const lang = () => (document.documentElement.lang === 'he' ? 'he' : 'en');
+  const label = () => { const T = SET_TXT[lang()]; ov.querySelector('h2').textContent = '⚙️ ' + T.t; ov.querySelector('.set-sub').textContent = T.s;
+    btn.setAttribute('aria-label', T.t); ov.querySelector('.set-x').setAttribute('aria-label', T.x); card.dir = lang() === 'he' ? 'rtl' : 'ltr'; };
+  label(); new MutationObserver(label).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+  const open = v => { ov.hidden = !v; if (v) card.scrollTop = 0; };
+  btn.onclick = () => { audio(); SFX.tink && SFX.tink(); open(true); };
+  ov.querySelector('.set-x').onclick = () => open(false);
+  ov.onclick = e => { if (e.target === ov) open(false); };
+  // the gear shows only on the start / end screens
+  const cards = ['start', 'end'].map(id => document.getElementById(id)).filter(Boolean);
+  const vis = () => { const on = cards.some(c => !c.hidden); btn.hidden = !on; if (!on) open(false); };
+  vis(); cards.forEach(c => new MutationObserver(vis).observe(c, { attributes: true, attributeFilter: ['hidden'] }));
+}
+if (typeof document !== 'undefined') setupSettings();
+
+/* ======================= PLAY UNTIL: TIME OR A GOAL (20 Nov, Edgar) =======================
+   Score games (Spider Swat, Jump Race, Freeze & Copy, Bee & Flowers) can end at a goal instead of a clock:
+   in Settings, "Play until" ⏱ Time / 🎯 Goal, and a slider for the goal (e.g. 10–100 jumps).
+   setupGoal({ key, row, min, max, step, def, unit: {en,he}, hide, onChange }) → { get, paint }
+     row  = element (or selector) the two new rows go after (default: start of the settings)
+     hide = element(s) hidden while the goal is on (e.g. the round-length row)
+     get() = the goal number, or 0 when playing by time */
+const GOAL_TXT = { en: { until: 'Play until', time: '⏱ Time', goal: '🎯 Goal', target: 'Goal', reached: 'Goal reached!', inT: 'in ', fast: 'Fastest: ', left: 'to go' },
+  he: { until: 'משחקים עד', time: '⏱ זמן', goal: '🎯 יעד', target: 'יעד', reached: 'הגעתם ליעד!', inT: 'תוך ', fast: 'הכי מהר: ', left: 'נשארו' } };
+export const goalText = () => GOAL_TXT[document.documentElement.lang === 'he' ? 'he' : 'en'];
+export const fmtTime = s => { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+/* fastest time to reach a goal, kept on this device only. Returns { best, isNew } (best in seconds, 0 = none yet) */
+export function goalBest(key, n, secs) {
+  const k = key + '-gbest-' + n, old = +LS.get(k, '0') || 0;
+  if (secs != null && (!old || secs < old)) { LS.set(k, String(Math.round(secs))); return { best: Math.round(secs), isNew: old > 0 }; }
+  return { best: old, isNew: false };
+}
+let goalCss = false;
+export function setupGoal(o) {
+  if (!goalCss) { goalCss = true; const s = document.createElement('style'); s.textContent = `
+.goal-sl{display:flex;align-items:center;gap:10px;width:100%;margin:2px 0 8px}
+.goal-sl input{flex:1;-webkit-appearance:none;appearance:none;height:16px;border:3px solid var(--ink);border-radius:999px;background:#fff;margin:0;touch-action:pan-x}
+.goal-sl input::-webkit-slider-thumb{-webkit-appearance:none;width:32px;height:32px;border-radius:50%;background:var(--sun);border:3px solid var(--ink);box-shadow:0 3px 0 var(--ink);cursor:pointer}
+.goal-sl input::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:var(--sun);border:3px solid var(--ink);box-shadow:0 3px 0 var(--ink);cursor:pointer}
+.goal-sl b{min-width:92px;text-align:center;background:#FFF1B8;border:3px solid var(--ink);border-radius:16px;padding:2px 8px;font:700 16px Fredoka,sans-serif;white-space:nowrap}`;
+    document.head.appendChild(s); }
+  const lang = () => (document.documentElement.lang === 'he' ? 'he' : 'en');
+  let on = LS.get(o.key + '-goalon', '0') === '1', n = +LS.get(o.key + '-goal', String(o.def)) || o.def;
+  n = Math.min(o.max, Math.max(o.min, Math.round(n / o.step) * o.step));
+  const r1 = document.createElement('div'); r1.className = 'g-row';
+  r1.innerHTML = '<span></span><div class="seg"><button data-v="0"></button><button data-v="1"></button></div>';
+  const r2 = document.createElement('div'); r2.className = 'goal-sl';
+  r2.innerHTML = `<input type="range" min="${o.min}" max="${o.max}" step="${o.step}"><b></b>`;
+  const at = typeof o.row === 'string' ? document.querySelector(o.row) : o.row;
+  if (at) { at.insertAdjacentElement('afterend', r1); r1.insertAdjacentElement('afterend', r2); }
+  else { const b = document.querySelector('.g-body'); const first = b.querySelector('.g-row'); b.insertBefore(r1, first); b.insertBefore(r2, first); }
+  const inp = r2.querySelector('input'); inp.value = n;
+  const hides = [].concat(o.hide || []).map(h => typeof h === 'string' ? document.querySelector(h) : h).filter(Boolean);
+  function paint() {
+    const T = GOAL_TXT[lang()];
+    r1.querySelector('span').textContent = T.until;
+    r1.querySelectorAll('button').forEach(b => { b.textContent = b.dataset.v === '1' ? T.goal : T.time; b.setAttribute('aria-pressed', String(b.dataset.v === (on ? '1' : '0'))); });
+    r2.hidden = !on; inp.value = n; r2.querySelector('b').textContent = '🎯 ' + n + ' ' + (o.unit[lang()] || o.unit.en);
+    hides.forEach(h => h.hidden = on);
+  }
+  r1.querySelectorAll('button').forEach(b => b.onclick = () => { on = b.dataset.v === '1'; LS.set(o.key + '-goalon', on ? '1' : '0'); paint(); o.onChange && o.onChange(); });
+  inp.oninput = () => { n = +inp.value; LS.set(o.key + '-goal', String(n)); paint(); o.onChange && o.onChange(); };
+  paint(); new MutationObserver(paint).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+  return { get: () => on ? n : 0, paint };
+}

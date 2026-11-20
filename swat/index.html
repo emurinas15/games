@@ -24,6 +24,7 @@
 .hs .none{text-align:center;opacity:.6;margin:4px 0}
 .hs-in{display:flex;gap:8px;align-items:center;justify-content:center;margin:0 0 10px;font:700 16px Fredoka,sans-serif}
 .hs-in input{font:700 18px Fredoka,sans-serif;border:3px solid var(--ink);border-radius:14px;padding:5px 10px;width:150px;background:#fff;color:var(--ink)}
+.stopx{position:fixed;left:12px;bottom:calc(var(--safe-b) + 12px);z-index:6;display:none}.stopx.on{display:block}
 #score2{color:#D9467A}#best-pill[hidden],#score2[hidden],#who-note[hidden]{display:none!important}.duo #score{color:#2F7FC0}
 </style>
 </head>
@@ -43,6 +44,7 @@
   <div class="pill" id="best-pill"><b id="best">0</b><small id="t-best">best</small></div>
 </div>
 
+<button class="snd stopx" id="stopx" aria-label="Stop">✕</button>
 <div class="msg" id="msg"></div>
 <div class="count" id="count"></div>
 <div class="toast" id="toast"></div>
@@ -62,7 +64,7 @@
     <summary id="t-grown">For grown-ups</summary>
     <div class="g-body">
       <p id="t-g1"></p>
-      <div class="g-row"><span id="t-round">Round</span>
+      <div class="g-row" id="round-row"><span id="t-round">Round</span>
         <div class="seg" id="round-seg"><button data-v="60"></button><button data-v="90"></button><button data-v="120"></button></div></div>
       <div class="g-row"><span id="t-reach">Reach</span>
         <div class="seg" id="reach-seg"><button data-v="near"></button><button data-v="far"></button></div></div>
@@ -96,7 +98,7 @@
 
 <script type="module">
 import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom,startPoseTracker,poseFrames,drawMirroredVideo} from '../shared/kit.js';
-import {camLoad,timeoutP} from '../shared/kit.js';
+import {camLoad,timeoutP,setupGoal,goalText,fmtTime,goalBest} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
 import {setupHowTo,seg,bigStar} from '../shared/howto.js';
 import {drawKid} from '../shared/kit.js';
@@ -105,7 +107,7 @@ const guides=[makeGuide('reachLow'),makeGuide('reachLow')];   // 16 Nov: lower +
 
 /* ================= TEXT ================= */
 const UI={
- en:{title:"Spider Swat",sub:"Your hands are rackets. Swat the spiders away!",play:"Play",
+ en:{title:"Spider Swat",sub:"Your hands are rackets. Swat the spiders away!",subG:n=>"Swat the spiders — get "+n+" points!",subG2:n=>"First to "+n+" points wins!",play:"Play",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
   g1:"Made for children who play sitting down. Each hand becomes a paddle racket. Spiders drop on their threads all around the child: high up, out to the sides and on the diagonals, so the arms reach in every direction. Put both hands together to make one big racket that swats several spiders at once and hits twice as hard. If the child hasn't used it after 30 seconds, a little cartoon in the corner shows how. Every 10 seconds more spiders come. From 30 seconds there are red spiders (2 hits, or 1 big-racket hit), and from 45 seconds red spiders with knight helmets (4 hits, or 2 big-racket hits). All spiders watch the rackets. Purple spiders pull themselves up out of the way when a hand comes slowly, then drop back; after a minute come blue spiders, which dodge twice as fast, so the child has to reach quickly. Red spiders never dodge: they rely on being tough. Spiders come in three sizes (small ones are harder to hit) and each hangs for about 3 seconds, up to 5 at a time.",
   round:"Round",reach:"Reach",near:"Near",far:"Far",two:"Two-hand racket",
@@ -125,7 +127,7 @@ const UI={
   g6:"★ Points: purple spider 1 · red 3 · blue (sneaky) 4 · armoured 6. The top 5 scores are kept on this device only, with a first name if you like.",
   g7:"★ 2-player battle: from 15 s, small black thorn balls flash among the spiders for 2 seconds — touching one is a strike (−3 points). 5 strikes and that player is out; the other keeps playing to the end. Super poses come in 3 tiers and appear one by one in a small column in the middle, weakest first — 🧊 Ice crown (a quarter into the round), 💪 Strong arms (almost halfway), ⚡ Y arms (two-thirds) — and then stay on the screen. Whoever holds a pose for 2 seconds first gets it; the card then rests 10 s and can be won again by either player. ⚡ Y arms (arms up in a Y) zaps every spider on the screen for 2 points each — but every thorn ball on the screen is a strike. 🧊 Ice crown (hands together above the head) freezes the other player's spiders for 8 s: they need two hits, or one hit right in the middle. 💪 Strong arms (elbows out at shoulder height, hands up, like a goal post) gives you giant rackets for 6 s: double hits, double points. The poses need about the same accuracy as Easy in Freeze & Copy. One player plays without these.",
   winL:"Blue wins!",winR:"Pink wins!",tie:"It's a tie!",g5:"★ 2 players: sit side by side, one on each half of the screen, phone sideways (landscape), about 2 m away. Each player has their own spiders and their own score; blue on the left, pink on the right."},
- he:{title:"מחבט עכבישים",sub:"הידיים שלכם הן מחבטים. העיפו את העכבישים!",play:"שחקו",
+ he:{title:"מחבט עכבישים",sub:"הידיים שלכם הן מחבטים. העיפו את העכבישים!",subG:n=>"העיפו עכבישים — הגיעו ל־"+n+" נקודות!",subG2:n=>"מי שמגיע ראשון ל־"+n+" נקודות מנצח!",play:"שחקו",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
   g1:"מיועד לילדים שמשחקים בישיבה. כל יד הופכת למחבט. עכבישים יורדים על חוטים מסביב לילד: גבוה למעלה, לצדדים ובאלכסונים, כך שהידיים מגיעות לכל הכיוונים. מחברים את שתי הידיים יחד ומקבלים מחבט ענק שמעיף כמה עכבישים בבת אחת ומכה פי שניים. אם הילד לא השתמש בו אחרי 30 שניות, סרטון קטן בפינה מראה איך. כל 10 שניות מגיעים עוד עכבישים. מ־30 שניות מופיעים עכבישים אדומים (2 מכות, או מכה אחת במחבט הענק), ומ־45 שניות עכבישים אדומים עם קסדת אביר (4 מכות, או 2 מכות במחבט הענק). כל העכבישים מסתכלים על המחבטים. העכבישים הסגולים מושכים את עצמם למעלה כשיד מתקרבת לאט, ואז חוזרים למטה; אחרי דקה מגיעים עכבישים כחולים שמתחמקים מהר פי שניים, כך שהילד צריך להושיט יד מהר. העכבישים האדומים אף פעם לא מתחמקים: הם סומכים על הקשיחות שלהם. העכבישים מגיעים בשלושה גדלים (הקטנים קשים יותר לפגיעה), כל אחד תלוי בערך 3 שניות, ועד 5 בבת אחת.",
   round:"סבב",reach:"טווח",near:"קרוב",far:"רחוק",two:"מחבט שתי ידיים",
@@ -187,14 +189,18 @@ function setLang(l){
   $('t-privacy2').textContent=u.privacy;
   $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
   $('c').setAttribute('aria-label',u.aria);
-  segs();syncSound();if(!$('end').hidden)fillEnd(lastNew);if(!$('hs').hidden)showHS();
+  segs();subLine();syncSound();if(!$('end').hidden)fillEnd(lastNew);if(!$('hs').hidden)showHS();
 }
 $('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
 const hsRefresh=()=>{if(!$('hs').hidden)showHS();};
+/* 20 Nov (Edgar): play until a number of points instead of a round time (2 players: first to the goal wins) */
+const goal=setupGoal({key:'sw',hide:'#round-row',min:20,max:150,step:10,def:50,unit:{en:'points',he:'נקודות'},onChange:()=>subLine()});
+let G=0,gb=null;
+function subLine(){const n=goal.get(),u=UI[lang];$('t-sub').textContent=n?(who==='duo'?u.subG2(n):u.subG(n)):u.sub;}
 document.querySelectorAll('#round-seg button').forEach(b=>b.onclick=()=>{roundLen=+b.dataset.v;LS.set('sw-round',roundLen);loadBest();segs();hsRefresh();});
 document.querySelectorAll('#reach-seg button').forEach(b=>b.onclick=()=>{reach=b.dataset.v;LS.set('sw-reach',reach);loadBest();segs();hsRefresh();});
 document.querySelectorAll('#two-seg button').forEach(b=>b.onclick=()=>{twoOn=b.dataset.v==='1';LS.set('sw-two',b.dataset.v);segs();});
-document.querySelectorAll('#who-seg button').forEach(b=>b.onclick=()=>{who=b.dataset.v;LS.set('sw-who',who);audio();SFX.tink();segs();loadBest();hsRefresh();});
+document.querySelectorAll('#who-seg button').forEach(b=>b.onclick=()=>{who=b.dataset.v;LS.set('sw-who',who);audio();SFX.tink();segs();subLine();loadBest();hsRefresh();});
 
 /* ================= CANVAS + ART ================= */
 const cv=$('c'),ctx=cv.getContext('2d');
@@ -484,8 +490,9 @@ async function play(){
   $('start').hidden=true;$('end').hidden=true;
   score=0;scores=[0,0];elapsed=0;level=0;pending=[null,null];spiders=[];helmets=[];pops=[];puffs=[];strands=[];floaters=[];bolts=[];announced={};prevHit.clear();
   strikes=[0,0];out=[false,false];strikeT=[-9,-9];flashT=[-9,-9];iceUntil=[0,0];powerUntil=[0,0];nextMace=[0,0];cards=[];$('hs').hidden=true;bigUsed=false;hintNext=30;hintT0=-99;
-  $('time').textContent=roundLen;loadBest();$('hud').classList.add('on');
-  $('hud').classList.toggle('duo',duo());$('score2').hidden=!duo();$('best-pill').hidden=duo();showScore();
+  G=goal.get();gb=null;$('t-left').textContent=G?goalText().left:UI[lang].left;
+  $('time').textContent=G||roundLen;loadBest();$('hud').classList.add('on');$('stopx').classList.add('on');
+  $('hud').classList.toggle('duo',duo());$('score2').hidden=!duo();$('best-pill').hidden=duo()||!!G;showScore();
   if(!camTried){
     camTried=true;msg(UI[lang].ready);state='ready';
     try{tracker=await camLoad(()=>startPoseTracker(video,{numPoses:2}));camOK=true;mode='camera';}
@@ -495,9 +502,14 @@ async function play(){
   if(mode==='finger'){state='count';countT=tNow;} else {state='ready';msg('');}
 }
 $('play').onclick=play;$('again').onclick=play;
+$('stopx').onclick=()=>{state='menu';musicStop();$('hud').classList.remove('on');$('stopx').classList.remove('on');msg('');$('toast').classList.remove('on');
+  guide.hide&&guide.hide();guides.forEach(g=>g.hide&&g.hide());$('start').hidden=false;};
 
 function endGame(){
-  state='over';musicStop();$('hud').classList.remove('on');msg('');$('toast').classList.remove('on');
+  state='over';musicStop();$('hud').classList.remove('on');$('stopx').classList.remove('on');msg('');$('toast').classList.remove('on');
+  if(G){   // goal mode: no high-score table (everyone ends at the goal) — the time it took, and the fastest on this device
+    hsEntries=[];if(!duo())gb=goalBest('sw-'+reach,G,elapsed);lastNew=!!(gb&&gb.isNew);if(lastNew){SFX.star();setTimeout(()=>showLevel(UI[lang].newbest,1500),250);}
+    guide.hide&&guide.hide();guides.forEach(g=>g.hide&&g.hide());fillEnd(lastNew);$('end').hidden=false;SFX.chime();return;}
   // top-5 table: each player's score may get in; the brief 1.5 s message, then a name box on the end card
   const a=getHS();hsEntries=[];const cand=duo()?[[0,scores[0]],[1,scores[1]]]:[[0,score]];
   for(const [k,v] of cand){if(v<=0)continue;const id=Math.random();a.push({n:'',s:v,id});a.sort((x,y)=>y.s-x.s);if(a.slice(0,5).some(e=>e.id===id))hsEntries.push({id,k});}
@@ -518,7 +530,11 @@ function fillEnd(nb){const u=UI[lang];$('final').textContent=score;$('newbest').
     inp.oninput=()=>{const a=getHS();const e=a.find(x=>x.id===en.id);if(e){e.n=inp.value.trim().slice(0,12);setHS(a);}};
     inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();};
     row.append(lab,inp);box.append(row);}$('t-privacy2').textContent=u.privacy;$('t-over').textContent=u.over[score<10?0:score<25?1:score<40?2:3];$('t-sec2').textContent=u.sec2;
-  if(duo()){const [a,b]=scores;$('final').textContent='🔵 '+a+' : '+b+' 🩷';$('t-over').textContent=a===b?u.tie:a>b?u.winL:u.winR;$('best-line').textContent='';}}
+  if(duo()){const [a,b]=scores;$('final').textContent='🔵 '+a+' : '+b+' 🩷';$('t-over').textContent=a===b?u.tie:a>b?u.winL:u.winR;$('best-line').textContent='';}
+  if(G){const T=goalText();
+    if(duo())$('best-line').textContent='🎯 '+G+' '+u.sec2+' · '+T.inT+fmtTime(elapsed);
+    else{$('t-over').textContent='🎯 '+T.reached;$('final').textContent=fmtTime(elapsed);$('t-sec2').textContent='🕷️ '+score+' '+u.sec2;
+      $('best-line').textContent=gb&&gb.best?(gb.isNew?'⭐ ':'')+T.fast+fmtTime(gb.best):'';}}}
 
 let last=performance.now(),demoNext=0;
 function frame(now){
@@ -548,7 +564,7 @@ function frame(now){
     else{
       if(msgNow)msg('');
       const tc=mode==='camera'&&players.some(b=>b.close);$('toast').textContent=UI[lang].back;$('toast').classList.toggle('on',!!tc);
-      elapsed+=dt;$('time').textContent=Math.max(0,Math.ceil(roundLen-elapsed));
+      elapsed+=dt;$('time').textContent=G?Math.max(0,G-(duo()?Math.max(...scores):score)):Math.max(0,Math.ceil(roundLen-elapsed));
       // special spiders: banner exactly at 30 / 45 / 60 s, and one of them arrives 1-4 s later
       const due=()=>tNow+1+Math.random()*3;let special=false;
       const promise=t=>{pending=[{type:t,at:due()},duo()?{type:t,at:due()}:null];};
@@ -568,7 +584,7 @@ function frame(now){
       }
       // battle: a super pose every 20 s; the first player to hold it for 2 s gets it
       if(duo()){
-        for(const [kind,f] of TIERS)if(elapsed>=roundLen*f&&!cards.some(c=>c.kind===kind)){cards.push({kind,t0:tNow,cool:0,prog:[0,0]});showLevel(UI[lang].newSup+' '+UI[lang].sup[kind].split(' ')[0]+' '+UI[lang].supName[kind]);}
+        for(const [kind,f] of TIERS)if(elapsed>=(G?90:roundLen)*f&&!cards.some(c=>c.kind===kind)){cards.push({kind,t0:tNow,cool:0,prog:[0,0]});showLevel(UI[lang].newSup+' '+UI[lang].sup[kind].split(' ')[0]+' '+UI[lang].supName[kind]);}
         for(const c of cards){
           if(tNow<c.cool){c.prog=[0,0];continue;}
           for(const k of [0,1]){const ok=!out[k]&&(mode==='camera'?poseOk(bodies[k],c.kind):false);
@@ -599,7 +615,7 @@ function frame(now){
         }
       }
       if(!duo()&&twoOn&&elapsed>=hintNext){hintNext+=30;if(!bigUsed){hintT0=tNow;FX.boing();}}
-      if(elapsed>=roundLen)endGame();
+      if(G?((duo()?Math.max(...scores):score)>=G||(duo()&&out[0]&&out[1])):elapsed>=roundLen)endGame();
     }
   }
   // spider motion

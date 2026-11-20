@@ -100,14 +100,14 @@ body.casting .toast{visibility:hidden}
      at the right distance. During play, if the child walks much closer or farther (shoulder width changes), the bee lets
      go and waits until the child comes back to the right spot and picks it up again — walking closer can't replace a jump.
    No body-move recognition at all: only where the head is. 90 s. Nothing is recorded or sent. */
-import {INK,$,LS,S,audio,tone,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,camLoad,timeoutP} from '../shared/kit.js';
+import {INK,$,LS,S,audio,tone,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,camLoad,timeoutP,setupGoal,goalText,fmtTime,goalBest} from '../shared/kit.js';
 import {setupCast} from '../shared/cast.js';
 import {setupHowTo,bigStar,ease} from '../shared/howto.js';
 import {drawBee,drawFlower,drawHolder,drawKid,drawGarden,drawMeadow,drawThorns,drawDizzy,drawHive,BOWS} from './art.js';
 
 const ROUND=90,BAND=[.4,.6];
 const UI={
- en:{title:"Bee & Flowers",sub:"Carry the bee on your head through the thorns to the flower!",play:"Play",solo:"1 player",duo:"2 players",
+ en:{title:"Bee & Flowers",sub:"Carry the bee on your head through the thorns to the flower!",subG:n=>"Bring "+n+" bees to their flowers!",subG2:n=>"First to "+n+" flowers wins!",flowers:"flowers",play:"Play",solo:"1 player",duo:"2 players",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
   g1:"Go to the beehive at the side of the screen: a bee sits on your head and follows it. Carry it to the flower on the other side without touching the thorns: duck under the ones hanging from the top, stay tall over the ones growing from the bottom, squeeze through the gaps. The flower hangs high, so the course ends with a jump. Touch the flower and the bee stays there; the next bee waits in the hive on that side, so the child goes back and forth (grown-ups can choose one side only). If a thorn touches the bee, it flies back to the hive. 90 seconds. 2 players: each starts at their own side, the flowers are in the middle.",
   endj:"End with a jump",side:"Beehives (1 player)",both:"Both sides",left:"Left",right:"Right",tall:"Thorns to jump over",on:"On",off:"Off",music:"Music",sfx:"Sound effects",mute:"Sound on or off",
@@ -121,7 +121,7 @@ const UI={
   ouch:"Ouch!",level:n=>"Level "+n,
   blue:"Blue",pink:"Pink",winL:"Blue wins!",winR:"Pink wins!",tie:"A tie!",best:n=>"Best: "+n+" 🌼",newBest:"New record!",great:"Great job!",
   playagain:"Play again",menu:"Menu"},
- he:{title:"הדבורה והפרחים",sub:"העבירו את הדבורה שעל הראש בין הקוצים אל הפרח!",play:"שחקו",solo:"שחקן אחד",duo:"2 שחקנים",
+ he:{title:"הדבורה והפרחים",sub:"העבירו את הדבורה שעל הראש בין הקוצים אל הפרח!",subG:n=>"הביאו "+n+" דבורים אל הפרחים!",subG2:n=>"מי שמגיע ראשון ל־"+n+" פרחים מנצח!",flowers:"פרחים",play:"שחקו",solo:"שחקן אחד",duo:"2 שחקנים",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
   g1:"הולכים לכוורת בצד המסך: דבורה יושבת על הראש ונעה איתו. מעבירים אותה אל הפרח בצד השני בלי לגעת בקוצים: מתכופפים מתחת לקוצים שתלויים מלמעלה, נשארים זקופים מעל הקוצים שצומחים מלמטה, ועוברים ברווחים. הפרח תלוי גבוה, אז המסלול נגמר בקפיצה. נוגעים בפרח והדבורה נשארת שם; הדבורה הבאה מחכה בכוורת שבאותו צד, כך שהילד הולך הלוך ושוב (מבוגרים יכולים לבחור צד אחד בלבד). אם קוץ נוגע בדבורה, היא עפה בחזרה לכוורת. 90 שניות. 2 שחקנים: כל אחד מתחיל בצד שלו, הפרחים באמצע.",
   endj:"סיום בקפיצה",side:"כוורות (שחקן אחד)",both:"שני הצדדים",left:"שמאל",right:"ימין",tall:"קוצים לקפוץ מעליהם",on:"פועל",off:"כבוי",music:"מוזיקה",sfx:"צלילים במשחק",mute:"הפעלת או השתקת קול",
@@ -165,13 +165,17 @@ function setLang(l){
   $('t-privacy2').textContent=u.privacy;$('menu').textContent=u.menu;document.title=u.title+' · Bamboo Physio';
   $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
   $('c').setAttribute('aria-label',u.aria);
-  segs();syncSound();cast.paint&&cast.paint();if(lastRes&&!$('end').hidden)fillEnd();
+  segs();subLine&&subLine();syncSound();cast.paint&&cast.paint();if(lastRes&&!$('end').hidden)fillEnd();
 }
 $('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
 document.querySelectorAll('#endj-seg button').forEach(b=>b.onclick=()=>{endJump=b.dataset.v==='1';LS.set('bee-endj',endJump?'1':'0');SFX.tink();segs();});
+/* 20 Nov (Edgar): play until a number of flowers instead of 90 seconds (2 players: first to the goal wins) */
+const goal=setupGoal({key:'bee',min:3,max:20,step:1,def:6,unit:{en:'flowers',he:'פרחים'},onChange:()=>subLine()});
+let G=0;
+function subLine(){const n=goal.get(),u=UI[lang];$('t-sub').textContent=n?(mode==='duo'?u.subG2(n):u.subG(n)):u.sub;}
 document.querySelectorAll('#tall-seg button').forEach(b=>b.onclick=()=>{tallOn=b.dataset.v==='1';LS.set('bee-tall',tallOn?'1':'0');SFX.tink();segs();});
 document.querySelectorAll('#side-seg button').forEach(b=>b.onclick=()=>{side=b.dataset.v;LS.set('bee-side',side);SFX.tink();segs();});
-document.querySelectorAll('#modes .lv').forEach(b=>b.onclick=()=>{mode=b.dataset.m;LS.set('bee-mode',mode);SFX.tink();segs();});
+document.querySelectorAll('#modes .lv').forEach(b=>b.onclick=()=>{mode=b.dataset.m;LS.set('bee-mode',mode);SFX.tink();segs();subLine();});
 
 /* ================= CANVAS ================= */
 const cv=$('c'),ctx=cv.getContext('2d');
@@ -303,7 +307,7 @@ async function play(){
   if(!camOK&&!FAKE){toast(UI[lang].ready,0);state='loading';
     try{await camLoad(startCam);$('toast').classList.remove('on');}
     catch(e){console.warn(e);toast(UI[lang].nocam,6000);}}
-  players=lanes().map((_,k)=>makePlayer(k));if(mode==='solo'&&side==='right')players[0].dir=-1;elapsed=0;pops=[];lastRes=null;lastSec=99;setupT=0;badT=0;
+  players=lanes().map((_,k)=>makePlayer(k));if(mode==='solo'&&side==='right')players[0].dir=-1;elapsed=0;pops=[];lastRes=null;lastSec=99;setupT=0;badT=0;G=goal.get();
   $('stopx').classList.add('on');musicStart();
   if(camOK)state='setup';
   else{players.forEach(P=>{P.ref={top:H*.5-H*.2*.45,u:H*.2,size:1};P.fake={x:P.ln.x+P.ln.w/2,y:H*.5};});startCount();}
@@ -325,8 +329,8 @@ function endGame(quit){
   if(quit){state='menu';$('start').hidden=false;segs();return;}
   FX.whistle();
   const a=players[0].score,b=players[1]?players[1].score:0;
-  lastRes={mode,a,b,newBest:false};
-  if(mode==='solo'&&a>best){lastRes.newBest=best>0;best=a;LS.set('bee-best3',String(best));}
+  lastRes={mode,a,b,newBest:false,G,secs:elapsed,gb:G&&mode==='solo'?goalBest('bee',G,elapsed):null};
+  if(!G&&mode==='solo'&&a>best){lastRes.newBest=best>0;best=a;LS.set('bee-best3',String(best));}
   if(mode==='solo'||a!==b){setTimeout(FX.win,500);confetti();}
   fillEnd();$('end').hidden=false;
 }
@@ -335,6 +339,9 @@ function fillEnd(){
   if(R.mode==='duo'){$('final').textContent=R.a+' : '+R.b;$('t-over').textContent=R.a===R.b?u.tie:(R.a>R.b?u.winL:u.winR);
     $('n-left').textContent='🔵 '+u.blue;$('n-right').textContent='🩷 '+u.pink;}
   else{$('final').textContent='🌼 '+R.a;$('t-over').textContent=R.newBest?u.newBest:u.great;$('n-left').textContent=u.best(best);$('n-right').textContent='';}
+  if(R.G){const T=goalText();if(R.mode==='solo'){$('t-over').textContent='🎯 '+T.reached;$('final').textContent='🌼 '+R.a+' · '+fmtTime(R.secs);
+    $('n-left').textContent=R.gb&&R.gb.best?(R.gb.isNew?'⭐ ':'')+T.fast+fmtTime(R.gb.best):'';}
+    else $('n-right').textContent+=' · '+fmtTime(R.secs);}
   $('t-again').textContent=u.playagain;$('t-privacy2').textContent=u.privacy;
 }
 function confetti(){for(let i=0;i<40;i++)pops.push({x:W*(.2+Math.random()*.6),y:H*.35,vx:(Math.random()-.5)*W*.9,vy:-H*(.4+Math.random()*.7),life:1.6+Math.random()*.6,c:['#FFD84D','#FF9FB0','#7DCB6B','#B79CF2'][i%4]});}
@@ -419,8 +426,9 @@ function frame(now){
   else if(state==='play'){
     elapsed+=dt;
     players.forEach(P=>stepPlayer(P,dt));
-    const left=Math.ceil(ROUND-elapsed);if(left<=5&&left<lastSec&&left>0)SFX.tick();lastSec=left;
-    if(elapsed>=ROUND)endGame(false);
+    if(G){if(players.some(P=>P.score>=G))endGame(false);}
+    else{const left=Math.ceil(ROUND-elapsed);if(left<=5&&left<lastSec&&left>0)SFX.tick();lastSec=left;
+    if(elapsed>=ROUND)endGame(false);}
   }
   render(dt);
   requestAnimationFrame(frame);
@@ -512,7 +520,7 @@ function render(dt){
   else if(state==='play'||state==='over'){
     if(state==='play'&&elapsed<.9)bigText(u.go,W/2,H*.3,Math.min(110,H*.17),'#FFD84D',1+.3*Math.max(0,1-elapsed*4));
     const left=Math.max(0,Math.ceil(ROUND-elapsed));
-    if(state==='play')bubble('⏱ '+left,W/2,64+fs*.2,fs,left<=10?'#FFE3E8':'#fff');
+    if(state==='play')G?bubble('🎯 '+G,W/2,64+fs*.2,fs,'#FFF1B8'):bubble('⏱ '+left,W/2,64+fs*.2,fs,left<=10?'#FFE3E8':'#fff');
     const cols=mode==='duo'?['#DDF3FF','#FFE3E8']:['#FFF3C4'];
     players.forEach((P,k)=>{const pk=Math.max(0,1-(tNow-P.pop)*3),x=mode==='duo'?W/2+(k?1:-1)*fs*5.2:W/2+fs*4.6,y=64+fs*.2;
       ctx.save();ctx.translate(x,y);ctx.scale(1+.35*pk,1+.35*pk);ctx.translate(-x,-y);bubble('🌼 '+P.score,x,y,fs,cols[k]);ctx.restore();
