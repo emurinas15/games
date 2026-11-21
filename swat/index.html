@@ -254,7 +254,7 @@ let W=0,H=0,DPR=1;
 function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;}
 addEventListener('resize',resize);resize();
 
-const SPIDER={b:{body:'#5FB7F0',leg:'#3E8CC4',hp:1},n:{body:'#6B5B95',leg:'#4A3E78',hp:1},r:{body:'#F0604D',leg:'#B83E33',hp:2},h:{body:'#F0604D',leg:'#B83E33',hp:4},M:{body:'#9C86CF',leg:'#6E5AA6',hp:1}};   // M = Mama Spider (story mode)
+const SPIDER={b:{body:'#5FB7F0',leg:'#3E8CC4',hp:1},n:{body:'#6B5B95',leg:'#4A3E78',hp:1},r:{body:'#F0604D',leg:'#B83E33',hp:2},h:{body:'#F0604D',leg:'#B83E33',hp:4},M:{body:'#9C86CF',leg:'#6E5AA6',hp:1},f:{body:'#FF9A3C',leg:'#D9661E',hp:1},fc:{body:'#FFC48A',leg:'#D98A4E',hp:1}};   // f = hot spider (story): touch it before freezing = lose a heart   // M = Mama Spider (story mode)
 /* face: 'happy' | 'angry' | 'dizzy' | 'oops' */
 function drawSpider(c,x,y,s,type,face,t,hp,legPhase=0,look=null){   // look: unit vector toward the nearest racket
   const D=SPIDER[type],lw=Math.max(2,s*.08);
@@ -267,6 +267,7 @@ function drawSpider(c,x,y,s,type,face,t,hp,legPhase=0,look=null){   // look: uni
     c.lineWidth=s*.14+lw*1.6;c.beginPath();c.moveTo(sd*s*.2,s*(-.05+i*.08));c.quadraticCurveTo(kx,ky-s*.3,fx,fy);c.stroke();
     c.strokeStyle=D.leg;c.lineWidth=s*.14;c.beginPath();c.moveTo(sd*s*.2,s*(-.05+i*.08));c.quadraticCurveTo(kx,ky-s*.3,fx,fy);c.stroke();c.strokeStyle=INK;
   }
+  if(type==='f'){const g=c.createRadialGradient(0,s*.1,s*.3,0,s*.1,s*1.3);g.addColorStop(0,'rgba(255,170,80,.55)');g.addColorStop(1,'rgba(255,170,80,0)');c.fillStyle=g;c.fillRect(-s*1.4,-s*1.3,s*2.8,s*2.8);}
   sticker(c,ell(0,s*.1,s*.5,s*.46),D.body,lw);
   c.fillStyle='rgba(255,255,255,.28)';c.fill(ell(-s*.2,-s*.08,s*.14,s*.09,-.5));
   // eyes
@@ -286,6 +287,10 @@ function drawSpider(c,x,y,s,type,face,t,hp,legPhase=0,look=null){   // look: uni
     else{c.lineWidth=lw*.8;c.beginPath();c.arc(0,s*.22,s*.1,.15*Math.PI,.85*Math.PI);c.stroke();}
   }
   c.fillStyle='rgba(255,140,165,.75)';c.fill(ell(-s*.33,s*.2,s*.07,s*.045));c.fill(ell(s*.33,s*.2,s*.07,s*.045));
+  if(type==='f'){   // hot: little steam curls rising, and a sweat drop
+    c.strokeStyle='rgba(255,255,255,.9)';c.lineWidth=Math.max(2,s*.07);c.lineCap='round';
+    for(let i=0;i<3;i++){const ph=(t*.9+i/3)%1,x0=(i-1)*s*.24,y0=-s*.45-ph*s*.7;c.globalAlpha=Math.min(1,(1-ph)*2);c.beginPath();c.moveTo(x0,y0);c.quadraticCurveTo(x0+s*.1,y0-s*.1,x0,y0-s*.2);c.quadraticCurveTo(x0-s*.1,y0-s*.3,x0,y0-s*.4);c.stroke();}
+    c.globalAlpha=1;const dp=new Path2D();dp.moveTo(s*.42,-s*.16);dp.quadraticCurveTo(s*.52,-s*.02,s*.42,s*.02);dp.quadraticCurveTo(s*.33,-s*.02,s*.42,-s*.16);sticker(c,dp,'#BFE9FF',lw*.6);}
   // knight helmet while it still has more than 2 hits left
   if(type==='h'&&hp>2)drawHelmet(c,s,lw,hp<4);
   c.restore();
@@ -365,7 +370,7 @@ const FX={
   power(){[392,523,659,784].forEach((f,i)=>tone({f0:f,dur:.16,type:'square',vol:.06,at:i*.07}));},
   charge(){tone({f0:660,dur:.06,type:'triangle',vol:.05});}
 };
-const PTS={n:1,r:3,b:4,h:6};   // armoured spiders take the most work, so they give the most
+const PTS={n:1,r:3,b:4,h:6,f:3};   // armoured spiders take the most work, so they give the most
 
 /* ================= TRACKING ================= */
 const video=$('v');
@@ -456,8 +461,8 @@ function spawn(force,own=0){
   else if(elapsed>=45){if(r<.18)type='h';else if(r<.45)type='r';}
   else if(elapsed>=30){if(r<.4)type='r';}
   if(force)type=force;
-  const iced=(duo()||story)&&tNow<iceUntil[own];
-  spiders.push({id:Math.random(),own,x,ty:y,y:-40,s,type,hp:SPIDER[type].hp,state:'down',t0:tNow,life:3+(type==='h'?2:type==='r'||type==='b'?1:0)+(iced?2:0),hangT:0,dodgeReady:0,face:'happy',swing:0,sv:0,faceT:0,k:1,ice:iced});
+  const iced=duo()&&tNow<iceUntil[own];   // story: Ice freezes only the spiders already there; new hot ones need a new ice crown
+  spiders.push({id:Math.random(),own,x,ty:y,y:-40,s,type,hp:SPIDER[type].hp,state:'down',t0:tNow,life:3+(type==='h'?2:type==='f'?5:type==='r'||type==='b'?1:0)+(iced?2:0),hangT:0,dodgeReady:0,face:'happy',swing:0,sv:0,faceT:0,k:1,ice:iced});
   FX.zip();return true;
 }
 const RK_COL=[['#FF7A66','#5FB7F0'],['#5FB7F0','#5FB7F0'],['#FF9FC6','#FF9FC6']];   // one player: red + blue; 2 players: blue (left) / pink (right)
@@ -486,6 +491,7 @@ function addPts(k,n,x,y){
 function iceBurst(sp){FX.crack();for(let i=0;i<8;i++){const a=Math.random()*6.3;puffs.push({x:sp.x,y:sp.y,vx:Math.cos(a)*sp.s*4,vy:Math.sin(a)*sp.s*4,r:sp.s*.22,life:.5,ice:true});}}
 function hit(sp,rk){
   const dx=sp.x-rk.x,dy=sp.y-rk.y,d=Math.hypot(dx,dy)||1;
+  if(story&&sp.type==='f'&&!sp.ice){FX.knock();sp.face='angry';sp.faceT=tNow+.7;sp.sv+=Math.sign(dx||1)*4;storyStrike(sp.x,sp.y,ST[lang].hot);return;}
   if(sp.ice&&story){sp.ice=false;iceBurst(sp);sp.hp=1;}   // story mode: a frozen baby spider goes back to bed with one boop
   else if(sp.ice){sp.ice=false;iceBurst(sp);   // iced: the first hit only breaks the ice — unless it lands right in the middle
     if(d>rk.r*.55+sp.s*.15){sp.face='angry';sp.faceT=tNow+.7;sp.sv+=Math.sign(dx||1)*3;return;}}
@@ -506,6 +512,7 @@ function popMace(sp){sp.state='fly';sp.vx=(Math.random()-.5)*300;sp.vy=-H*.9;sp.
   for(let i=0;i<8;i++)pops.push({x:sp.x,y:sp.y,vx:(Math.random()-.5)*500,vy:(Math.random()-.7)*500,life:.6,dark:true});}
 const MAXSTRIKE=5;   // 17 Nov (Edgar): 5 strikes, not 3
 function strike(k,x,y){
+  if(story)return storyStrike(x,y,UI[lang].ouch);
   if(out[k]||tNow-strikeT[k]<1)return;   // a short grace after each strike
   strikes[k]++;strikeT[k]=tNow;flashT[k]=tNow;addPts(k,-3,x,y);FX.ouch();
   if(strikes[k]>=MAXSTRIKE){out[k]=true;showLevel(UI[lang].out[k]);for(const sp of spiders)if(sp.own===k&&sp.state!=='fly')sp.state='up';
@@ -526,7 +533,7 @@ function fireSuper(kind,k){
   if(kind==='zap'){FX.zap();
     for(const sp of spiders){if(sp.state==='fly'||sp.state==='gone'||sp.y<0)continue;
       bolts.push({x:sp.x,y:sp.y,life:.5,seed:Math.random()*99});
-      if(sp.type==='m'){popMace(sp);strikeT[k]=-9;strike(k,sp.x,sp.y);continue;}   // every thorn ball on the screen = a strike
+      if(sp.type==='m'){popMace(sp);if(!story){strikeT[k]=-9;strike(k,sp.x,sp.y);}continue;}   // story: Zap pops thorn balls safely   // every thorn ball on the screen = a strike
       sp.state='fly';sp.face='dizzy';sp.ice=false;sp.vx=(Math.random()-.5)*W;sp.vy=-H*1.2;sp.spin=12;addPts(k,story?PTS[sp.type]:2,sp.x,sp.y);}}   // story: full points
   else if(kind==='ice'){FX.ice();iceUntil[o]=tNow+8;for(const sp of spiders)if(sp.own===o&&sp.type!=='m'&&sp.state!=='fly'&&sp.state!=='gone'){sp.ice=true;sp.life+=2;if(sp.state==='dodge'){sp.state='hang';sp.y=sp.ty;}}}
   else {FX.power();powerUntil[k]=tNow+6;}
@@ -666,7 +673,7 @@ function frame(now){
         for(const rk of rks){
           if(rk.own!==(sp.own||0))continue;   // 2 players: you can only swat your own spiders
           const key=rk.id+sp.id,over=Math.hypot(rk.x-sp.x,rk.y-sp.y)<rk.r+sp.s*.55;
-          if(over&&!prevHit.get(key)&&sp.state!=='fly'){if(sp.type==='m'){if(tNow-strikeT[sp.own]>=1){popMace(sp);strike(sp.own,sp.x,sp.y);}}else hit(sp,rk);}
+          if(over&&!prevHit.get(key)&&sp.state!=='fly'){if(sp.type==='m'){if(story&&sp.state!=='hang'){}else if(tNow-strikeT[sp.own]>=1){popMace(sp);strike(sp.own,sp.x,sp.y);}}else hit(sp,rk);}
           prevHit.set(key,over);
         }
       }
@@ -712,7 +719,7 @@ function render(dt){
       ctx.strokeStyle='rgba(43,33,24,.35)';ctx.lineWidth=1;ctx.stroke();}
     else{ctx.save();ctx.translate(sp.x,sp.y);ctx.rotate(sp.rot||0);ctx.scale(sp.k,sp.k);if(sp.type==='m')drawMace(ctx,0,0,sp.s,tNow);else drawSpider(ctx,0,0,sp.s,sp.type,sp.face,tNow,sp.hp,sp.id*10);ctx.restore();continue;}
     if(sp.type==='m'){drawMace(ctx,bx,by,sp.s,tNow);continue;}
-    ctx.save();ctx.translate(bx,by);ctx.rotate(-sw*.6);drawSpider(ctx,0,0,sp.s,sp.type,sp.face,tNow,sp.hp,sp.id*10,lookAt(bx,by));ctx.restore();
+    ctx.save();ctx.translate(bx,by);ctx.rotate(-sw*.6);drawSpider(ctx,0,0,sp.s,sp.type==='f'&&sp.ice?'fc':sp.type,sp.face,tNow,sp.hp,sp.id*10,lookAt(bx,by));ctx.restore();
     if(sp.ice)drawIce(ctx,bx,by+sp.s*.1,sp.s,tNow);
     if(sp.type!=='n'&&sp.hp>0&&state==='play'){ // little hearts show the hits left
       for(let i=0;i<sp.hp;i++){ctx.save();ctx.translate(bx+(i-(sp.hp-1)/2)*sp.s*.32,by+sp.s*.85);sticker(ctx,ell(0,0,sp.s*.09,sp.s*.09),'#FFD84D',2);ctx.restore();}
@@ -806,22 +813,25 @@ const ST={
  en:{story:'Story',map:'Bedtime Spiders',mapsub:"Mama Spider's babies won't go to sleep!",back:'← Back',reset:'↺ Start over',reset2:'Tap again to start over',
   lv:'Level',goal:'goal',tap:'Tap ▶',go:"Let's go! ▶",gn:'Good night! ▶',done:['Level done!','Great booping!','Night night!'],fail:'So close!',got:'points',
   need:n=>'You need '+n+' points. Try again!',won:n=>'Goal: '+n+' points ✓',next:'Next level ▶',last:'The end ▶',retry:'Try again ▶',levels:'All levels',
-  endT:'The end!',endS:'All the baby spiders are asleep. Shhh…',endB:'Back to the levels',big:'🙏 Hands together!',mama:'Mama Spider'},
+  endT:'The end!',endS:'All the baby spiders are asleep. Shhh…',endB:'Back to the levels',big:'🙏 Hands together!',mama:'Mama Spider',
+  hot:'Ouch! Hot!',hotB:'🔥 Hot spiders! Freeze them first!',thornB:'⚠️ Watch out for the thorns!',noLives:'Oops! No hearts left'},
  he:{story:'סיפור',map:'עכבישים לפני השינה',mapsub:'התינוקות של אמא עכבישה לא רוצים לישון!',back:'→ חזרה',reset:'↺ מתחילים מחדש',reset2:'הקישו שוב כדי להתחיל מחדש',
   lv:'שלב',goal:'יעד',tap:'הקישו ◀',go:'יוצאים לדרך! ◀',gn:'לילה טוב! ◀',done:['השלב הושלם!','הקפצות מעולות!','לילה טוב!'],fail:'כמעט!',got:'נקודות',
   need:n=>'צריך '+n+' נקודות. נסו שוב!',won:n=>'יעד: '+n+' נקודות ✓',next:'לשלב הבא ◀',last:'הסוף ◀',retry:'עוד פעם ◀',levels:'כל השלבים',
-  endT:'הסוף!',endS:'כל העכבישונים ישנים. ששש…',endB:'חזרה לשלבים',big:'🙏 ידיים ביחד!',mama:'אמא עכבישה'}
+  endT:'הסוף!',endS:'כל העכבישונים ישנים. ששש…',endB:'חזרה לשלבים',big:'🙏 ידיים ביחד!',mama:'אמא עכבישה',
+  hot:'אאוץ׳! חם!',hotB:'🔥 עכבישים חמים! קודם מקפיאים!',thornB:'⚠️ זהירות, קוצים!',noLives:'אופס! נגמרו הלבבות'}
 };
 // who speaks the second bubble on each page (page 9 = the ending)
-const NAMES={en:['Pip','Pip & Pop','Rocky','Sir Wiggles','Ninja Bo','Pip','Rocky','Ninja Bo','All the babies','Pip'],
- he:['פיפ','פיפ ופופ','רוקי','האביר ויגלס','הנינג׳ה בּוֹ','פיפ','רוקי','הנינג׳ה בּוֹ','כל התינוקות','פיפ']};
+const NAMES={en:['Pip','Pip & Pop','Rocky','Sir Wiggles','Ninja Bo','Pip','Toasty','Rocky','Ninja Bo','All the babies','Pip'],
+ he:['פיפ','פיפ ופופ','רוקי','האביר ויגלס','הנינג׳ה בּוֹ','פיפ','טוסטי','רוקי','הנינג׳ה בּוֹ','כל התינוקות','פיפ']};
 const LINES={
  en:[["It's bedtime, but my babies won't go to sleep! Can you boop them back up to bed?","Hee hee! Bet you can't boop me!"],
   ["Oh no, twins! Put your hands together to make a BIG racket. It boops two at once!","We're never going to bed! Never ever!"],
   ["Uh-oh. Rocky is wide awake. He needs two boops!","I'm NOT sleepy! I'm… yaaawn… not sleepy!"],
   ["The knights are playing again. Boop off their helmets first!","Sir Wiggles never sleeps! Ha-HA!"],
   ["Shhh… Ninja Bo is sneaky. Move your hands FAST, or he jumps away!","You can't see me… I'm a ninja! Hee hee."],
-  ["So many babies! Hands together up high, like an ice crown. Hold it!","Brrr! My legs are frozen! Okay, okay, boop me!"],
+  ["Careful! Thorn balls are hanging next to the babies. Boop only the babies, not the thorns!","Ouchie! Don't touch the prickly ones!"],
+  ["Some babies are too HOT to sleep! Don't touch a hot one. First an ice crown, hands together up high. Then boop!","Phew, so hot! Cool me down, please!"],
   ["Make strong arms: elbows out, hands up. Hold it, and your rackets get GIANT!","Whoa! Those rackets are as big as the moon!"],
   ["Arms up high like a Y! Hold it, and sleepy sparkles send everyone to bed!","Uh-oh… sparkles make me sooo sleepy…"],
   ["This is it! ALL my babies are up. Use every trick you know!","Party in the web! Woo-hoo!"],
@@ -831,7 +841,8 @@ const LINES={
   ["אוי אוי. רוקי ער לגמרי. הוא צריך שתי הקפצות!","אני לא עייף! אני… פיהוּק… לא עייף!"],
   ["האבירים שוב משחקים. קודם תעיפו להם את הקסדות!","האביר ויגלס אף פעם לא ישן! הא הא!"],
   ["ששש… הנינג׳ה בּוֹ ערמומי. תזיזו את הידיים מהר, אחרת הוא קופץ!","אי אפשר לראות אותי… אני נינג׳ה! חִי חִי."],
-  ["כמה הרבה תינוקות! ידיים ביחד למעלה, כמו כתר קרח. תחזיקו!","בררר! הרגליים שלי קפאו! טוב, טוב, תקפיצו אותי!"],
+  ["זהירות! כדורי קוצים תלויים ליד התינוקות. מקפיצים רק את התינוקות, לא את הקוצים!","אאוצ׳י! לא נוגעים בדוקרנים!"],
+  ["חלק מהתינוקות חמים מדי בשביל לישון! לא נוגעים בחם. קודם כתר קרח, ידיים ביחד למעלה. ואז מקפיצים!","אוף, כמה חם! תקררו אותי, בבקשה!"],
   ["תעשו ידיים חזקות: מרפקים לצדדים, ידיים למעלה. תחזיקו, והמחבטים נהיים ענקיים!","וואו! המחבטים גדולים כמו הירח!"],
   ["ידיים למעלה כמו Y! תחזיקו, ונצנוצי שינה שולחים את כולם למיטה!","אוי… מהנצנוצים אני נהיה כל כך עייף…"],
   ["זהו זה! כל התינוקות שלי ערים. תשתמשו בכל הטריקים!","מסיבה בקורים! יוּ־הוּ!"],
@@ -839,23 +850,26 @@ const LINES={
 };
 /* the spiders of each level: mix = single spiders by type, pairs = two side by side above the head (made for the big racket),
    intro = the new thing (its first one comes ~3 s in, with a banner), sup = super cards [kind, second it appears] */
+/* thorns = thorn balls hung right next to the spiders (touch one = lose a heart), lives = hearts on this level */
 const LEVELS=[
  {mix:{n:22},two:false},
  {mix:{n:16},pairs:{n:8},intro:'big'},
  {mix:{n:14,r:8},pairs:{r:2},intro:'r'},
  {mix:{n:12,r:4,h:5},intro:'h'},
  {mix:{n:10,b:9},intro:'b'},
- {mix:{n:12,r:6,h:3,b:4},pairs:{n:3},sup:[['ice',4]]},
+ {mix:{n:12,r:5},thorns:22,lives:5,intro:'m'},
+ {mix:{n:10,r:4,f:8},sup:[['ice',2]],cool:6,lives:5,intro:'f'},
  {mix:{n:12,r:6,h:3,b:4},sup:[['power',4]]},
  {mix:{n:12,r:6,h:3,b:4},pairs:{n:2},sup:[['zap',4]]},
- {mix:{n:12,r:7,h:4,b:5},pairs:{n:2,r:1},sup:[['ice',4],['power',14],['zap',24]]}
+ {mix:{n:10,r:6,h:3,b:4,f:5},pairs:{n:2},thorns:8,lives:5,cool:8,sup:[['ice',4],['power',14],['zap',24]]}
 ];
+const LAST=LEVELS.length-1,END=LEVELS.length;   // END = the ending comic page
 // comic cast per page: the babies hanging on the right, and the pose card Mama shows (levels 6–8)
-const COMIC=[{k:['n']},{k:['n','n']},{k:['r']},{k:['h']},{k:['b']},{k:['n'],pose:'ice'},{k:['r'],pose:'power'},{k:['b'],pose:'zap'},{k:['n','r','h','b']},{k:['n','r','h','b'],sleep:true}];
-const LV_ICON=[{t:'n'},{t:'n',two:1},{t:'r'},{t:'h'},{t:'b'},{t:'n',e:'🧊'},{t:'r',e:'💪'},{t:'b',e:'⚡'},{t:'h',e:'🌟'}];
+const COMIC=[{k:['n']},{k:['n','n']},{k:['r']},{k:['h']},{k:['b']},{k:['m','n']},{k:['f'],pose:'ice'},{k:['r'],pose:'power'},{k:['b'],pose:'zap'},{k:['n','r','h','b','f']},{k:['n','r','h','b','f'],sleep:true}];
+const LV_ICON=[{t:'n'},{t:'n',two:1},{t:'r'},{t:'h'},{t:'b'},{t:'m'},{t:'f',e:'🧊'},{t:'r',e:'💪'},{t:'b',e:'⚡'},{t:'h',e:'🌟'}];
 function RL(){return story&&!story.end?60:roundLen;}
 function twoNow(){return story&&story.L?story.L.two!==false:twoOn;}
-function storyProg(){const n=parseInt(LS.get('sw-story','0'),10);return n>=0&&n<=9?n:0;}
+function storyProg(){const n=parseInt(LS.get('sw-story','0'),10);return n>=0&&n<=END?n:0;}
 let wonT=0,resetArm=false,comicP=0,comicStep=0,comicT0=0;
 
 function buildQueue(L){
@@ -863,10 +877,11 @@ function buildQueue(L){
   for(const [t,n] of Object.entries(L.mix))for(let i=0;i<n;i++)items.push({type:t});
   for(const [t,n] of Object.entries(L.pairs||{}))for(let i=0;i<n;i++)items.push({type:t,pair:true});
   for(let i=items.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[items[i],items[j]]=[items[j],items[i]];}
-  if(L.intro){const j=items.findIndex(q=>L.intro==='big'?q.pair:(q.type===L.intro&&!q.pair));const [q]=items.splice(j,1);q.intro=L.intro;items.splice(1,0,q);}
+  if(L.intro&&L.intro!=='m'){const j=items.findIndex(q=>L.intro==='big'?q.pair:(q.type===L.intro&&!q.pair));const [q]=items.splice(j,1);q.intro=L.intro;items.splice(1,0,q);}
   const N=items.length,t0=1.2,t1=53,gap=(t1-t0)/(N-1);   // spread over the minute, the last ones still with time to swat
   items.forEach((q,i)=>q.t=t0+i*gap+(i?(Math.random()-.5)*gap*.5:0));
-  return {queue:items,total:items.reduce((a,q)=>a+PTS[q.type]*(q.pair?2:1),0)};
+  const thorns=[];for(let i=0;i<(L.thorns||0);i++)thorns.push({t:3+i*(49/Math.max(1,(L.thorns||1)-1))+(Math.random()-.5)*1.2,intro:!i&&L.intro==='m'});
+  return {queue:items,thorns,total:items.reduce((a,q)=>a+PTS[q.type]*(q.pair?2:1),0)};
 }
 // two spiders side by side above the head: one big-racket swat gets both. They don't dodge.
 function spawnPair(type){
@@ -874,22 +889,39 @@ function spawnPair(type){
   const cx=Math.max(bx.x0+F.sw*.27+s*1.2,Math.min(bx.x1-F.sw*.27-s*1.2,cx0));
   const y0=Math.max(H*(H>W?.12:.2),(F.shL.y+F.shR.y)/2-F.sw*(reach==='far'?1.75:1.4));
   if(spiders.some(o=>o.state!=='fly'&&Math.abs(o.x-cx)<s*3&&Math.abs(o.ty-y0)<s*2.5))return false;
-  for(const d of [-1,1])spiders.push({id:Math.random(),own:0,x:cx+d*F.sw*.27,ty:y0+(d>0?s*.25:0),y:-40,s,type,hp:SPIDER[type].hp,state:'down',t0:tNow,life:4+(type==='r'?1:0),hangT:0,dodgeReady:1e9,face:'happy',swing:0,sv:0,faceT:0,k:1,ice:tNow<iceUntil[0]});
+  for(const d of [-1,1])spiders.push({id:Math.random(),own:0,x:cx+d*F.sw*.27,ty:y0+(d>0?s*.25:0),y:-40,s,type,hp:SPIDER[type].hp,state:'down',t0:tNow,life:4+(type==='r'?1:0),hangT:0,dodgeReady:1e9,face:'happy',swing:0,sv:0,faceT:0,k:1,ice:false});
   FX.zip();return true;
 }
 function storyTick(dt){
   const L=story.L,u=UI[lang];
   for(const q of story.queue){if(q.done||q.t>elapsed)continue;   // at most one new spider per frame
-    if(q.pair?spawnPair(q.type):spawn(q.type)){q.done=true;if(q.intro)showLevel(q.intro==='big'?ST[lang].big:u[{r:'red',h:'helmet',b:'blue'}[q.intro]],1800);}
+    if(q.pair?spawnPair(q.type):spawn(q.type)){q.done=true;if(q.intro)showLevel(q.intro==='big'?ST[lang].big:q.intro==='f'?ST[lang].hotB:u[{r:'red',h:'helmet',b:'blue'}[q.intro]],2000);}
     break;}
+  for(const q of story.thorns){if(q.done||q.t>elapsed)continue;if(spawnThorn()){q.done=true;if(q.intro)showLevel(ST[lang].thornB,2000);}break;}
   for(const [kind,at] of L.sup||[])if(elapsed>=at&&!cards.some(c=>c.kind===kind)){cards.push({kind,t0:tNow,cool:0,prog:[0,0]});showLevel(u.newSup+' '+u.sup[kind].split(' ')[0]+' '+u.supName[kind],1800);}
   for(const c of cards){
     if(tNow<c.cool){c.prog=[0,0];continue;}
     const ok=mode==='camera'&&poseOk(body,c.kind),p0=c.prog[0];c.prog[0]=Math.max(0,Math.min(1,p0+(ok?dt/2:-dt*.4)));
     if(ok&&Math.floor(p0*8)!==Math.floor(c.prog[0]*8))FX.charge();
-    if(c.prog[0]>=1){c.cool=tNow+COOL;c.prog=[0,0];fireSuper(c.kind,0);}
+    if(c.prog[0]>=1){c.cool=tNow+(L.cool||COOL);c.prog=[0,0];fireSuper(c.kind,0);}
   }
 }
+function spawnThorn(){
+  const F=frame0(0),bx=sideBox(0),ts=Math.max(22,F.sw*.2),nb=spiders.filter(o=>o.state==='hang'&&o.type!=='m');
+  const nearOk=(x,y)=>x>bx.x0+ts&&x<bx.x1-ts&&y>H*.12&&y<H*.8&&!spiders.some(o=>o.state!=='fly'&&Math.hypot(o.x-x,o.ty-y)<(o.type==='m'?ts*2.2:o.s*.55+ts*1.1));
+  let x=null,y=null;
+  for(const sp of nb.sort(()=>Math.random()-.5)){   // beside or under a spider: centre the racket on the spider and you miss the thorns
+    for(const a of [0,Math.PI,Math.PI/2,Math.PI*.25,Math.PI*.75].sort(()=>Math.random()-.5)){const D=sp.s*.55+F.sw*.42,px=sp.x+Math.cos(a)*D,py=sp.ty+Math.sin(a)*D;if(nearOk(px,py)){x=px;y=py;break;}}
+    if(x!==null)break;}
+  if(x===null)return false;
+  spiders.push({id:Math.random(),own:0,x,ty:y,y:-40,s:ts,type:'m',hp:1,state:'down',t0:tNow,life:3.5,hangT:0,dodgeReady:1e9,face:'happy',swing:0,sv:0,faceT:0,k:1});FX.zip();return true;
+}
+function storyStrike(x,y,txt){
+  if(!story||!story.L.lives||state!=='play'||tNow-strikeT[0]<1)return;
+  strikes[0]++;strikeT[0]=tNow;flashT[0]=tNow;FX.ouch();floaters.push({x,y:y-44,txt,col:'#FFFFFF',life:1.1,fs:20});
+  if(strikes[0]>=story.L.lives){story.noLives=true;storyEnd(false);showLevel(ST[lang].noLives,2000);}
+}
+function heartPath(r){const p=new Path2D();p.moveTo(0,r*.9);p.bezierCurveTo(-r*1.4,-r*.1,-r*.7,-r*1.1,0,-r*.4);p.bezierCurveTo(r*.7,-r*1.1,r*1.4,-r*.1,0,r*.9);p.closePath();return p;}
 function storyEnd(win){
   if(state!=='play')return;state='won';wonT=tNow;story.win=win;const u=ST[lang];
   if(win){if(story.i+1>storyProg())LS.set('sw-story',String(story.i+1));SFX.star();showLevel('⭐ '+u.done[story.i%3]+' ⭐',2000);
@@ -902,16 +934,16 @@ function hideRun(){musicStop();$('hud').classList.remove('on');$('stopx').classL
 function showStoryResult(){
   state='over';hideRun();
   const u=ST[lang],i=story.i,win=story.win;
-  $('se-title').textContent=win?'⭐ '+u.done[i%3]:u.fail;
+  $('se-title').textContent=win?'⭐ '+u.done[i%3]:story.noLives?u.noLives:u.fail;
   $('se-score').textContent=score;$('se-sub').textContent=u.got;
   $('se-line').textContent=win?u.won(story.target):u.need(story.target);
-  $('se-next').textContent=win?(i<8?u.next:u.last):u.retry;
+  $('se-next').textContent=win?(i<LAST?u.next:u.last):u.retry;
   $('se-map').textContent=u.levels;$('se-map').hidden=false;
   $('send').hidden=false;SFX.chime();
 }
 $('se-next').onclick=()=>{audio();SFX.tink();$('send').hidden=true;
   if(!story||story.end){story=null;openMap();return;}
-  const i=story.i;if(!story.win)startLevel(i);else if(i<8)startLevel(i+1);else{story=null;openComic(9);}};
+  const i=story.i;if(!story.win)startLevel(i);else if(i<LAST)startLevel(i+1);else{story=null;openComic(END);}};
 $('se-map').onclick=()=>{audio();SFX.tink();$('send').hidden=true;story=null;cards=[];openMap();};
 
 /* level map */
@@ -925,7 +957,7 @@ function buildMap(){
     const b=document.createElement('button');b.className='lv'+(i<p?' done':i===p?' next':' lock');
     const cv=document.createElement('canvas');cv.width=112;cv.height=112;const c=cv.getContext('2d');c.scale(2,2);
     const face=i<p?'sleep':'happy';
-    if(ic.two){drawSpider(c,17,30,11,'n',face,0,1);drawSpider(c,39,30,11,'n',face,0,1);}else drawSpider(c,28,31,15,ic.t,face,0,SPIDER[ic.t].hp);
+    if(ic.two){drawSpider(c,17,30,11,'n',face,0,1);drawSpider(c,39,30,11,'n',face,0,1);}else if(ic.t==='m')drawMace(c,28,29,15,0);else drawSpider(c,28,31,15,ic.t,face,0,SPIDER[ic.t].hp);
     const n=document.createElement('span');n.textContent=(i+1)+(ic.e?' '+ic.e:'');b.append(cv,n);
     if(i<p||i>p){const st=document.createElement('span');st.className='st';st.textContent=i<p?'⭐':'🔒';b.append(st);}
     b.onclick=()=>{if(i>p){SFX.tink();b.animate([{transform:'translateX(-4px)'},{transform:'translateX(4px)'},{transform:'none'}],{duration:220});return;}audio();SFX.tink();startLevel(i);};
@@ -934,7 +966,7 @@ function buildMap(){
 $('story-btn').onclick=()=>{audio();SFX.tink();openMap();};
 $('smap-back').onclick=()=>{audio();SFX.tink();$('smap').hidden=true;$('start').hidden=false;};
 $('smap-reset').onclick=()=>{audio();SFX.tink();if(!resetArm){resetArm=true;buildMap();return;}resetArm=false;LS.set('sw-story','0');buildMap();};
-function startLevel(i){const L=LEVELS[i],q=buildQueue(L);story={i,L,queue:q.queue,total:q.total,target:Math.ceil(q.total*PASS)};cards=[];openComic(i);}
+function startLevel(i){const L=LEVELS[i],q=buildQueue(L);story={i,L,queue:q.queue,thorns:q.thorns,total:q.total,target:Math.ceil(q.total*PASS)};cards=[];openComic(i);}
 
 /* comic page: Mama Spider hangs on the left, the baby (babies) on the right; tap 1 = the baby answers, tap 2 = play */
 function openComic(p){comicP=p;comicStep=0;comicT0=tNow;state='comic';spiders=[];
@@ -944,13 +976,13 @@ function fillComic(){
   $('comic').dir=lang==='he'?'rtl':'ltr';
   $('bub0').innerHTML='<b>'+esc(u.mama)+'</b>'+esc(ln[0]);$('bub1').innerHTML='<b>'+esc(nm)+'</b>'+esc(ln[1]);
   $('bub0').classList.add('on');$('bub1').classList.toggle('on',comicStep>=1);
-  $('comic-tap').textContent=comicStep<1?u.tap:comicP<9?u.go:u.gn;
+  $('comic-tap').textContent=comicStep<1?u.tap:comicP<END?u.go:u.gn;
   layoutComic();
 }
 $('comic').onclick=e=>{if(e.target.closest('#comic-x'))return;audio();SFX.tink();
   if(comicStep<1){comicStep=1;comicT0=tNow;fillComic();return;}
   $('comic').hidden=true;
-  if(comicP<9)play();
+  if(comicP<END)play();
   else{state='over';story={end:true};const u=ST[lang];SFX.star();
     $('se-title').textContent='🌙 '+u.endT;$('se-score').textContent='⭐';$('se-sub').textContent='';$('se-line').textContent=u.endS;
     $('se-next').textContent=u.endB;$('se-map').hidden=true;$('send').hidden=false;}
@@ -959,11 +991,11 @@ $('comic-x').onclick=e=>{e.stopPropagation();audio();SFX.tink();$('comic').hidde
 addEventListener('resize',()=>{if(!$('comic').hidden)layoutComic();});
 function comicGeo(){
   const port=H>W*1.05,n=COMIC[comicP].k.length,g={port,kids:[]};
-  if(port){const s=Math.min(W*.19,H*.1),ks=Math.min(W*.12,H*.065)*(n>2?.85:1);g.mama={x:W*.3,y:H*.7,s};
-    const xs=n===1?[.7]:n===2?[.6,.82]:[.25,.44,.63,.82];xs.forEach((x,j)=>g.kids.push({x:W*x,y:H*(.19+(j%2)*.03),s:ks}));
+  if(port){const s=Math.min(W*.19,H*.1),ks=Math.min(W*.12,H*.065)*(n>4?.7:n>2?.85:1);g.mama={x:W*.3,y:H*.7,s};
+    const xs=n===1?[.7]:n===2?[.6,.82]:n===4?[.25,.44,.63,.82]:[.18,.34,.5,.66,.82];xs.forEach((x,j)=>g.kids.push({x:W*x,y:H*(.19+(j%2)*.03),s:ks}));
     g.card={x:W*.74,y:H*.7,cw:Math.min(W*.32,H*.19)};}
-  else{const s=Math.min(H*.16,W*.09),ks=Math.min(H*.1,W*.06)*(n>2?.85:1);g.mama={x:W*.2,y:H*.66,s};
-    const xs=n===1?[.76]:n===2?[.68,.85]:[.58,.69,.8,.91];xs.forEach((x,j)=>g.kids.push({x:W*x,y:H*(.22+(j%2)*.04),s:ks}));
+  else{const s=Math.min(H*.16,W*.09),ks=Math.min(H*.1,W*.06)*(n>4?.8:n>2?.85:1);g.mama={x:W*.2,y:H*.66,s};
+    const xs=n===1?[.76]:n===2?[.68,.85]:n===4?[.58,.69,.8,.91]:[.55,.64,.73,.82,.91];xs.forEach((x,j)=>g.kids.push({x:W*x,y:H*(.22+(j%2)*.04),s:ks}));
     g.card={x:W*.37,y:H*.68,cw:Math.min(H*.28,W*.14)};}
   return g;
 }
@@ -1003,8 +1035,8 @@ function drawComic(){
   drawCap(ctx,mx,M.y-mb,M.s,t);
   // the babies (they giggle and bounce on their threads when it's their turn)
   g.kids.forEach((k,j)=>{const type=cs.k[j],sw=Math.sin(t*1.6+j*1.3)*.07,jump=!sl&&!talkM?Math.abs(Math.sin(t*7+j*.9))*k.s*.22:0,y=k.y-jump;
-    const x=hang(k.x,y,k.s,sw);ctx.save();ctx.translate(x,y);ctx.rotate(-sw*.6);drawSpider(ctx,0,0,k.s,type,sl?'sleep':'happy',t,SPIDER[type].hp,j*3,sl?null:{x:(M.x-k.x)/W,y:.3});ctx.restore();
-    if(sl){ctx.save();ctx.font=`900 ${Math.round(k.s*.5)}px Grandstander,Fredoka,sans-serif`;ctx.fillStyle='#FFF1B8';ctx.strokeStyle=INK;ctx.lineWidth=4;ctx.lineJoin='round';
+    const x=hang(k.x,y,k.s,sw);ctx.save();ctx.translate(x,y);ctx.rotate(-sw*.6);if(type==='m')drawMace(ctx,0,0,k.s*.8,t);else drawSpider(ctx,0,0,k.s,type,sl?'sleep':'happy',t,SPIDER[type].hp,j*3,sl?null:{x:(M.x-k.x)/W,y:.3});ctx.restore();
+    if(sl&&type!=='m'){ctx.save();ctx.font=`900 ${Math.round(k.s*.5)}px Grandstander,Fredoka,sans-serif`;ctx.fillStyle='#FFF1B8';ctx.strokeStyle=INK;ctx.lineWidth=4;ctx.lineJoin='round';
       for(let z=0;z<3;z++){const ph=((t*.5+j*.3+z/3)%1);ctx.globalAlpha=Math.min(1,(1-ph)*2);const zx=x+k.s*(.5+ph*.6),zy=y-k.s*(.5+ph*1.4);ctx.strokeText('z',zx,zy);ctx.fillText('z',zx,zy);}ctx.restore();}});
   // levels 6–8: Mama shows the pose to copy on a little card
   if(cs.pose){const C=g.card,cw=C.cw,ch=cw*1.1,pop=Math.min(1,since*3+.3);ctx.save();ctx.translate(C.x,C.y);ctx.scale(pop,pop);ctx.rotate(Math.sin(t*1.2)*.04);ctx.translate(-C.x,-C.y);
@@ -1030,8 +1062,10 @@ function drawStoryCards(){
     ctx.restore();ctx.lineWidth=3.5;ctx.strokeStyle=INK;ctx.stroke(p);
     ctx.font=`${Math.round(cw*.2)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(UI[lang].sup[c.kind].split(' ')[0],cx+cw*.33,cy+ch*.36);
     ctx.restore();}
+  if(story&&story.L&&story.L.lives){const n=story.L.lives,r=11,hb=$('hud').getBoundingClientRect(),y=(hb.bottom>0?hb.bottom:70)+20;   // hearts in a small row under the time
+    if(tNow-flashT[0]<.5){ctx.fillStyle=`rgba(240,96,77,${.3*(1-(tNow-flashT[0])/.5)})`;ctx.fillRect(0,0,W,H);}
+    for(let i=0;i<n;i++){const x=Math.max(12,hb.left)+r*1.4+i*r*2.4,lost=i>=n-strikes[0];ctx.save();ctx.translate(x,y);if(lost)ctx.globalAlpha=.35;sticker(ctx,heartPath(r),lost?'#E6E1D8':'#FF7A8A',2.5);ctx.restore();}}
   if(tNow<powerUntil[0])bubbleC('💪 '+Math.ceil(powerUntil[0]-tNow),W/2,H-34,20,'#FFF1B8');
-  else if(tNow<iceUntil[0])bubbleC('🧊 '+Math.ceil(iceUntil[0]-tNow),W/2,H-34,20,'#DDF3FF');
 }
 // no camera: tap a super card to use it
 cv.addEventListener('pointerdown',e=>{if(!story||state!=='play'||mode==='camera')return;
