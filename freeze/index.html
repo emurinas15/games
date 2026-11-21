@@ -13,6 +13,9 @@
 .stopx.on{display:block}
 .who-row{display:flex;justify-content:center;margin:2px 0 12px}
 .seg.big button{font-size:16px;padding:9px 14px;white-space:nowrap}
+.play-row{display:flex;gap:10px}.play-row .btn{flex:1;min-width:0;margin:0}
+.btn.story{background:#F5B842}   /* 21 Nov (Edgar): story mode — a 30-page comic; each page turns when the pose is copied */
+.srs{display:block;margin:6px auto 0;border:none;background:none;font:700 15px Fredoka,sans-serif;color:var(--ink);text-decoration:underline;cursor:pointer}
 </style>
 </head>
 <body>
@@ -31,9 +34,11 @@
 <div class="card home" id="start">
   <h1 id="t-title">Freeze & Copy</h1>
   <p class="sub" id="t-sub"></p>
-  <button class="btn" id="play"><span id="t-play">Play</span></button>
+  <div class="play-row"><button class="btn" id="play"><span id="t-play">Play</span></button><button class="btn story" id="story"><span>📖 Story</span></button></div>
+  <button class="srs" id="story-restart" hidden></button>
   <!-- 15 Nov (Edgar wanted a PvP mode): the 2-player race was hidden under For grown-ups, so it's now right above Play -->
   <div class="who-row"><div class="seg big" id="who-seg"><button data-v="solo"></button><button data-v="duo"></button></div></div>
+
   <p class="note" id="t-privacy"></p>
   <details id="grown">
     <summary id="t-grown">For grown-ups</summary>
@@ -61,6 +66,7 @@
   <div class="big-score"><span id="final">0</span><small id="t-sec2"></small></div>
   <p class="best-line" id="best-line"></p>
   <button class="btn" id="again"><span id="t-again">Play again</span></button>
+  <button class="srs" id="tomenu" hidden></button>
   <p class="note" id="t-privacy2"></p>
 </div>
 
@@ -94,7 +100,8 @@ const UI={
   ready:"Getting ready…",two:"Two players, side by side!",raise:"Raise a hand to spin!",mix:"MIX-UP!",freeze:"Freeze!",copy:"Copy me!",
   great:["Great copy!","Perfect!","You're a statue!","Nailed it!"],miss:["Hehe, too tricky!","Almost!","Next one!"],winL:"← Blue wins!",winR:"Pink wins! →",
   spin:"Spin",left:"s",timeup:"Time's up!",blue:"Blue",pink:"Pink",tie:"A tie!",nobody:"Step in front of the camera!",turn:"Turn the phone sideways to play",
-  nocam:"No camera here — this game needs a camera.",aria:"Game area"},
+  nocam:"No camera here — this game needs a camera.",aria:"Game area",
+  story:"📖 Story",storyAt:n=>"📖 "+n+"/30",restart:"↺ Start the story over",theEnd:"The End!",roarBack:"Lion's roar is back!",storyAgain:"↺ Read it again",menu:"Back to the menu"},
  he:{title:"קופאים ומעתיקים",sub:"מסובבים את גלגל החיות, החיה קופאת — ומעתיקים את הפסל!",subG:n=>"מעתיקים "+n+" פסלי חיות!",subG2:n=>"מי שמגיע ראשון ל־"+n+" פסלים מנצח!",statues:"פסלים",play:"שחקו",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
   g1:"מרימים יד כדי לסובב את הגלגל. החיה רוקדת, קופאת בתנוחה מצחיקה, ומעתיקים אותה — מחזיקים עד שהצנצנת מתמלאת. אחרי כמה סיבובים מגיעים ערבובים: חצי חיה אחת וחצי חיה אחרת. משחק נמשך דקה וחצי — מעתיקים כמה שיותר פסלים. שחקן אחד מנסה לשבור את השיא שלו; שני שחקנים מתחרים מי מעתיק ראשון.",
@@ -108,7 +115,8 @@ const UI={
   ready:"מתכוננים…",two:"שני שחקנים, זה לצד זה!",raise:"הרימו יד כדי לסובב!",mix:"ערבוב!",freeze:"קופאים!",copy:"תעתיקו אותי!",
   great:["העתקה מעולה!","מושלם!","יציבים כמו פסל!","בול!"],miss:["חחח, קשה מדי!","כמעט!","הבא!"],winL:"← הכחול ניצח!",winR:"הוורוד ניצח! →",
   spin:"סיבוב",left:"שנ׳",timeup:"נגמר הזמן!",blue:"כחול",pink:"ורוד",tie:"תיקו!",nobody:"היכנסו מול המצלמה!",turn:"סובבו את הטלפון לרוחב כדי לשחק",
-  nocam:"אין כאן מצלמה — המשחק הזה צריך מצלמה.",aria:"אזור המשחק"}
+  nocam:"אין כאן מצלמה — המשחק הזה צריך מצלמה.",aria:"אזור המשחק",
+  story:"📖 סיפור",storyAt:n=>"📖 "+n+"/30",restart:"↺ להתחיל את הסיפור מההתחלה",theEnd:"הסוף!",roarBack:"השאגה של האריה חזרה!",storyAgain:"↺ לקרוא שוב",menu:"חזרה לתפריט"}
 };
 
 // 15 Nov (Edgar: "too forgiving"): one notch up — old Medium is the new Easy, old Hard the new Medium, and a new Hard
@@ -138,7 +146,7 @@ function setLang(l){
   $('t-privacy2').textContent=u.privacy;
   $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
   $('c').setAttribute('aria-label',u.aria);
-  segs();subLine();syncSound();if(!$('end').hidden)fillEnd(lastNew);
+  segs();subLine();syncSound();storyLabel();if(!$('end').hidden)fillEnd(lastNew);
 }
 $('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
 const segBind=(id,fn)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{fn(b.dataset.v);loadBest();segs();});
@@ -351,13 +359,228 @@ function drawHead(a,x,y,r,lw,t,o,skin=SKIN[0]){
   if(id==='elephant')sticker(ctx,ell(x,y-r*.72,r*.12,r*.1),a.light,lw*.6);   // little trunk tip on the hood; the arms are the trunk
   const blink=(Math.sin(t*1.7+id.length)>.97)?.15:1,er=fr*.13;
   for(const d of [-1,1]){const cx=x+d*fr*.36,cy=fy-fr*.02;
+    if(o.sleepy){ctx.strokeStyle=INK;ctx.lineWidth=lw*.9;ctx.beginPath();ctx.arc(cx,cy-er*.2,er,Math.PI*.1,Math.PI*.9);ctx.stroke();continue;}
     if(o.happy){ctx.strokeStyle=INK;ctx.lineWidth=lw*.9;ctx.beginPath();ctx.arc(cx,cy+er*.3,er,Math.PI*1.1,Math.PI*1.9);ctx.stroke();continue;}
     ctx.fillStyle=INK;ctx.fill(ell(cx,cy,er*.8,er*1.05*blink));ctx.fillStyle='#fff';ctx.fill(ell(cx+er*.28,cy-er*.35,er*.32,er*.32*blink));}
   ctx.fillStyle='rgba(255,120,140,.55)';for(const d of [-1,1])ctx.fill(ell(x+d*fr*.58,fy+fr*.28,fr*.15,fr*.09));
-  if(o.happy){const m=new Path2D();m.moveTo(x-fr*.25,fy+fr*.3);m.quadraticCurveTo(x,fy+fr*.72,x+fr*.25,fy+fr*.3);m.closePath();sticker(ctx,m,'#E2564A',lw*.6);}
+  if(o.mouth==='frown'){ctx.strokeStyle=INK;ctx.lineWidth=lw*.9;ctx.lineCap='round';ctx.beginPath();ctx.arc(x,fy+fr*.56,fr*.22,1.2*Math.PI,1.8*Math.PI);ctx.stroke();
+    for(const d of [-1,1]){ctx.beginPath();ctx.moveTo(x+d*fr*.58,fy-fr*.3);ctx.lineTo(x+d*fr*.16,fy-fr*.17);ctx.stroke();}}   // story: grumpy crab
+  else if(o.mouth==='o'){sticker(ctx,ell(x,fy+fr*.42,fr*.1,fr*.12),'#7A2E26',lw*.6);}   // story: surprised / squeaky lion
+  else if(o.mouth==='smile'){const m=new Path2D();m.moveTo(x-fr*.25,fy+fr*.3);m.quadraticCurveTo(x,fy+fr*.72,x+fr*.25,fy+fr*.3);m.closePath();sticker(ctx,m,'#E2564A',lw*.6);}
+  else if(o.mouth==='sleep'){ctx.strokeStyle=INK;ctx.lineWidth=lw*.8;ctx.beginPath();ctx.moveTo(x-fr*.12,fy+fr*.38);ctx.lineTo(x+fr*.12,fy+fr*.38);ctx.stroke();}
+  else if(o.happy){const m=new Path2D();m.moveTo(x-fr*.25,fy+fr*.3);m.quadraticCurveTo(x,fy+fr*.72,x+fr*.25,fy+fr*.3);m.closePath();sticker(ctx,m,'#E2564A',lw*.6);}
   else if(id==='lion'){const m=new Path2D();m.ellipse(x,fy+fr*.45,fr*.2,fr*.17,0,0,7);sticker(ctx,m,'#7A2E26',lw*.6);}   // roaring
   else{ctx.strokeStyle=INK;ctx.lineWidth=lw*.8;ctx.lineCap='round';ctx.beginPath();ctx.arc(x,fy+fr*.28,fr*.2,.15*Math.PI,.85*Math.PI);ctx.stroke();}
 }
+
+const SPAGES=[{"ch":"lion","bg":"sunrise","pose":["lion",0],"solo":true,"b":[["lion","Good morning, jungle! Here comes my big ROAR!","בוקר טוב, ג'ונגל! הנה השאגה הגדולה שלי!"],["lion","…squeak?","…צִיף?","small"]],"lm":"o"},
+ {"ch":"lion","bg":"sunrise","pose":["lion",1],"solo":true,"b":[["lion","Oh no! My roar is lost!","אוי לא! השאגה שלי הלכה לאיבוד!"],["lion","Maybe it's hiding. I'll POUNCE on it!","אולי היא מתחבאת. אני אזנק עליה!"]]},
+ {"ch":"lion","bg":"sunrise","pose":["lion",2],"solo":true,"peek":"frog","b":[["lion","Shh… sneaky, sneaky…","ששש… מתגנב, מתגנב…"],["frog","Ribbit! Who's sneaking?","קוואק! מי מתגנב פה?"]]},
+ {"ch":"frog","bg":"pond","pose":["frog",0],"b":[["frog","Hi-hi-hi! I'm Frog! Lost your roar? Squat like me!","היי-היי-היי! אני צפרדע! איבדת שאגה? תעשה סקוואט כמוני!"],["lion","Ribbit… squeak.","קוואק… צִיף.","small"]]},
+ {"ch":"frog","bg":"pond","pose":["frog",1],"b":[["frog","Now JUMP! Roars LOVE jumping!","עכשיו לקפוץ! שאגות מתות על קפיצות!"],["lion","Boing… squeak. Still squeak.","בוינג… צִיף. עדיין צִיף."]]},
+ {"ch":"frog","bg":"pond","pose":["frog",2],"lion":"stand","lm":"o","fly":true,"b":[["frog","Ooh, a fly! GOTCHA! …Bye-bye, fly!","אוי, זבוב! תפסתי! …ביי ביי, זבוב!"],["frog","Ask Elephant. She remembers EVERYTHING!","תשאל את הפיל. הוא זוכר הכול!"]]},
+ {"ch":"elephant","bg":"tree","pose":["elephant",0],"lion":"stand","lm":"smile","b":[["elephant","Hello! I'm Elephant. I never forget!","שלום! אני פיל. אני אף פעם לא שוכח!"],["lion","I lost my roar. Can you help?","איבדתי את השאגה. תעזור לי?"]]},
+ {"ch":"elephant","bg":"tree","pose":["elephant",1],"b":[["elephant","Blow a big TOOT like me! TOOOT!","תעשה טוּט גדול כמוני! טוּוּוּט!"],["lion","toot… squeak.","טוּט… צִיף.","small"],["elephant","Wait… who are you?","רגע… מי אתה?"]]},
+ {"ch":"elephant","bg":"tree","pose":["elephant",2],"b":[["elephant","Ask my friend! She's pink and fancy…","תשאל את החברה שלי! היא ורודה ומפונפנת…"],["lion","Flamingo?","פלמינגו?"],["elephant","Yes! Um… who are YOU?","כן! אממ… ומי אתה?"]]},
+ {"ch":"flamingo","bg":"lagoon","pose":["flamingo",0],"lion":"wobble","lm":"o","b":[["flamingo","Darling! Stand on one leg. So fancy!","יקירי! עומדים על רגל אחת. כל כך אלגנטי!"],["lion","Whoa… whoa… WHOA!","אוי… אוי… אוווי!"]]},
+ {"ch":"flamingo","bg":"lagoon","pose":["flamingo",1],"lion":"wobble2","lm":"o","b":[["flamingo","Now the other leg! Chop chop!","עכשיו הרגל השנייה! קדימה, קדימה!"],["lion","My legs are in a knot!","הרגליים שלי עשו קשר!"]]},
+ {"ch":"flamingo","bg":"lagoon","pose":["flamingo",2],"b":[["flamingo","Someone is grumbling by the river. That's Crab.","מישהו רוטן שם ליד הנהר. זה הסרטן."],["flamingo","Ta-ta, darling!","ביי ביי, יקירי!"]]},
+ {"ch":"crab","bg":"river","pose":["crab",0],"lion":"stand","lm":"smile","b":[["crab","Snip snap! Go away. I'm grumpy.","קליק קלאק! לך מפה. אני עצבני."],["lion","Please? I lost my roar.","בבקשה? איבדתי את השאגה."]]},
+ {"ch":"crab","bg":"river","pose":["crab",1],"lm":"o","b":[["crab","Fine. Claws up! Look SCARY!","טוב. צבתות למעלה! תיראה מפחיד!"],["lion","Squeak!","צִיף!","small"],["crab","…That's not scary.","…זה לא מפחיד."]]},
+ {"ch":"crab","bg":"river","pose":["crab",2],"lion":"stand","lm":"smile","b":[["crab","Follow me to Bear's cave!","בוא אחריי למערה של הדוב!"],["lion","Crab… the cave is THAT way.","סרטן… המערה בכיוון ההוא."],["crab","I knew that.","ידעתי."]]},
+ {"ch":"bear","bg":"cave","pose":["bear",0],"sleepy":true,"lion":"stand","lm":"smile","b":[["bear","Yaaawn. Who woke me up?","אוווה. מי העיר אותי?"],["lion","Bear, you're so strong! Help me roar!","דוב, אתה כל כך חזק! תעזור לי לשאוג!"]]},
+ {"ch":"bear","bg":"cave","pose":["bear",1],"b":[["bear","Stomp! Roars start in your feet.","דריכה! שאגות מתחילות מהרגליים."],["lion","STOMP! …Ouch. Squeak.","דריכה! …איי. צִיף."]]},
+ {"ch":"bear","bg":"cave","pose":["bear",2],"sleepy":true,"lion":"stand","lm":"o","b":[["bear","Ask the new kid… the cold one… zzz…","תשאל את החדש… זה מהקרח… נום נום…"],["lion","What cold one?","איזה קרח?"]]},
+ {"ch":"penguin","bg":"mud","pose":["penguin",0],"lion":"stand","lm":"smile","b":[["penguin","Excuse me! Is this the South Pole?","סליחה! זה הקוטב הדרומי?"],["lion","No. This is the jungle.","לא. זה הג'ונגל."],["penguin","Hmm. Green snow.","הממ. שלג ירוק."]]},
+ {"ch":"penguin","bg":"mud","pose":["penguin",1],"b":[["penguin","Wheee! Mud ice!","ויייי! קרח של בוץ!"],["lion","Penguin, have you seen my roar?","פינגווין, ראית את השאגה שלי?"]]},
+ {"ch":"penguin","bg":"mud","pose":["penguin",2],"lion":"stand","lm":"o","pal":true,"b":[["penguin","My friend is in the pond. Let's ask!","החבר שלי בבריכה. בוא נשאל אותו!"],["pal","No roar in here! But I see long ears!","אין פה שאגה! אבל אני רואה אוזניים ארוכות!"]]},
+ {"ch":"bunny","bg":"meadow","pose":["bunny",0],"lion":"stand","lm":"smile","b":[["bunny","Shh! Long ears hear EVERYTHING.","ששש! אוזניים ארוכות שומעות הכול."],["lion","Can you hear my roar?","אתה שומע את השאגה שלי?"]]},
+ {"ch":"bunny","bg":"meadow","pose":["bunny",1],"lm":"o","b":[["bunny","I hear… a CRUNCHY carrot! Hop hop!","אני שומע… גזר פריך! הופ הופ!"],["lion","That's not my roar…","זאת לא השאגה שלי…"]]},
+ {"ch":"bunny","bg":"meadow","pose":["bunny",2],"tallCarrot":true,"lion":"stand","lm":"o","b":[["bunny","Up there! The biggest carrot!","שם למעלה! הגזר הכי גדול!"],["lion","Bunny! My ROAR!","ארנב! השאגה שלי!"],["bunny","Oh. Ask Duck. Duck copies everything.","אה. תשאל את הברווז. הוא מחקה הכול."]]},
+ {"ch":"duck","bg":"pond","pose":["duck",0],"lm":"smile","lion":"stand","b":[["lion","Hello, Duck!","שלום, ברווז!"],["duck","Hello, Duck!","שלום, ברווז!"],["lion","No, YOU are Duck.","לא, אתה הברווז."]]},
+ {"ch":"duck","bg":"pond","pose":["duck",1],"lm":"o","b":[["lion","I lost my roar!","איבדתי את השאגה!"],["duck","I lost my roar!","איבדתי את השאגה!"],["lion","Stop copying me!","די לחקות אותי!"]]},
+ {"ch":"duck","bg":"pond","pose":["duck",2],"lm":"o","dangle":true,"b":[["duck","Stop copying me!","די לחקות אותי!"],["lion","Who can help me?!","מי יכול לעזור לי?!"],["spider","M-me?","א-אני?","small"]]},
+ {"ch":"spider","bg":"web","pose":["spider",0],"lion":"stand","lm":"smile","b":[["spider","H-hi… I'm Spider. Want to be friends?","ש-שלום… אני עכביש. רוצה להיות חבר שלי?"],["lion","Yes! But I lost my roar.","כן! אבל איבדתי את השאגה."]]},
+ {"ch":"spider","bg":"web","pose":["spider",1],"b":[["spider","Eight legs… EIGHT tickles!","שמונה רגליים… שמונה דגדוגים!"],["lion","Oh no! Hee hee!","אוי לא! הי הי!"]]},
+ {"ch":"spider","bg":"web","pose":["spider",2],"lm":"smile","b":[["spider","Tickle chase! Zoom zoom!","תופסת דגדוגים! זום זום!"],["lion","Ha ha ha… HA HA HAAA…","חה חה חה… חה חה חהההה…"]]}];
+const SEND=[["lion","ROOOOAR!","רוווארר!"],["all","Your roar is back!","השאגה חזרה!"],["lion","It was hiding in my giggles!","היא הסתתרה בצחקוקים שלי!"]];
+const S_BG={
+ sunrise:{sky:['#FFE3B0','#FFF6DE'],hill:'#9ED37F',hill2:'#7CC06A',ground:'#8FCB6C'},
+ pond:{sky:['#BFE9F2','#EFFBF6'],hill:'#8FD18A',hill2:'#6FBF74',ground:'#86C96E'},
+ tree:{sky:['#CDEBC2','#F4FBEA'],hill:'#A8D77E',hill2:'#86C46A',ground:'#9FD07A'},
+ lagoon:{sky:['#FFD9E2','#FFF3E8'],hill:'#9CD8A0',hill2:'#78C689',ground:'#F2DDB0'},
+ river:{sky:['#C9EAFB','#F2FAFF'],hill:'#9ED38A',hill2:'#7DC27A',ground:'#F0D9A8'},
+ cave:{sky:['#DCE8C8','#F7F7E6'],hill:'#A2CF86',hill2:'#86BC74',ground:'#A6CE7E'},
+ mud:{sky:['#D7EEF7','#F5FBF2'],hill:'#97D18A',hill2:'#79C07A',ground:'#93CB72'},
+ meadow:{sky:['#D6F0FF','#FFFBEA'],hill:'#A6DA85',hill2:'#86C873',ground:'#9BD27A'},
+ web:{sky:['#E3DAF5','#FBF5EC'],hill:'#8FCB8E',hill2:'#6FB67E',ground:'#8CC777'},
+ party:{sky:['#FFE0EC','#FFF8E0'],hill:'#9ED37F',hill2:'#7CC06A',ground:'#8FCB6C'}};
+function sLeaf(c,x,y,len,ang,col,wid=.38){c.save();c.translate(x,y);c.rotate(ang);const p=new Path2D();p.moveTo(0,0);p.bezierCurveTo(len*.25,-len*wid,len*.75,-len*wid*.8,len,0);p.bezierCurveTo(len*.75,len*wid*.8,len*.25,len*wid,0,0);sticker(c,p,col,2.6);
+ c.strokeStyle='rgba(43,33,24,.45)';c.lineWidth=1.6;c.beginPath();c.moveTo(len*.06,0);c.quadraticCurveTo(len*.5,-len*.04,len*.9,0);c.stroke();c.restore();}
+function sBush(c,x,y,r,col){const p=new Path2D();for(let i=0;i<7;i++){const a=Math.PI+i/6*Math.PI;p.moveTo(x+Math.cos(a)*r*.6+r*.38,y+Math.sin(a)*r*.5);p.arc(x+Math.cos(a)*r*.6,y+Math.sin(a)*r*.5,r*.38,0,7);}sticker(c,p,col,2.6);c.fillStyle=col;c.fill(ell(x,y,r*.75,r*.42));}
+function sDrawBG(c,W,H,k,t){
+ const B=S_BG[k],g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,B.sky[0]);g.addColorStop(1,B.sky[1]);c.fillStyle=g;c.fillRect(0,0,W,H);
+ if(k==='sunrise'||k==='party'){sticker(c,ell(W*.82,H*.2,H*.09,H*.09),'#FFD86B',3);c.fillStyle='rgba(255,255,255,.35)';c.fill(ell(W*.8,H*.18,H*.03,H*.02));}
+ // soft clouds
+ c.fillStyle='rgba(255,255,255,.8)';for(const [cx,cy,r] of [[.2,.12,.05],[.55,.08,.04]]){c.fill(ell(W*cx,H*cy,H*r*2,H*r));c.fill(ell(W*cx+H*r,H*cy-H*r*.6,H*r*1.1,H*r*.9));}
+ // far hills
+ c.fillStyle=B.hill;c.beginPath();c.moveTo(0,H*.62);c.bezierCurveTo(W*.2,H*.48,W*.35,H*.5,W*.5,H*.6);c.bezierCurveTo(W*.65,H*.5,W*.85,H*.46,W,H*.58);c.lineTo(W,H);c.lineTo(0,H);c.fill();
+ c.fillStyle=B.hill2;c.beginPath();c.moveTo(0,H*.72);c.bezierCurveTo(W*.25,H*.64,W*.6,H*.7,W,H*.66);c.lineTo(W,H);c.lineTo(0,H);c.fill();
+ // props behind
+ if(k==='cave'){const p=new Path2D();p.moveTo(W*.56,H*.92);p.bezierCurveTo(W*.54,H*.38,W*.98,H*.3,W*1.02,H*.5);p.lineTo(W*1.02,H*.92);p.closePath();sticker(c,p,'#B9A58C',3);const q=new Path2D();q.moveTo(W*.64,H*.92);q.bezierCurveTo(W*.64,H*.52,W*.92,H*.5,W*.94,H*.92);q.closePath();c.fillStyle='#5E4B3C';c.fill(q);}
+ if(k==='tree'){const p=new Path2D();p.moveTo(W*.88,H*.95);p.bezierCurveTo(W*.9,H*.6,W*.86,H*.35,W*.9,H*.1);p.lineTo(W*1.02,H*.1);p.lineTo(W*1.02,H*.95);p.closePath();sticker(c,p,'#A97A52',3);}
+ if(k==='web'){c.save();c.translate(W*.7,H*.02);c.strokeStyle='rgba(255,255,255,.85)';c.lineWidth=2;for(let i=0;i<9;i++){const a=Math.PI*(.05+i/8*.9);c.beginPath();c.moveTo(0,0);c.lineTo(Math.cos(a)*H*.5,Math.sin(a)*H*.5);c.stroke();}
+   for(let r=H*.1;r<H*.5;r+=H*.08){c.beginPath();for(let i=0;i<9;i++){const a=Math.PI*(.05+i/8*.9),px=Math.cos(a)*r,py=Math.sin(a)*r;if(i)c.quadraticCurveTo(Math.cos(a-.17)*r*.92,Math.sin(a-.17)*r*.92,px,py);else c.moveTo(px,py);}c.stroke();}c.restore();
+   c.fillStyle='rgba(255,236,150,.9)';for(const [fx,fy] of [[.15,.3],[.4,.2],[.9,.55],[.6,.45]])c.fill(ell(W*fx,H*fy,4,4));}
+ // ground
+ c.fillStyle=B.ground;c.beginPath();c.moveTo(0,H*.84);c.bezierCurveTo(W*.3,H*.8,W*.7,H*.86,W,H*.82);c.lineTo(W,H);c.lineTo(0,H);c.fill();
+ if(k==='pond'||k==='mud'){const pc=k==='pond'?'#7FCDE0':'#A8855E';sticker(c,ell(W*.72,H*.92,W*.24,H*.06),pc,3);c.fillStyle='rgba(255,255,255,.4)';c.fill(ell(W*.66,H*.905,W*.06,H*.012));
+   if(k==='pond')for(const [lx,lr] of [[.55,.035],[.88,.03]]){const p=new Path2D();p.ellipse(W*lx,H*.93,H*lr*1.6,H*lr*.6,0,.3,Math.PI*2-.05);p.lineTo(W*lx,H*.93);p.closePath();sticker(c,p,'#6FC06A',2);} }
+ if(k==='meadow')for(const [cx,cy] of [[.14,.86],[.2,.88],[.88,.84],[.93,.87]]){const p=new Path2D();p.ellipse(W*cx,H*cy,H*.016,H*.012,0,Math.PI,0);p.closePath();sticker(c,p,'#FF9A3D',2);sLeaf(c,W*cx,H*cy-H*.012,H*.045,-Math.PI/2-.3,'#6CBF6A',.3);sLeaf(c,W*cx,H*cy-H*.012,H*.045,-Math.PI/2+.3,'#5DB86A',.3);}
+ if(k==='mud'){sticker(c,ell(W*.12,H*.95,W*.12,H*.03),'#7FCDE0',2.5);}
+ if(k==='river'||k==='lagoon'){const col=k==='river'?'#86CDEB':'#9ED8E6';c.fillStyle=col;c.beginPath();c.moveTo(0,H*.76);c.bezierCurveTo(W*.3,H*.72,W*.6,H*.8,W,H*.74);c.lineTo(W,H*.8);c.bezierCurveTo(W*.6,H*.86,W*.3,H*.78,0,H*.82);c.fill();
+   c.strokeStyle='rgba(255,255,255,.7)';c.lineWidth=2.5;c.lineCap='round';for(const wx of [.18,.5,.8]){c.beginPath();c.moveTo(W*wx,H*.78);c.quadraticCurveTo(W*wx+12,H*.77,W*wx+24,H*.78);c.stroke();}}
+ // framing foliage
+ const L1='#5DB86A',L2='#7FCB6B',L3='#3FA06A';
+ sLeaf(c,-10,H*.1,H*.34,.35,L1);sLeaf(c,-6,H*.28,H*.3,.05,L2);sLeaf(c,-8,H*.02,H*.28,.75,L3);
+ if(k!=='tree'&&k!=='cave'){sLeaf(c,W+10,H*.12,H*.32,Math.PI-.35,L2);sLeaf(c,W+8,H*.3,H*.28,Math.PI-.05,L1);}
+ // hanging vines
+ c.strokeStyle='#4E9A54';c.lineWidth=4;for(const vx of [.36,.6]){c.beginPath();c.moveTo(W*vx,0);c.bezierCurveTo(W*vx+14,H*.06,W*vx-12,H*.12,W*vx+4,H*.18);c.stroke();sLeaf(c,W*vx+4,H*.18,H*.07,1.2,L2,.45);sLeaf(c,W*vx-3,H*.09,H*.06,2.4,L1,.45);}
+ sBush(c,W*.06,H*.88,H*.13,'#6CBF6A');sBush(c,W*.95,H*.9,H*.1,'#5DB86A');
+ if(k==='lagoon'){c.strokeStyle='#4E9A54';c.lineWidth=3;for(const rx of [.08,.11,.92]){c.beginPath();c.moveTo(W*rx,H*.86);c.quadraticCurveTo(W*rx+6,H*.7,W*rx+2,H*.62);c.stroke();sticker(c,ell(W*rx+2,H*.62,4,12),'#A97A52',2);}}
+ // flowers
+ for(const [fx,fy,fc] of [[.2,.9,'#FF9FB0'],[.48,.93,'#FFD86B'],[.85,.86,'#B9A3E0']]){for(let i=0;i<5;i++){const a=i/5*Math.PI*2;sticker(c,ell(W*fx+Math.cos(a)*6,H*fy+Math.sin(a)*6,5,5),fc,1.6);}sticker(c,ell(W*fx,H*fy,4,4),'#FFF1B8',1.4);}
+}
+
+/* ---------- characters ---------- */
+const S_STAND={uaL:105,faL:95,uaR:75,faR:85,thL:95,shL:90,thR:85,shR:90,tr:-90};
+function sPose(pg){const p={...ANIMALS[IDX[pg.pose[0]]].poses[pg.pose[1]].pose};if(bodyMode!=='full')for(const k of LEGS)p[k]=90;return p;}
+function sFigure(id,x,ground,s,o={}){const i=IDX[id],pose=o.pose||S_STAND;drawAnimal({a:i,b:i,pose},x,ground-s*(bodyMode==='full'?.98:.55),s,o.t??10,o);}
+function sLionPose(pg){const p=sPose(pg);
+ if(pg.lion==='stand')return S_STAND;
+ if(pg.lion==='wobble')return {...p,tr:-78,uaL:-150,faL:-120,uaR:-30,faR:-60};
+ if(pg.lion==='wobble2')return {...p,tr:-102,uaL:200,faL:170,uaR:-20,faR:10};
+ return p;}
+
+function sDrawPage(pg,end,t){
+ const W=900,H=600;
+ sDrawBG(ctx,W,H,end?'party':pg.bg);
+ const G=H*.87,s=H*.25;
+ if(end){const cast=['frog','elephant','flamingo','crab','bear','penguin','bunny','duck','spider'];const xs=[.05,.13,.21,.3,.68,.76,.84,.92,.98];
+   cast.forEach((id,i)=>sFigure(id,W*xs[i],G,s*.52,{mouth:'smile',hop:-Math.abs(Math.sin(t*7+i))*s*.06,pose:{...S_STAND,uaL:-130,faL:-120,uaR:-50,faR:-60}}));
+   sFigure('lion',W*.5,G,s*1.05,{pose:sPose({pose:['lion',0]}),hop:-Math.abs(Math.sin(t*6))*s*.05});
+   // confetti
+   const cols=['#FF9FB0','#FFD86B','#7DCB6B','#5FB7F0','#B9A3E0'];for(let i=0;i<40;i++){const x=(i*137.5%100)/100*W,y=(i*61.8%45)/100*H+H*.02;ctx.save();ctx.translate(x,y);ctx.rotate(i);sticker(ctx,ell(0,0,7,3.5),cols[i%5],1.4);ctx.restore();}
+   return;}
+ if(pg.solo){sFigure('lion',W*.46,G,s*1.08,{...SFX_O(s,t),pose:sPose(pg),mouth:SCHEER?undefined:pg.lm});
+   if(pg.peek){sBush(ctx,W*.84,G-H*.06,H*.2,'#5DB86A');ctx.save();ctx.translate(W*.84,G-H*.26);drawHead(ANIMALS[IDX['frog']],0,0,H*.07,2.6,10,{mouth:'smile'});ctx.restore();sBush(ctx,W*.84,G-H*.02,H*.17,'#6CBF6A');}
+   return;}
+ const other=pg.pose[0];
+ sFigure('lion',W*.28,G,s,{...SFX_O(s,t),pose:sLionPose(pg),mouth:SCHEER?undefined:pg.lm});
+ sFigure(other,W*.7,G,s,{...SFX_O(s,t),pose:sPose(pg),sleepy:pg.sleepy&&other==='bear',mouth:pg.sleepy?'sleep':other==='crab'?'frown':(other==='spider'||other==='flamingo'||other==='frog')?'smile':undefined});
+ if(pg.sleepy){ctx.font=`900 ${H*.05}px Grandstander`;ctx.fillStyle='#6B7FB0';ctx.fillText('z',W*.79,H*.5);ctx.font=`900 ${H*.035}px Grandstander`;ctx.fillText('z',W*.82,H*.46);}
+ if(pg.fly){const s2=s,y=G-s2*(bodyMode==='full'?.98:.55),R=d=>d*Math.PI/180,P=sPose(pg),tl=R((P.tr??-90)+90),pv={x:0,y:s2*.3};
+   const rot=p=>({x:pv.x+(p.x-pv.x)*Math.cos(tl)-(p.y-pv.y)*Math.sin(tl),y:pv.y+(p.x-pv.x)*Math.sin(tl)+(p.y-pv.y)*Math.cos(tl)});
+   const sh=rot({x:s2*.25,y:-s2*.2}),e={x:sh.x+Math.cos(R(P.uaR))*s2*.3,y:sh.y+Math.sin(R(P.uaR))*s2*.3},h={x:W*.7+e.x+Math.cos(R(P.faR))*s2*.27,y:y+e.y+Math.sin(R(P.faR))*s2*.27};
+   // the fly is caught in the kid's hand: wings and a head peek out of the fist, little wiggle lines around it
+   const fx=h.x+s2*.01,fy=h.y-s2*.11;ctx.fillStyle='rgba(255,255,255,.9)';ctx.strokeStyle=INK;ctx.lineWidth=1.6;
+   for(const d of [-1,1]){const p=ell(fx+d*s2*.055,fy-s2*.035,s2*.06,s2*.032,d*.5);ctx.fill(p);ctx.stroke(p);}
+   sticker(ctx,ell(fx,fy,s2*.04,s2*.038),'#3b2a20',2);ctx.fillStyle='#fff';ctx.fill(ell(fx-s2*.015,fy-s2*.01,s2*.012,s2*.012));ctx.fill(ell(fx+s2*.015,fy-s2*.01,s2*.012,s2*.012));
+   ctx.strokeStyle=INK;ctx.lineWidth=2.4;ctx.lineCap='round';for(const [a,r] of [[-.6,.13],[-1.2,.15],[-1.9,.13],[.2,.12]]){ctx.beginPath();ctx.moveTo(h.x+Math.cos(a)*s2*r,h.y+Math.sin(a)*s2*r);ctx.lineTo(h.x+Math.cos(a)*s2*(r+.05),h.y+Math.sin(a)*s2*(r+.05));ctx.stroke();}}
+ if(pg.tallCarrot){ctx.save();ctx.strokeStyle='#4E9A54';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(W*.93,0);ctx.quadraticCurveTo(W*.95,H*.2,W*.93,H*.36);ctx.stroke();ctx.save();ctx.translate(W*.93,H*.36);ctx.rotate(-.1);const p=new Path2D();p.moveTo(-H*.035,0);p.quadraticCurveTo(0,H*.2,H*.008,H*.2);p.quadraticCurveTo(H*.02,H*.1,H*.035,0);p.closePath();sticker(ctx,p,'#FF9A3D',3);for(const a of [-.4,0,.4])sLeaf(ctx,0,0,H*.07,-Math.PI/2+a,'#6CBF6A',.3);ctx.restore();}
+ if(pg.dangle){ctx.strokeStyle='rgba(255,255,255,.95)';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(W*.9,0);ctx.lineTo(W*.9,H*.47);ctx.stroke();ctx.save();ctx.translate(W*.9,H*.52);ctx.rotate(Math.PI);drawHead(ANIMALS[IDX['spider']],0,0,H*.055,2.4,10,{mouth:'smile'});ctx.restore();}
+ if(pg.pal){const px=W*.98,py=G-H*.045,rx=W*.24,ry=H*.11,hx=W*.88;sticker(ctx,ell(px,py,rx,ry),'#7FCDE0',3);
+   ctx.save();ctx.translate(hx,py-H*.03);drawHead(ANIMALS[IDX['penguin']],0,0,H*.042,2.6,10,{mouth:'smile'});ctx.restore();
+   ctx.save();ctx.beginPath();ctx.rect(px-rx-4,py-H*.012,rx*2+8,ry*2);ctx.clip();ctx.fillStyle='#7FCDE0';ctx.fill(ell(px,py,rx-1.5,ry-1.5));ctx.restore();
+   ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=3;ctx.lineCap='round';for(const d of [-1,1]){ctx.beginPath();ctx.arc(hx+d*H*.06,py-H*.008,H*.02,Math.PI*1.15,Math.PI*1.85);ctx.stroke();}
+   ctx.fillStyle='rgba(255,255,255,.45)';ctx.fill(ell(px-rx*.5,py+ry*.35,rx*.25,ry*.15));}
+ if(pg.splash){for(let i=0;i<7;i++){const a=Math.PI*(1.1+i/6*.8);sticker(ctx,ell(W*.7+Math.cos(a)*H*.2,G-H*.02+Math.sin(a)*H*.12,7,9),'#BDE9F5',1.6);}}
+}
+
+
+/* ================= STORY MODE — "Where's Lion's Roar?" (21 Nov 2026, Edgar) =================
+   One continuous comic: Lion + 9 friends × 3 pages = 30 pages, then a last page with the big roar.
+   Each page shows one of that friend's 3 statue poses (the same poses and the same matching as the wheel game);
+   holding the copy until the jar fills turns the page. 1 player only. Progress is kept on this device only
+   (localStorage 'jp-story'), and the start card has a "Start over" button. No clock in story mode. */
+let SCHEER=false;
+const SFX_O=(s,t)=>SCHEER?{happy:true,hop:-Math.abs(Math.sin(t*9))*s*.06,t}:{t};
+const SN=SPAGES.length,SKEY='jp-story';
+let story=false,sp=+LS.get(SKEY,'0')||0,whoKeep='solo',sFlip=null;
+if(!(sp>=0&&sp<=SN))sp=0;
+
+/* the comic card: 3:2, on the left; the child plays in the rest of the picture */
+function storyRect(){const y=58,hMax=H-y-Math.max(50,H*.1),w=Math.min(W*.6,hMax*1.5);return {x:12,y:y+(hMax-w/1.5)/2,w,h:w/1.5};}
+
+/* speech bubbles drawn in page units (900 × 600), same layout rules as the comic preview:
+   one column per speaker, kept in reading order, moved to the edge if they would cover a face */
+function sWrap(t,maxW){const words=t.split(' '),lines=[];let cur='';
+  for(const w of words){const tryL=cur?cur+' '+w:w;if(ctx.measureText(tryL).width>maxW&&cur){lines.push(cur);cur=w;}else cur=tryL;}
+  if(cur)lines.push(cur);return lines;}
+function sBubbleX(pg,sp_,end){if(end)return .5;if(pg.dangle&&sp_==='spider')return .9;if(sp_==='pal')return .9;if(pg.solo)return sp_==='lion'?.42:.78;return sp_==='lion'?.27:.7;}
+function sBubbles(pg,end,count){
+  const W=900,U=W/100,list=end?SEND:pg.b,col={};let prevTop=-99,prevH=0;
+  ctx.save();ctx.direction=lang==='he'?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';
+  list.forEach((b,k)=>{if(k>=count)return;
+    const [who_,en,he,cls]=b,txt=lang==='he'?he:en,small=cls==='small',f=small?U*2.9:U*3.3;
+    ctx.font=`${small?'italic ':''}700 ${f}px Fredoka,sans-serif`;
+    const pad=U*2.2,lines=sWrap(txt,W*.46-pad*2),tw=Math.max(...lines.map(l=>ctx.measureText(l).width)),w=tw+pad*2,h=lines.length*f*1.15+U*2.4;
+    const c=sBubbleX(pg,who_,end);let cx=c*100;
+    const y=Math.max(2,col[c]??2,prevTop+prevH*.95);
+    if(y+h/U>26.5&&c!==.5)cx=c>.5?100:0;
+    const L=Math.min(Math.max(cx,w/2/U+1.5),100-w/2/U-1.5),x=L*U,top=y*U;
+    const tail=Math.max(x-w/2+U*3,Math.min(x+w/2-U*3,c*W));
+    const fill=small?'#FFF1B8':who_==='all'?'#FFE3E8':'#fff';
+    const p=new Path2D();p.roundRect(x-w/2,top,w,h,Math.min(h/2,U*4));
+    ctx.fillStyle='rgba(43,33,24,.15)';ctx.save();ctx.translate(0,U*.6);ctx.fill(p);ctx.restore();
+    const tp=new Path2D();tp.moveTo(tail-U*1.3,top+h-2);tp.lineTo(tail,top+h+U*2);tp.lineTo(tail+U*1.3,top+h-2);tp.closePath();
+    ctx.lineWidth=U*.55;ctx.strokeStyle=INK;ctx.lineJoin='round';ctx.fillStyle=fill;ctx.fill(tp);ctx.stroke(tp);ctx.fill(p);ctx.stroke(p);
+    ctx.fillStyle=fill;ctx.fillRect(tail-U*1.1,top+h-U*.6,U*2.2,U*.9);   // join the tail to the bubble
+    ctx.fillStyle=INK;lines.forEach((l,i)=>ctx.fillText(l,x,top+U*1.2+f*1.15*(i+.5)+1));
+    prevTop=y;prevH=h/U;col[c]=y+h/U+3.2;});
+  ctx.restore();
+}
+const sBubCount=pg=>(pg?pg.b:SEND).length;
+function drawStoryPage(R,i,t,count){   // i = page index, SN = the last page
+  const end=i>=SN,pg=end?null:SPAGES[i],k=R.w/900;
+  ctx.save();const clip=new Path2D();clip.roundRect(R.x,R.y,R.w,R.h,18);ctx.clip(clip);
+  ctx.translate(R.x,R.y);ctx.scale(k,k);sDrawPage(pg,end,t);sBubbles(pg,end,count);ctx.restore();
+  ctx.save();ctx.lineWidth=4;ctx.strokeStyle=INK;ctx.stroke(clip);ctx.restore();
+}
+function drawStory(){
+  const R=storyRect(),u=UI[lang];
+  // card shadow
+  ctx.save();ctx.fillStyle=INK;ctx.beginPath();ctx.roundRect(R.x,R.y+5,R.w,R.h,18);ctx.fill();ctx.restore();
+  if(sFlip){ // page turn: the old page folds away, the new one unfolds
+    const k=Math.min(1,sFlip.t/.6),half=k<.5,sx=Math.abs(Math.cos(k*Math.PI));
+    ctx.save();ctx.translate(R.x+R.w/2,0);ctx.scale(Math.max(.02,sx),1);ctx.translate(-R.x-R.w/2,0);
+    drawStoryPage(R,half?sFlip.from:sp,tNow,half?99:0);ctx.restore();}
+  else{SCHEER=phase==='cheer'||phase==='finale';drawStoryPage(R,sp,tNow,phase==='read'?Math.floor(phaseT/1.1)+1:99);SCHEER=false;}
+  const fs=Math.max(15,Math.min(22,R.w*.045)),by=R.y+R.h+fs*1.05;
+  if(sp<SN&&target){bubble((lang==='he'?'מחקים: ':'Copy: ')+animalName(target),R.x+R.w/2,by,fs,'#E6F7DE');}
+  bubble('📖 '+Math.min(sp+1,SN)+'/'+SN,R.x+R.w+8+(W-R.x-R.w-8)/2,64+fs*.2,fs,'#fff');
+}
+function storyTarget(){const pg=SPAGES[sp],a=IDX[pg.pose[0]];target=makeTarget(a,null,pg.pose[1]);target.frozen=true;}
+function storyPage(){state='play';meters=[0,0];winner=-1;if(sp>=SN){setPhase('finale');target=null;SFX.chime();
+    for(let k=0;k<40;k++)pops.push({x:W*.3,y:H*.3,vx:(Math.random()-.5)*W,vy:-H*(.4+Math.random()*.6),life:2});return;}
+  storyTarget();setPhase('read');}
+function storyUpdate(dt,u){
+  if(sFlip){sFlip.t+=dt;if(sFlip.t>=.6){sFlip=null;storyPage();}return;}
+  if(phase==='read'){if(phaseT>Math.min(4,sBubCount(SPAGES[sp])*1.1+.3))setPhase('copy');}   // copying may start while the last bubbles appear
+  if(phase==='read'||phase==='copy'){
+    const p=people[0];lastMatch=[];
+    if(p){const r=compare(target.pose,poseOf(p),TOL[strict]);lastMatch[0]={r,p};if(r.legsUnseen&&tNow-feetHintT>3){feetHintT=tNow;say(u.feet,1.4);}
+      if(r.ok&&phase==='copy'){meters[0]=Math.min(1,meters[0]+dt/1.2);fillTick+=dt;if(fillTick>.2){fillTick=0;FX.fill(meters[0]);}}
+      else meters[0]=Math.max(0,meters[0]-dt*.4);}
+    else meters[0]=Math.max(0,meters[0]-dt*.4);
+    if(meters[0]>=1){FX.great();say(pick(u.great),1.2);
+      for(let k=0;k<14;k++)pops.push({x:W*.3,y:H*.3,vx:(Math.random()-.5)*W*.8,vy:-H*(.3+Math.random()*.5),life:1.2});setPhase('cheer');}
+  }
+  else if(phase==='cheer'){if(phaseT>1.3){sFlip={from:sp,t:0};sp=Math.min(SN,sp+1);LS.set(SKEY,String(sp));FX.whoosh();target=null;lastMatch=[];}}
+  else if(phase==='finale'){if(phaseT>7)endGame(false);}
+}
+function storyLabel(){const u=UI[lang],b=$('story');if(!b)return;b.querySelector('span').textContent=sp>0&&sp<SN?u.storyAt(sp+1):u.story;
+  $('story-restart').hidden=!(sp>0);$('story-restart').textContent=u.restart;}
 
 /* ================= GAME ================= */
 let feetHintT=-9,state='menu',phase='',phaseT=0,tNow=0,countT=0,spinN=0,score=[0,0],target=null,lastPicks=[],meters=[0,0],winner=-1,bigMsg='',bigMsgT=0,pops=[],frost=[],fillTick=0,lastMatch=[];
@@ -392,8 +615,9 @@ function wheelUpdate(dt){
   const sl=sliceAt(WH.ang);if(sl!==WH.lastSlice){if(WH.lastSlice>=0&&WH.stopT>=0&&WH.result<0)FX.tick();WH.lastSlice=sl;}
 }
 
-async function play(){
+async function play(storyMode=false){
   audio();SFX.go();
+  if(story)who=whoKeep;story=!!storyMode;if(story){whoKeep=who;who='solo';if(sp>=SN)sp=0;sFlip=null;}
   $('start').hidden=true;$('end').hidden=true;
   if(!camOK){say(UI[lang].ready,99);state='loading';
     try{await camLoad(startCam);}catch(e){console.warn(e);state='menu';bigMsg='';$('start').hidden=false;toast(UI[lang].nocam,6000);return;}}
@@ -404,17 +628,23 @@ async function play(){
   guides=who==='duo'?[makeGuide(gk,{},bodyMode==='full'?gt:{}),makeGuide(gk,{},bodyMode==='full'?gt:{})]:[];guides.forEach(g=>g.reset());
   state='setup';
 }
-$('play').onclick=play;$('again').onclick=play;
+$('play').onclick=()=>play(false);$('story').onclick=()=>play(true);
+$('again').onclick=()=>{if(story){sp=0;LS.set(SKEY,'0');play(true);}else play(false);};
+$('story-restart').onclick=()=>{sp=0;LS.set(SKEY,'0');storyLabel();};
+$('tomenu').onclick=()=>{$('end').hidden=true;$('start').hidden=false;state='menu';storyLabel();};
 $('stopx').onclick=()=>endGame(true);
 function endGame(quit){
   state='over';musicStop();$('stopx').classList.remove('on');if(guide)guide.hide();guides.forEach(g=>g.hide());target=null;
-  if(quit){state='menu';$('start').hidden=false;return;}
+  if(story){who=whoKeep;}
+  if(quit){state='menu';$('start').hidden=false;storyLabel();return;}
+  if(story){fillEnd(false);$('end').hidden=false;SFX.chime();storyLabel();return;}
   const sc=who==='duo'?Math.max(score[0],score[1]):score[0];
   lastNew=!G&&who==='solo'&&sc>best;if(lastNew){best=sc;LS.set(bestKey(),String(sc));}
   if(G&&who==='solo'){gb=goalBest('fc-'+bodyMode+strict,G,gameT);lastNew=gb.isNew&&gb.best>0;}
   fillEnd(lastNew);$('end').hidden=false;SFX.chime();
 }
-function fillEnd(nb){const u=UI[lang];$('newbest').hidden=!nb;$('newbest').textContent=u.newbest;
+function fillEnd(nb){const u=UI[lang];$('newbest').hidden=!nb;$('newbest').textContent=u.newbest;$('tomenu').hidden=!story;$('tomenu').textContent=u.menu;$('t-again').textContent=story?u.storyAgain:u.again;
+  if(story){$('t-over').textContent=u.theEnd;$('final').textContent='🦁';$('t-sec2').textContent=' '+u.roarBack;$('best-line').textContent='';return;}
   if(who==='duo'){$('final').textContent=score[0]+' – '+score[1];$('t-over').textContent=score[0]===score[1]?u.tie:(score[0]>score[1]?u.winL:u.winR);$('best-line').textContent='';}
   else{$('final').textContent=score[0];$('t-over').textContent=u.over[Math.min(3,Math.floor(score[0]/3))];$('best-line').textContent=u.bestis+best;}
   if(G){const T=goalText();$('t-sec2').textContent=' '+u.statues+' · '+T.inT+fmtTime(gameT);
@@ -433,7 +663,8 @@ function frame(now){
     if(guide){if(guide.update(dt,obsOf(people[0]),playRect())==='done'){state='count';countT=tNow;}}
     else{const sl=duoSlots(),hv=halves(),d=guides.map((g,k)=>g.update(dt,obsOf(sl[k]),hv[k])==='done');if(d[0]&&d[1]){state='count';countT=tNow;}}
   }
-  else if(state==='count'){ if(tNow-countT>=3)nextSpin(); }
+  else if(state==='count'){ if(tNow-countT>=3){if(story)storyPage();else nextSpin();} }
+  else if(state==='play'&&story){ storyUpdate(dt,u); }
   else if(state==='play'){
     phaseT+=dt;
     if(phase!=='timeup'){gameT+=dt;if(timeLeft()<=0){setPhase('timeup');say(u.timeup,1.8);FX.giggle();}}
@@ -483,7 +714,7 @@ const portraitPlay=()=>H>W*1.05&&['setup','count','play'].includes(state);
 /* 16 Nov (Edgar): in 2-player mode the players stand on the two sides and the action is in the MIDDLE —
    the wheel spins in a centre card and, once it picks, the animal statue takes the wheel's place in that same card.
    One player: the same card sits on the left and the player has the rest of the picture. */
-function stageRect(){const y=58,h=H-y-Math.max(56,H*.11);
+function stageRect(){if(story)return storyRect();const y=58,h=H-y-Math.max(56,H*.11);
   if(who==='duo'){const w=Math.min(W*.24,h*.75);return {x:(W-w)/2,y,w,h};}
   const w=Math.min(W*.3,h*.82);return {x:12,y,w,h};}
 function playRect(){if(who==='duo')return {x:0,y:0,w:W,h:H};const R=stageRect(),x=R.x+R.w+8;return {x,y:0,w:W-x,h:H};}
@@ -568,6 +799,7 @@ function render(dt){
   if(portraitPlay()){drawTurnPhone();return;}
   if(state==='setup'){ if(guide)guide.draw(ctx,playRect(),lang); else{const hv=halves();guides.forEach((g,k)=>g.draw(ctx,hv[k],lang));} }
   else if(state==='count'){const n=3-Math.floor(tNow-countT),k=(tNow-countT)%1;if(n>0)bigText(String(n),W/2,H*.42,Math.min(150,H*.22),'#fff',1+.25*Math.max(0,1-k*4));}
+  else if(state==='play'&&story){drawStory();if(phase==='read'||phase==='copy'||phase==='cheer'){drawMeter(0,W-43);if(phase!=='cheer')drawCopyDots();}}
   else if(state==='play'){
     if(phase==='spin'||phase==='mix')drawWheel();
     else{drawStage();
@@ -621,7 +853,7 @@ function drawDemo(){
     const pts=[sgm(sgm(sh.L,pose.uaL,s*.3),pose.faL,s*.27),sgm(sgm(sh.R,pose.uaR,s*.3),pose.faR,s*.27),sgm(sgm(hp.L,pose.thL,s*.34),pose.shL,s*.32),sgm(sgm(hp.R,pose.thR,s*.34),pose.shR,s*.32)];
     pts.forEach((p,i)=>{if(on>i/4)sticker(c,ell(p.x,p.y,s*.06,s*.06),'#8BD16B',2.5);});};
   const lay=(w,h)=>({s:Math.min(h*.36,w*.2),gy:h*.9});
-  setupHowTo({lang:()=>lang,play:()=>play(),steps:[
+  setupHowTo({lang:()=>lang,play:()=>play(),before:'.play-row',steps:[
     {dur:3.4,cap:{en:'Raise a hand ✋',he:'מרימים יד ✋'},draw(c,w,h,t,k){const L=lay(w,h);
       kid(c,w*.3,L.gy-L.s*.98,L.s,lerp(STAND,HAND,seg(k,.1,.3)),t);
       const spin=k<.35?t*6:(()=>{const u=seg(k,.35,.9);return 3.4*.35*6+u*4;})(),ang=k<.9?spin:spin;
@@ -637,6 +869,8 @@ function drawDemo(){
   ]});
 }
 
+// test hook (Claude only, ?storytest): jump straight to a story page without a camera
+if(new URLSearchParams(location.search).has('storytest'))window.__st=(i,ph,bm)=>{if(bm)bodyMode=bm;story=true;who='solo';sp=i;$('start').hidden=true;storyPage();if(ph)setPhase(ph);if(ph==='copy')meters[0]=.5;};
 setLang(lang);loadBest();
 requestAnimationFrame(frame);
 </script>
