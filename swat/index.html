@@ -25,6 +25,7 @@
 .hs-in{display:flex;gap:8px;align-items:center;justify-content:center;margin:0 0 10px;font:700 16px Fredoka,sans-serif}
 .hs-in input{font:700 18px Fredoka,sans-serif;border:3px solid var(--ink);border-radius:14px;padding:5px 10px;width:150px;background:#fff;color:var(--ink)}
 .stopx{position:fixed;left:12px;bottom:calc(var(--safe-b) + 12px);z-index:6;display:none}.stopx.on{display:block}
+.ptime{margin:-2px 0 8px;font:600 14px Fredoka,sans-serif;text-align:center;opacity:.8}   /* 21 Nov (Edgar): estimated playtime under the buttons */
 /* 21 Nov (Edgar): story mode — "Bedtime spiders" */
 .play-row{display:flex;gap:10px;align-items:stretch;margin-bottom:12px}.card.home .play-row #play{flex:1.35;margin:0}
 .card.home #story-btn{flex:1;background:#8E7CC3;font-size:24px;padding:6px 0 4px;margin:0;line-height:1.1}
@@ -77,6 +78,7 @@
 <div class="card home" id="start">
   <h1 id="t-title">Spider Swat</h1>
   <p class="sub" id="t-sub"></p>
+  <p class="ptime" id="ptime"></p>
   <div class="play-row" id="play-row"><button class="btn" id="play"><span id="t-play">Play</span></button>
   <button class="btn" id="story-btn">📖 <span id="t-story">Story</span></button></div>
   <!-- 16 Nov (Edgar): 2-player mode, side by side, phone sideways only -->
@@ -242,8 +244,11 @@ const hsRefresh=()=>{if(!$('hs').hidden)showHS();};
 /* 20 Nov (Edgar): play until a number of points instead of a round time (2 players: first to the goal wins) */
 const goal=setupGoal({key:'sw',hide:'#round-row',min:20,max:150,step:10,def:50,unit:{en:'points',he:'נקודות'},onChange:()=>subLine()});
 let G=0,gb=null;
-function subLine(){const n=goal.get(),u=UI[lang];$('t-sub').textContent=n?(who==='duo'?u.subG2(n):u.subG(n)):u.sub;}
-document.querySelectorAll('#round-seg button').forEach(b=>b.onclick=()=>{roundLen=+b.dataset.v;LS.set('sw-round',roundLen);loadBest();segs();hsRefresh();});
+function subLine(){const n=goal.get(),u=UI[lang];$('t-sub').textContent=n?(who==='duo'?u.subG2(n):u.subG(n)):u.sub;
+  // estimated playtime (21 Nov, Edgar). Story: 9 levels × ~1 min + a comic page each ≈ 12 min; progress is kept per level.
+  const he=lang==='he',g=n?(he?'🎯 '+n+' נקודות':'🎯 '+n+' points'):(roundLen===60?(he?'דקה':'1 min'):roundLen===90?(he?'דקה וחצי':'1½ min'):(he?'2 דק׳':'2 min'));
+  $('ptime').textContent=he?`⏱ משחק: ${g} · 📖 סיפור: כ־12 דק׳ (9 שלבים)`:`⏱ Game: ${g} · 📖 Story: about 12 min (9 levels)`;}
+document.querySelectorAll('#round-seg button').forEach(b=>b.onclick=()=>{roundLen=+b.dataset.v;LS.set('sw-round',roundLen);loadBest();segs();subLine();hsRefresh();});
 document.querySelectorAll('#reach-seg button').forEach(b=>b.onclick=()=>{reach=b.dataset.v;LS.set('sw-reach',reach);loadBest();segs();hsRefresh();});
 document.querySelectorAll('#two-seg button').forEach(b=>b.onclick=()=>{twoOn=b.dataset.v==='1';LS.set('sw-two',b.dataset.v);segs();});
 document.querySelectorAll('#who-seg button').forEach(b=>b.onclick=()=>{who=b.dataset.v;LS.set('sw-who',who);audio();SFX.tink();segs();subLine();loadBest();hsRefresh();});

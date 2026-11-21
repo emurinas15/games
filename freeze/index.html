@@ -14,7 +14,8 @@
 .who-row{display:flex;justify-content:center;margin:2px 0 12px}
 .seg.big button{font-size:16px;padding:9px 14px;white-space:nowrap}
 .play-row{display:flex;gap:10px}.play-row .btn{flex:1;min-width:0;margin:0}
-.btn.story{background:#F5B842}   /* 21 Nov (Edgar): story mode — a 30-page comic; each page turns when the pose is copied */
+.btn.story{background:#F5B842}
+.ptime{margin:-2px 0 8px;font:600 14px Fredoka,sans-serif;text-align:center;opacity:.8}   /* 21 Nov (Edgar): estimated playtime under the buttons */   /* 21 Nov (Edgar): story mode — a 30-page comic; each page turns when the pose is copied */
 .srs{display:block;margin:6px auto 0;border:none;background:none;font:700 15px Fredoka,sans-serif;color:var(--ink);text-decoration:underline;cursor:pointer}
 </style>
 </head>
@@ -34,6 +35,7 @@
 <div class="card home" id="start">
   <h1 id="t-title">Freeze & Copy</h1>
   <p class="sub" id="t-sub"></p>
+  <p class="ptime" id="ptime"></p>
   <div class="play-row"><button class="btn" id="play"><span id="t-play">Play</span></button><button class="btn story" id="story"><span>📖 Story</span></button></div>
   <button class="srs" id="story-restart" hidden></button>
   <!-- 15 Nov (Edgar wanted a PvP mode): the 2-player race was hidden under For grown-ups, so it's now right above Play -->
@@ -153,7 +155,10 @@ const segBind=(id,fn)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.
 /* 20 Nov (Edgar): play until a number of statues instead of 90 seconds (2 players: first to the goal wins) */
 const goal=setupGoal({key:'fc',min:3,max:20,step:1,def:8,unit:{en:'statues',he:'פסלים'},onChange:()=>subLine()});
 let G=0,gb=null;
-function subLine(){const n=goal.get(),u=UI[lang];$('t-sub').textContent=n?(who==='duo'?u.subG2(n):u.subG(n)):u.sub;}
+function subLine(){const n=goal.get(),u=UI[lang];$('t-sub').textContent=n?(who==='duo'?u.subG2(n):u.subG(n)):u.sub;
+  // estimated playtime (21 Nov, Edgar). Story: 30 pages × ~15 s ≈ 8 min; it can be stopped any time — the page is kept.
+  const he=lang==='he',g=n?(he?'🎯 '+n+' פסלים':'🎯 '+n+' statues'):(he?'דקה וחצי':'1½ min'),left=SN-(sp>=SN?0:sp),m=Math.max(1,Math.round(left*15/60));
+  $('ptime').textContent=he?`⏱ משחק: ${g} · 📖 סיפור: כ־${m} דק׳${sp>0&&sp<SN?' שנשארו':''}`:`⏱ Game: ${g} · 📖 Story: about ${m} min${sp>0&&sp<SN?' left':''}`;}
 segBind('body-seg',v=>{bodyMode=v;LS.set('fc-body',v);});
 segBind('who-seg',v=>{who=v;LS.set('fc-who3',v);subLine();});
 segBind('strict-seg',v=>{strict=v;LS.set('fc-strict',v);});
@@ -476,7 +481,7 @@ function sDrawPage(pg,end,t){
    if(pg.peek){sBush(ctx,W*.84,G-H*.06,H*.2,'#5DB86A');ctx.save();ctx.translate(W*.84,G-H*.26);drawHead(ANIMALS[IDX['frog']],0,0,H*.07,2.6,10,{mouth:'smile'});ctx.restore();sBush(ctx,W*.84,G-H*.02,H*.17,'#6CBF6A');}
    return;}
  const other=pg.pose[0];
- sFigure('lion',W*.28,G,s,{...SFX_O(s,t),pose:sLionPose(pg),mouth:SCHEER?undefined:pg.lm});
+ sFigure('lion',W*.28,G,s,{...SFX_O(s,t),pose:sLionNow(pg),mouth:SCHEER?undefined:pg.lm});
  sFigure(other,W*.7,G,s,{...SFX_O(s,t),pose:sPose(pg),sleepy:pg.sleepy&&other==='bear',mouth:pg.sleepy?'sleep':other==='crab'?'frown':(other==='spider'||other==='flamingo'||other==='frog')?'smile':undefined});
  if(pg.sleepy){ctx.font=`900 ${H*.05}px Grandstander`;ctx.fillStyle='#6B7FB0';ctx.fillText('z',W*.79,H*.5);ctx.font=`900 ${H*.035}px Grandstander`;ctx.fillText('z',W*.82,H*.46);}
  if(pg.fly){const s2=s,y=G-s2*(bodyMode==='full'?.98:.55),R=d=>d*Math.PI/180,P=sPose(pg),tl=R((P.tr??-90)+90),pv={x:0,y:s2*.3};
@@ -503,8 +508,12 @@ function sDrawPage(pg,end,t){
    Each page shows one of that friend's 3 statue poses (the same poses and the same matching as the wheel game);
    holding the copy until the jar fills turns the page. 1 player only. Progress is kept on this device only
    (localStorage 'jp-story'), and the start card has a "Start over" button. No clock in story mode. */
-let SCHEER=false;
-const SFX_O=(s,t)=>SCHEER?{happy:true,hop:-Math.abs(Math.sin(t*9))*s*.06,t}:{t};
+let SCHEER=false,SLK=0;
+/* 21 Nov night (Edgar): first Lion meets the friend and just watches; the child copies the friend's pose; THEN Lion
+   copies it too (a short move into the pose), and only then the page turns. SLK: 0 = Lion stands, 1 = Lion in the pose. */
+const sLerp=(A,B,k)=>{const o={};for(const key in B){const a=A[key]??B[key],d=((B[key]-a+540)%360)-180;o[key]=a+d*k;}return o;};
+function sLionNow(pg){const fin=pg.lion==='stand'?sPose(pg):sLionPose(pg);return sLerp(S_STAND,fin,SLK);}
+const SFX_O=(s,t)=>SCHEER?{happy:true,hop:SLK>=1?-Math.abs(Math.sin(t*9))*s*.06:0,t}:{t};
 const SN=SPAGES.length,SKEY='jp-story';
 let story=false,sp=+LS.get(SKEY,'0')||0,whoKeep='solo',sFlip=null;
 if(!(sp>=0&&sp<=SN))sp=0;
@@ -554,8 +563,8 @@ function drawStory(){
   if(sFlip){ // page turn: the old page folds away, the new one unfolds
     const k=Math.min(1,sFlip.t/.6),half=k<.5,sx=Math.abs(Math.cos(k*Math.PI));
     ctx.save();ctx.translate(R.x+R.w/2,0);ctx.scale(Math.max(.02,sx),1);ctx.translate(-R.x-R.w/2,0);
-    drawStoryPage(R,half?sFlip.from:sp,tNow,half?99:0);ctx.restore();}
-  else{SCHEER=phase==='cheer'||phase==='finale';drawStoryPage(R,sp,tNow,phase==='read'?Math.floor(phaseT/1.1)+1:99);SCHEER=false;}
+    SLK=half?1:0;drawStoryPage(R,half?sFlip.from:sp,tNow,half?99:0);SLK=0;ctx.restore();}
+  else{SCHEER=phase==='cheer'||phase==='finale';const e=Math.max(0,Math.min(1,(phaseT-.35)/.7));SLK=phase==='cheer'?e*e*(3-2*e):0;drawStoryPage(R,sp,tNow,phase==='read'?Math.floor(phaseT/1.1)+1:99);SCHEER=false;SLK=0;}
   const fs=Math.max(15,Math.min(22,R.w*.045)),by=R.y+R.h+fs*1.05;
   if(sp<SN&&target){bubble((lang==='he'?'מחקים: ':'Copy: ')+animalName(target),R.x+R.w/2,by,fs,'#E6F7DE');}
   bubble('📖 '+Math.min(sp+1,SN)+'/'+SN,R.x+R.w+8+(W-R.x-R.w-8)/2,64+fs*.2,fs,'#fff');
@@ -565,6 +574,7 @@ function storyPage(){state='play';meters=[0,0];winner=-1;if(sp>=SN){setPhase('fi
     for(let k=0;k<40;k++)pops.push({x:W*.3,y:H*.3,vx:(Math.random()-.5)*W,vy:-H*(.4+Math.random()*.6),life:2});return;}
   storyTarget();setPhase('read');}
 function storyUpdate(dt,u){
+  phaseT+=dt;
   if(sFlip){sFlip.t+=dt;if(sFlip.t>=.6){sFlip=null;storyPage();}return;}
   if(phase==='read'){if(phaseT>Math.min(4,sBubCount(SPAGES[sp])*1.1+.3))setPhase('copy');}   // copying may start while the last bubbles appear
   if(phase==='read'||phase==='copy'){
@@ -576,10 +586,10 @@ function storyUpdate(dt,u){
     if(meters[0]>=1){FX.great();say(pick(u.great),1.2);
       for(let k=0;k<14;k++)pops.push({x:W*.3,y:H*.3,vx:(Math.random()-.5)*W*.8,vy:-H*(.3+Math.random()*.5),life:1.2});setPhase('cheer');}
   }
-  else if(phase==='cheer'){if(phaseT>1.3){sFlip={from:sp,t:0};sp=Math.min(SN,sp+1);LS.set(SKEY,String(sp));FX.whoosh();target=null;lastMatch=[];}}
+  else if(phase==='cheer'){if(phaseT>1.15&&!storyUpdate.joined){storyUpdate.joined=true;SFX.boing();}if(phaseT>2.3){storyUpdate.joined=false;sFlip={from:sp,t:0};sp=Math.min(SN,sp+1);LS.set(SKEY,String(sp));FX.whoosh();target=null;lastMatch=[];}}
   else if(phase==='finale'){if(phaseT>7)endGame(false);}
 }
-function storyLabel(){const u=UI[lang],b=$('story');if(!b)return;b.querySelector('span').textContent=sp>0&&sp<SN?u.storyAt(sp+1):u.story;
+function storyLabel(){const u=UI[lang],b=$('story');if(!b)return;subLine();b.querySelector('span').textContent=sp>0&&sp<SN?u.storyAt(sp+1):u.story;
   $('story-restart').hidden=!(sp>0);$('story-restart').textContent=u.restart;}
 
 /* ================= GAME ================= */
