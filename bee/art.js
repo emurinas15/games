@@ -191,24 +191,28 @@ export function drawThorns(c, x, y0, y1, w, t, from = 'top') {
   c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
   const len = y1 - y0, lw = Math.max(3, w * .09), n = Math.max(2, Math.round(len / (w * .9)));
   const stem = ph => { const p = []; for (let i = 0; i <= 24; i++) { const k = i / 24, y = y0 + len * k; p.push([x + Math.sin(k * n * Math.PI + ph + Math.sin(t * 1.3) * .15) * w * .22, y]); } return p; };
-  for (const [ph, col] of [[0, '#7A5A3A'], [Math.PI, '#5E8F3E']]) {
-    const pts = stem(ph);
+  // 21 Nov (Edgar): a white outline around the whole plant so it stands out on green and brown backgrounds
+  const W2 = Math.max(4, w * .09), thornPath = (a, b, side) => { const th = new Path2D(), s = w * .2;
+    th.moveTo(a, b - s * .5); th.quadraticCurveTo(a + side * s * .9, b - s * .2, a + side * s * 1.5, b + (from === 'top' ? s * .6 : -s * .6)); th.quadraticCurveTo(a + side * s * .6, b + s * .2, a, b + s * .5); th.closePath(); return th; };
+  const stems = [[0, '#7A5A3A'], [Math.PI, '#5E8F3E']].map(([ph, col]) => [stem(ph), col]);
+  c.strokeStyle = '#fff';
+  for (const [pts] of stems) {
+    c.lineWidth = w * .2 + lw + W2 * 2; c.beginPath(); pts.forEach(([a, b], i) => i ? c.lineTo(a, b) : c.moveTo(a, b)); c.stroke();
+    for (let i = 1; i < 24; i += 2) { const [a, b] = pts[i]; c.lineWidth = Math.max(1.6, lw * .45) + W2 * 2; c.stroke(thornPath(a, b, i % 4 === 1 ? 1 : -1)); }
+  }
+  for (const [pts, col] of stems) {
     c.strokeStyle = INK; c.lineWidth = w * .2 + lw; c.beginPath(); pts.forEach(([a, b], i) => i ? c.lineTo(a, b) : c.moveTo(a, b)); c.stroke();
     c.strokeStyle = col; c.lineWidth = w * .2; c.stroke();
-    // thorns
-    for (let i = 1; i < 24; i += 2) {
-      const [a, b] = pts[i], side = (i % 4 === 1 ? 1 : -1), th = new Path2D(), s = w * .2;
-      th.moveTo(a, b - s * .5); th.quadraticCurveTo(a + side * s * .9, b - s * .2, a + side * s * 1.5, b + (from === 'top' ? s * .6 : -s * .6)); th.quadraticCurveTo(a + side * s * .6, b + s * .2, a, b + s * .5); th.closePath();
-      sticker(c, th, '#E8D6A8', Math.max(1.6, lw * .45));
-    }
+    for (let i = 1; i < 24; i += 2) { const [a, b] = pts[i]; sticker(c, thornPath(a, b, i % 4 === 1 ? 1 : -1), '#FFF1C9', Math.max(1.6, lw * .45)); }
   }
   // a few leaves and a berry so it reads as a plant
   for (let i = 0; i < n; i++) {
     const ly = y0 + len * (i + .5) / n, d = i % 2 ? 1 : -1, p = new Path2D();
     c.save(); c.translate(x + d * w * .2, ly); c.rotate(d * .6 + Math.sin(t * 2 + i) * .08); c.scale(d, 1);
-    p.moveTo(0, 0); p.quadraticCurveTo(w * .3, -w * .28, w * .7, 0); p.quadraticCurveTo(w * .3, w * .28, 0, 0); sticker(c, p, '#7DCB6B', Math.max(1.6, lw * .5)); c.restore();
+    p.moveTo(0, 0); p.quadraticCurveTo(w * .3, -w * .28, w * .7, 0); p.quadraticCurveTo(w * .3, w * .28, 0, 0); c.strokeStyle = '#fff'; c.lineWidth = Math.max(1.6, lw * .5) + W2 * 2; c.stroke(p); sticker(c, p, '#7DCB6B', Math.max(1.6, lw * .5)); c.restore();
   }
   const by = from === 'top' ? y1 - w * .15 : y0 + w * .15;
+  c.fillStyle = '#fff'; c.fill(ell(x - w * .12, by, w * .14 + W2, w * .14 + W2)); c.fill(ell(x + w * .08, by + w * .08, w * .12 + W2, w * .12 + W2));
   sticker(c, ell(x - w * .12, by, w * .14, w * .14), '#8B5CC9', Math.max(1.6, lw * .5)); sticker(c, ell(x + w * .08, by + w * .08, w * .12, w * .12), '#A274E0', Math.max(1.6, lw * .5));
   c.restore();
 }
