@@ -520,15 +520,18 @@ function render(dt){
   else if(state==='play'||state==='over'){
     if(state==='play'&&elapsed<.9)bigText(u.go,W/2,H*.3,Math.min(110,H*.17),'#FFD84D',1+.3*Math.max(0,1-elapsed*4));
     const left=Math.max(0,Math.ceil(ROUND-elapsed));
-    // scores live in the bottom corners so the middle of the picture stays free for the child (21 Nov, Edgar)
-    const pw=t=>{ctx.save();ctx.font=`700 ${fs}px Fredoka,sans-serif`;const w=ctx.measureText(t).width+fs*1.4;ctx.restore();return w;};
-    const at=(t,side,y,f,fill)=>{const w=pw(t),x=side<0?LEFT0+w/2:W-12-w/2;bubble(t,x,y,f,fill);},LEFT0=86,row=fs*2.35,y0=H-fs*1.25-8;
+    // scores live along the bottom edge, in the corners, so the middle of the picture stays free for the child (21 Nov, Edgar)
+    const pw=(t,f=fs)=>{ctx.save();ctx.font=`700 ${f}px Fredoka,sans-serif`;const w=ctx.measureText(t).width+f*1.4;ctx.restore();return w;};
+    const LEFT0=66,GAP=8,y0=H-fs*.95-12;let rx=W-12;   // one row along the bottom: from the right edge leftwards, and (2 players) player 1 from the left
+    const put=(t,f,fill,x)=>bubble(t,x,y0,f,fill);
+    const right=(t,f,fill,pk=0)=>{const w=pw(t,f),x=rx-w/2;rx-=w+GAP;ctx.save();ctx.translate(x,y0);ctx.scale(1+.35*pk,1+.35*pk);ctx.translate(-x,-y0);put(t,f,fill,x);ctx.restore();};
     const clockT=G?'🎯 '+G:'⏱ '+left,clockF=G?'#FFF1B8':left<=10?'#FFE3E8':'#fff';
-    const cols=mode==='duo'?['#DDF3FF','#FFE3E8']:['#FFF3C4'];
-    players.forEach((P,k)=>{const pk=Math.max(0,1-(tNow-P.pop)*3),side=mode==='duo'?(k?1:-1):1,t='🌼 '+P.score,w=pw(t),x=side<0?LEFT0+w/2:W-12-w/2;
-      ctx.save();ctx.translate(x,y0);ctx.scale(1+.35*pk,1+.35*pk);ctx.translate(-x,-y0);bubble(t,x,y0,fs,cols[k]);ctx.restore();});
-    if(state==='play')at(clockT,1,y0-row,fs,clockF);
-    if(mode==='solo'&&players[0])at(u.level(players[0].level),1,y0-row*2,fs*.8);
+    const cols=mode==='duo'?['#DDF3FF','#FFE3E8']:['#FFF3C4'],pk=P=>Math.max(0,1-(tNow-P.pop)*3);
+    const me=mode==='duo'?players[1]:players[0];
+    if(me)right('🌼 '+me.score,fs,cols[mode==='duo'?1:0],pk(me));
+    if(state==='play')right(clockT,fs,clockF);
+    if(mode==='solo'&&players[0])right(u.level(players[0].level),fs*.8,'#fff');
+    if(mode==='duo'&&players[0]){const P=players[0],t='🌼 '+P.score,w=pw(t),x=LEFT0+w/2,k=pk(P);ctx.save();ctx.translate(x,y0);ctx.scale(1+.35*k,1+.35*k);ctx.translate(-x,-y0);put(t,fs,cols[0],x);ctx.restore();}
   }
   drawPops(dt);
 }
