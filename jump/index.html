@@ -67,6 +67,8 @@ body.casting .toast{visibility:hidden}
       <p id="t-g1"></p>
       <div class="g-row"><span id="t-sens">Jump size</span>
         <div class="seg" id="sens-seg"><button data-v="small"></button><button data-v="normal"></button></div></div>
+      <div class="g-row"><span id="t-fxl">Effects</span>
+        <div class="seg" id="fx-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
       <div class="g-row"><span id="t-music">Music</span>
         <div class="seg" id="music-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
       <div class="g-row"><span id="t-sfx">Sound effects</span>
@@ -110,7 +112,7 @@ const UI={
   panda:"Panda",duck:"Duck",rabbit:"Rabbit",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
   g1:"Jump as many times as you can in one minute. 2 players: race each other, standing side by side. Beat the animals: race the Panda (it jumps every 3 seconds), then the Duck (every 2 seconds), then the Rabbit (every second). Jump more times than the animal before the minute ends to beat it. The camera only needs to see from the belly button up: a jump counts when the head and both shoulders go up together and come back down quickly. Waving the arms, shrugging, nodding or standing up on the toes doesn't count.",
-  sens:"Jump size",small:"Small jumps",normal:"Normal",music:"Music",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
+  sens:"Jump size",fxl:"Effects (leaves, splashes, sparkles)",small:"Small jumps",normal:"Normal",music:"Music",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
   g2:"★ Turn the phone sideways and stand it at about chest height (a table or shelf), about 1 m away, so the child sees the screen and the camera sees the head, shoulders and belly. Leave room above the head for the jumps. 2 players: stand side by side, a little farther back.",
   g3:"★ Small jumps also counts little hops, for young children or children who find jumping hard.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
@@ -123,7 +125,7 @@ const UI={
   panda:"פנדה",duck:"ברווז",rabbit:"ארנב",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
   g1:"קופצים כמה שיותר פעמים בדקה אחת. 2 שחקנים: מתחרים זה בזה, עומדים זה לצד זה. נגד החיות: מתחרים בפנדה (קופצת כל 3 שניות), אחר כך בברווז (כל 2 שניות) ואחר כך בארנב (כל שנייה). כדי לנצח חיה צריך לקפוץ יותר ממנה עד סוף הדקה. המצלמה צריכה לראות רק מהטבור ומעלה: קפיצה נספרת כשהראש ושתי הכתפיים עולים יחד ויורדים מהר. נפנוף ידיים, משיכת כתפיים, הנהון או עלייה על קצות האצבעות לא נספרים.",
-  sens:"גודל קפיצה",small:"קפיצות קטנות",normal:"רגיל",music:"מוזיקה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
+  sens:"גודל קפיצה",fxl:"אפקטים (עלים, התזות, נצנצים)",small:"קפיצות קטנות",normal:"רגיל",music:"מוזיקה",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
   g2:"★ סובבו את הטלפון לרוחב והעמידו אותו בגובה החזה (על שולחן או מדף), בערך מטר מהילד, כך שהילד רואה את המסך והמצלמה רואה את הראש, הכתפיים והבטן. השאירו מקום מעל הראש לקפיצות. 2 שחקנים: עומדים זה לצד זה, קצת יותר רחוק.",
   g3:"★ ״קפיצות קטנות״ סופר גם ניתורים קטנים, לילדים צעירים או לילדים שקשה להם לקפוץ.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
@@ -147,6 +149,7 @@ const cast=setupCast({canvas:$('c'),button:$('cast'),lang:()=>lang,sound:()=>(au
 
 function segs(){
   const u=UI[lang];
+  document.querySelectorAll('#fx-seg button').forEach(b=>{b.textContent=u[b.dataset.v==='1'?'on':'off'];b.setAttribute('aria-pressed',String(+b.dataset.v===+fxOn));});
   document.querySelectorAll('#sens-seg button').forEach(b=>{b.textContent=u[b.dataset.v];b.setAttribute('aria-pressed',b.dataset.v===sens);});
   document.querySelectorAll('#modes .lv').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===mode));
   document.querySelectorAll('#animals .lv').forEach(b=>{b.setAttribute('aria-pressed',b.dataset.a===animal);b.querySelector('b').textContent=u[b.dataset.a];
@@ -157,7 +160,7 @@ let lastRes=null;
 function setLang(l){
   lang=l;LS.set('bamboo-lang',l);const u=UI[l];
   document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
-  for(const k of ['title','sub','play','privacy','grown','g1','sens','music','sfx','g2','g3','legal','vs','duo'])
+  for(const k of ['title','sub','play','privacy','grown','g1','sens','fxl','music','sfx','g2','g3','legal','vs','duo'])
     {const e=$('t-'+k);if(e)e.textContent=u[k];}
   $('t-privacy2').textContent=u.privacy;$('menu').textContent=u.menu;
   $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
@@ -165,6 +168,10 @@ function setLang(l){
   segs();subLine&&subLine();syncSound();cast.paint&&cast.paint();if(lastRes&&!$('end').hidden)fillEnd();
 }
 $('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
+/* 22 Nov (Edgar): Effects on/off — off = only the numbers (no leaves, splashes, hay, sparkles or confetti).
+   Starts OFF if the device asks for reduced motion. */
+let fxOn=LS.get('jr-fx',matchMedia('(prefers-reduced-motion: reduce)').matches?'0':'1')==='1';
+document.querySelectorAll('#fx-seg button').forEach(b=>b.onclick=()=>{fxOn=b.dataset.v==='1';LS.set('jr-fx',fxOn?'1':'0');if(!fxOn){bits=[];rings=[];sparks=[];streak=[0,0];lastJ=[-9,-9];flowT=[0,0];sparks=[];}segs();});
 document.querySelectorAll('#sens-seg button').forEach(b=>b.onclick=()=>{sens=b.dataset.v;LS.set('jr-sens',sens);segs();});
 /* 20 Nov (Edgar): play until a number of jumps instead of one minute — first to the goal wins (vs the animal too) */
 const goal=setupGoal({key:'jr',min:10,max:100,step:5,def:30,unit:{en:'jumps',he:'קפיצות'},onChange:()=>subLine()});
@@ -188,6 +195,7 @@ const FX={
   flutter(){for(let i=0;i<5;i++)noise({dur:.04,freq:2200,vol:.07,type:'bandpass',at:i*.07});},
   hop(){tone({f0:900,f1:1500,dur:.07,type:'sine',vol:.12});},
   whistle(){tone({f0:1900,f1:2100,dur:.5,type:'sine',vol:.14});tone({f0:2000,f1:2250,dur:.5,type:'sine',vol:.08});},
+  secret(){[1047,1319,1568,2093,2637].forEach((f,i)=>tone({f0:f,dur:.5,type:'sine',vol:.16,at:i*.09}));},   // 22 Nov: secret tier chime
   win(){[784,988,1175,1568].forEach((f,i)=>tone({f0:f,dur:.28,type:'triangle',vol:.28,at:i*.08}));},
   aww(){tone({f0:520,f1:330,dur:.5,type:'triangle',vol:.16});}
 };
@@ -277,7 +285,7 @@ $('stopx').onclick=()=>endGame(true);
 
 /* no camera (or ?fake): tap = jump (2 players: left / right half of the screen) */
 cv.addEventListener('pointerdown',e=>{ if(camOK||state!=='play')return; const k=mode==='duo'&&e.clientX>W/2?1:0; jumpFx(k);dets[k].n++;dets[k].pop=tNow; });
-function jumpFx(k){FX.jump(k);burst(animal,sideRect(k),false);}
+function jumpFx(k){FX.jump(k);burst(animal,sideRect(k),false);if(mode==='duo')onDuoJump(k);}
 
 function endGame(quit){
   state='over';musicStop();$('stopx').classList.remove('on');if(guide)guide.hide();
@@ -303,7 +311,7 @@ function fillEnd(){
   if(R.G){gl.textContent='🎯 '+R.G+' '+u.jumps+' · '+T.inT+fmtTime(R.secs)+(R.gb&&R.gb.best?' · '+(R.gb.isNew?'⭐ ':'')+T.fast+fmtTime(R.gb.best):'');}
   $('t-privacy2').textContent=u.privacy;
 }
-function confetti(){for(let i=0;i<40;i++)pops.push({x:W*(.2+Math.random()*.6),y:H*.35,vx:(Math.random()-.5)*W*.9,vy:-H*(.4+Math.random()*.7),life:1.6+Math.random()*.6,c:['#FFD84D','#FF9FB0','#7DCB6B','#5FB7F0'][i%4]});}
+function confetti(){if(!fxOn)return;for(let i=0;i<40;i++)pops.push({x:W*(.2+Math.random()*.6),y:H*.35,vx:(Math.random()-.5)*W*.9,vy:-H*(.4+Math.random()*.7),life:1.6+Math.random()*.6,c:['#FFD84D','#FF9FB0','#7DCB6B','#5FB7F0'][i%4]});}
 
 const portraitPlay=()=>H>W*1.05&&['setup','count','play'].includes(state);
 function stageRect(){const y=58,h=H-y-Math.max(56,H*.11),w=Math.min(W*.3,h*.82);return {x:12,y,w,h};}
@@ -369,20 +377,21 @@ const SPR=(()=>{const mk=(w,h,f)=>{const c=document.createElement('canvas');c.wi
 let bits=[],rings=[],stageDt=0;const STAGE_CLIP={};
 const rnd=(a,b)=>a+Math.random()*(b-a);
 function burst(kind,R,small){
+  if(!fxOn)return;const soft=mode==='duo'&&!small;   // 2 players: the sparkles are the main show, the animal effect is smaller
   if(bits.length>90)bits.splice(0,bits.length-90);
-  const H0=R.h,g=H0*(kind==='duck'?2.2:1.7),sz=Math.min(R.w,R.h)*(small?.16:.11),bot=R.y+R.h,ret=bits;
+  const H0=R.h,g=H0*(kind==='duck'?2.2:1.7),sz=Math.min(R.w,R.h)*(small?.16:soft?.08:.11),bot=R.y+R.h,ret=bits;
   const up=f=>-Math.sqrt(2*g*H0*f);   // speed that rises to f × the height
-  if(kind==='panda'){const n=3+Math.floor(Math.random()*3);
+  if(kind==='panda'){const n=soft?2:3+Math.floor(Math.random()*3);
     for(let i=0;i<n;i++)ret.push({img:SPR.leaf[i%3],x:R.x+R.w*rnd(.1,.9),y:bot+sz*.3,vx:rnd(-.15,.15)*R.w,vy:up(rnd(.45,.75)),g,drag:H0*.22,sway:rnd(2.5,4),ph:rnd(0,6),
       w:sz*1.8,h:sz*.9,rot:rnd(-1,1),vr:rnd(-3,3),life:3.2,clip:small?STAGE_CLIP:null});}
-  else if(kind==='duck'){const cx=R.x+R.w*(small?.5:rnd(.3,.7)),n=small?8:16;
+  else if(kind==='duck'){const cx=R.x+R.w*(small?.5:rnd(.3,.7)),n=small?8:soft?7:16;
     for(let i=0;i<n;i++){const a=-Math.PI/2+rnd(-.9,.9),v=-up(rnd(.2,.45))*rnd(.8,1.1);
       ret.push({img:SPR.drop,x:cx+rnd(-.06,.06)*R.w,y:bot-sz*.2,vx:Math.cos(a)*v*.8,vy:Math.sin(a)*v,g,drag:0,w:sz*.75,h:sz*.95,rot:0,vr:0,face:1,life:2,clip:small?STAGE_CLIP:null});}
     rings.push({x:cx,y:bot-sz*.15,r:sz*.4,max:R.w*(small?.35:.22),t:0,clip:small?STAGE_CLIP:null});}
-  else{const n=small?5:8;
+  else{const n=small?5:soft?4:8;
     for(let i=0;i<n;i++)ret.push({img:SPR.hay[i%3],x:R.x+R.w*rnd(.15,.85),y:bot+sz*.2,vx:rnd(-.2,.2)*R.w,vy:up(rnd(.35,.65)),g,drag:H0*.4,sway:rnd(2,3.5),ph:rnd(0,6),
       w:sz*1.4,h:sz*.6,rot:rnd(-1,1),vr:rnd(-5,5),life:3,clip:small?STAGE_CLIP:null});
-    if(Math.random()<.3)ret.push({img:SPR.carrot,x:R.x+R.w*rnd(.3,.7),y:bot+sz*.4,vx:rnd(-.1,.1)*R.w,vy:up(rnd(.5,.7)),g,drag:0,w:sz*2.8,h:sz*1.7,rot:rnd(-.5,.5),vr:rnd(-4,4),life:3,clip:small?STAGE_CLIP:null});}
+    if(Math.random()<(soft?.15:.3))ret.push({img:SPR.carrot,x:R.x+R.w*rnd(.3,.7),y:bot+sz*.4,vx:rnd(-.1,.1)*R.w,vy:up(rnd(.5,.7)),g,drag:0,w:sz*2.8,h:sz*1.7,rot:rnd(-.5,.5),vr:rnd(-4,4),life:3,clip:small?STAGE_CLIP:null});}
 }
 function drawBits(dt,clipR){
   for(const b of (clipR?bits.filter(b=>b.clip===clipR):bits.filter(b=>!b.clip))){
@@ -395,6 +404,59 @@ function drawBits(dt,clipR){
     ctx.strokeStyle='#7FD3F7';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(r.x,r.y,rr*.7,rr*.2,0,0,7);ctx.stroke();ctx.restore();}
 }
 function cleanBits(){bits=bits.filter(b=>b.life>0&&b.y<H*1.5);rings=rings.filter(r=>r.t<.7);}
+
+/* ================= 2-PLAYER SPARKLES (22 Nov, Edgar) =================
+   Jumps less than 1 s apart build a run ("streak"). 5 tiers: 3, 6, 9, 12, 15 jumps in a row — each tier more, bigger,
+   more colourful sparkles rising from the bottom of that child's half. From tier 5 they keep coming as long as the run
+   lasts. Secret tier at 20 in a row: golden stars, hearts and rainbow sparkles + a chime.
+   Seizure-safe by design (WCAG 2.3.1 "three flashes"): no flashing at all — nothing blinks on/off, no full-screen or
+   large bright changes, no red; sparkles are small, fade in/out over ≥0.25 s and twinkle by slowly changing SIZE
+   (≈1 Hz, smooth), never brightness strobes. Each child's sparkles stay in their own half, behind the numbers.
+   Max 120 sparkles on screen (the oldest goes) so it never slows the phone. */
+const STREAK_GAP=1, TIERS_AT=[3,6,9,12,15], SECRET_AT=20;
+const SPK=(()=>{const mk=(f)=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');g.translate(32,32);f(g);return c;};
+  const twinkle=col=>mk(g=>{const p=new Path2D();for(let i=0;i<8;i++){const a=-Math.PI/2+i*Math.PI/4,r=i%2?9:27;p[i?'lineTo':'moveTo'](Math.cos(a)*r,Math.sin(a)*r);}p.closePath();
+    sticker(g,p,col,3.5);g.fillStyle='rgba(255,255,255,.75)';g.beginPath();g.arc(-3,-4,4,0,7);g.fill();});
+  const dot=col=>mk(g=>{const p=new Path2D();p.arc(0,0,13,0,7);sticker(g,p,col,3.5);g.fillStyle='rgba(255,255,255,.7)';g.beginPath();g.arc(-4,-4,4,0,7);g.fill();});
+  const star=col=>mk(g=>{g.scale(2.2,2.2);sticker(g,starPath(12),col,1.8);g.fillStyle='rgba(255,255,255,.6)';g.beginPath();g.arc(-3,-3,2.2,0,7);g.fill();});
+  const heart=col=>mk(g=>{const p=new Path2D();p.moveTo(0,22);p.bezierCurveTo(-30,2,-22,-24,0,-10);p.bezierCurveTo(22,-24,30,2,0,22);p.closePath();sticker(g,p,col,3.5);
+    g.fillStyle='rgba(255,255,255,.6)';g.beginPath();g.ellipse(-9,-6,4,6,-.5,0,7);g.fill();});
+  const C=['#FFF6B0','#FFD84D','#FFB3C7','#9FDCFF','#B8EBA0','#D9C2FF'];
+  return {tw:C.map(twinkle),dot:C.map(dot),gold:[star('#FFD84D'),star('#FFE680'),twinkle('#FFD84D')],heart:[heart('#FF9FB0'),heart('#FFB3C7')],
+    rainbow:['#FF9FB0','#FFC46B','#FFE680','#9EE08A','#8FD0FF','#C7A8FF'].map(twinkle)};})();
+let sparks=[],streak=[0,0],lastJ=[-9,-9],flowT=[0,0];
+const tierOf=n=>n>=SECRET_AT?6:TIERS_AT.reduce((t,a,i)=>n>=a?i+1:t,0);
+function sparkle(k,count,tier){
+  const R=sideRect(k),big=1+tier*.12;
+  for(let i=0;i<count;i++){
+    let img;if(tier>=6){const r=Math.random();img=r<.35?SPK.gold[i%3]:r<.6?SPK.heart[i%2]:SPK.rainbow[i%6];}
+    else{const pal=Math.min(6,1+tier);img=(Math.random()<.7?SPK.tw:SPK.dot)[Math.floor(Math.random()*pal)];}
+    const sz=Math.min(R.w,R.h)*rnd(.035,.06)*big;
+    sparks.push({img,k,x:R.x+R.w*rnd(.06,.94),y:R.y+R.h+sz,vx:rnd(-.05,.05)*R.w,vy:-R.h*rnd(.35,.7)*(1+tier*.08),sz,ph:rnd(0,6),age:0,life:rnd(1.3,2)+tier*.1});
+  }
+  if(sparks.length>120)sparks.splice(0,sparks.length-120);
+}
+function onDuoJump(k){
+  streak[k]=tNow-lastJ[k]<STREAK_GAP?streak[k]+1:1;lastJ[k]=tNow;
+  if(!fxOn)return;
+  const t=tierOf(streak[k]);
+  if(t>0)sparkle(k,[0,4,7,10,14,18,26][t],t);
+  if(streak[k]===SECRET_AT){FX.secret&&FX.secret();sparkle(k,8,6);}
+}
+function stepSparks(dt){
+  if(!fxOn){sparks=[];return;}
+  if(mode==='duo'&&state==='play')for(let k=0;k<2;k++){
+    if(tNow-lastJ[k]>=STREAK_GAP)streak[k]=0;   // run broken: no new sparkles, the ones on screen fade out
+    const t=tierOf(streak[k]);
+    if(t>=5){flowT[k]+=dt*(t>=6?16:12);while(flowT[k]>=1){flowT[k]-=1;sparkle(k,1,t);}}else flowT[k]=0;
+  }
+  for(const p of sparks){p.age+=dt;p.vy*=Math.pow(.55,dt);p.x+=(p.vx+Math.sin(p.age*2+p.ph)*p.sz*.8)*dt;p.y+=p.vy*dt;}
+  sparks=sparks.filter(p=>p.age<p.life);
+  for(const p of sparks){
+    const a=Math.min(1,p.age/.25,(p.life-p.age)/.4),sc=1+.22*Math.sin(p.age*2*Math.PI*1+p.ph);   // smooth fade + ~1 Hz size twinkle
+    ctx.save();ctx.globalAlpha=Math.max(0,a);ctx.translate(p.x,p.y);ctx.rotate(Math.sin(p.age+p.ph)*.4);ctx.drawImage(p.img,-p.sz*sc/2,-p.sz*sc/2,p.sz*sc,p.sz*sc);ctx.restore();}
+}
+
 /* the child's side of the screen for player k */
 function sideRect(k){if(mode==='duo')return {x:k?W/2:0,y:0,w:W/2,h:H};const P=playRect();return {x:P.x,y:0,w:P.w,h:H};}
 
@@ -471,7 +533,7 @@ function render(dt){
   const fs=Math.max(18,Math.min(26,W*.04)),PR=playRect(),cx=PR.x+PR.w/2;
   stageDt=dt;if(mode==='vs')drawStage();
   else if(state!=='setup'){ctx.save();ctx.setLineDash([2,14]);ctx.lineCap='round';ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(W/2,90);ctx.lineTo(W/2,H-20);ctx.stroke();ctx.restore();}
-  if(state==='play'||state==='over')drawBits(dt,null);cleanBits();
+  if(state==='play'||state==='over'){drawBits(dt,null);stepSparks(dt);}cleanBits();
   if(state==='setup'){
     if(guide)guide.draw(ctx,PR,lang);
     else{bubble(u.two,W/2,H*.16,fs);
