@@ -1,4 +1,6 @@
 /* Bamboo Physio · Big Screen
+   📺 button = a "Show it on your TV" guide (phone's own AirPlay / Cast / mirroring, like the store
+   apps will use), matching the device. The old code connection below is kept only as a fallback.
    Sends the game picture (and sound, if the TV asks for it) from the phone straight to a TV or
    computer that has https://emurinas15.github.io/games/tv/ open. The picture goes phone → screen
    directly over the home Wi-Fi (WebRTC). A free public PeerJS broker only introduces the two
@@ -10,21 +12,32 @@ const TV_URL = 'emurinas15.github.io/games/tv';
 const PREFIX = 'bamboophysio-tv-';
 const LSK = 'bp-tv-code';
 const T = {
-  en: { title: 'Show on a big screen', s1: 'On the TV or computer, open:', s2: 'Type the 4 numbers you see there:',
-    go: 'Connect', again: 'Connect to screen ', other: 'Another screen', stop: 'Stop showing', close: 'Close',
+  en: { title: 'Show it on your TV', lead: 'Use your phone’s own screen sharing, the same way you’d show photos on the TV.',
+    before: 'Before you start: the phone and the TV on the same Wi-Fi, TV turned on.',
+    ios_h: '📱 iPhone / iPad', ios1: 'Swipe down from the top-right corner.', ios2: 'Tap “Screen Mirroring” (two overlapping boxes).', ios3: 'Pick your TV. If it asks, type the code shown on the TV.', ios_n: 'Works with Apple TV and TVs that say “AirPlay” (most new LG, Samsung, Sony).',
+    and_h: '📱 Android', and1: 'Swipe down twice from the top of the screen.', and2: 'Tap “Smart View”, “Cast” or “Screen cast” (the name changes by phone).', and3: 'Pick your TV and tap “Start now”.', and_n: 'Works with most smart TVs and with a Chromecast / Google TV.',
+    pc_h: '💻 Computer', pc1: 'Easiest: connect the computer to the TV with an HDMI cable.', pc2: 'Windows, no cable: press ⊞ Win + K and pick the TV.', pc3: 'Mac, no cable: Control Center → Screen Mirroring → pick the TV.', pc_n: '',
+    other: 'Other devices', tip: '★ Then turn the phone sideways and put it far away, where it can see the whole play area. Everyone watches the TV.',
+    sound: '🔊 The music comes out of the TV.',
+    code_h: 'TV can’t mirror? Connect with a code', s1: 'On the TV or computer, open:', s2: 'Type the 4 numbers you see there:',
+    go: 'Connect', again: 'Connect to screen ', other2: 'Another screen', stop: 'Stop showing', close: 'Got it',
     connecting: 'Connecting…', on: 'Showing on the big screen ✓', bad: 'No screen with that number. Check the number on the TV.',
-    fail: 'Couldn’t reach the screen. Are the phone and the TV on the same Wi-Fi?', need: 'Type 4 numbers',
-    mirror: 'Or use your phone’s own screen mirroring', ios: 'iPhone: swipe down from the top-right corner → Screen Mirroring → pick the TV (Apple TV or AirPlay TV).',
-    android: 'Android: swipe down twice from the top → Smart View / Cast / Screen cast → pick the TV.',
-    tip: '★ Put the phone far away, sideways, where it can see the whole floor. Everyone watches the big screen.', aria: 'Show on a big screen' },
-  he: { title: 'הצגה על מסך גדול', s1: 'בטלוויזיה או במחשב, פתחו:', s2: 'הקלידו את 4 הספרות שמופיעות שם:',
-    go: 'חיבור', again: 'חיבור למסך ', other: 'מסך אחר', stop: 'הפסקת ההצגה', close: 'סגירה',
+    fail: 'Couldn’t reach the screen. Are the phone and the TV on the same Wi-Fi?', need: 'Type 4 numbers', aria: 'Show on your TV' },
+  he: { title: 'הצגה בטלוויזיה', lead: 'משתמשים בשיתוף המסך של הטלפון, כמו כשמראים תמונות בטלוויזיה.',
+    before: 'לפני שמתחילים: הטלפון והטלוויזיה על אותה רשת Wi-Fi, הטלוויזיה דולקת.',
+    ios_h: '📱 אייפון / אייפד', ios1: 'החליקו למטה מהפינה הימנית העליונה.', ios2: 'הקישו על "שיקוף מסך" (שני ריבועים זה על זה).', ios3: 'בחרו את הטלוויזיה. אם מתבקש, הקלידו את הקוד שמופיע בטלוויזיה.', ios_n: 'עובד עם Apple TV ועם טלוויזיות שכתוב בהן AirPlay (רוב ה-LG, סמסונג וסוני החדשות).',
+    and_h: '📱 אנדרואיד', and1: 'החליקו פעמיים למטה מראש המסך.', and2: 'הקישו על Smart View, Cast או "שיקוף מסך" (השם משתנה לפי הטלפון).', and3: 'בחרו את הטלוויזיה והקישו "התחל עכשיו".', and_n: 'עובד עם רוב הטלוויזיות החכמות ועם Chromecast / Google TV.',
+    pc_h: '💻 מחשב', pc1: 'הכי פשוט: מחברים את המחשב לטלוויזיה בכבל HDMI.', pc2: 'Windows בלי כבל: לוחצים ⊞ Win + K ובוחרים את הטלוויזיה.', pc3: 'Mac בלי כבל: מרכז הבקרה ← שיקוף מסך ← בוחרים את הטלוויזיה.', pc_n: '',
+    other: 'מכשירים אחרים', tip: '★ אחר כך מסובבים את הטלפון לרוחב ומניחים אותו רחוק, כך שיראה את כל אזור המשחק. כולם מסתכלים על הטלוויזיה.',
+    sound: '🔊 המוזיקה יוצאת מהטלוויזיה.',
+    code_h: 'הטלוויזיה לא משקפת? חיבור עם קוד', s1: 'בטלוויזיה או במחשב, פתחו:', s2: 'הקלידו את 4 הספרות שמופיעות שם:',
+    go: 'חיבור', again: 'חיבור למסך ', other2: 'מסך אחר', stop: 'הפסקת ההצגה', close: 'הבנתי',
     connecting: 'מתחברים…', on: 'מוצג על המסך הגדול ✓', bad: 'אין מסך עם המספר הזה. בדקו את המספר בטלוויזיה.',
-    fail: 'לא הצלחנו להגיע למסך. האם הטלפון והטלוויזיה מחוברים לאותה רשת Wi-Fi?', need: 'הקלידו 4 ספרות',
-    mirror: 'או השתמשו בשיקוף המסך של הטלפון', ios: 'אייפון: החליקו למטה מהפינה הימנית העליונה ← שיקוף מסך ← בחרו את הטלוויזיה (Apple TV או טלוויזיה עם AirPlay).',
-    android: 'אנדרואיד: החליקו פעמיים למטה מלמעלה ← Smart View / Cast / שיקוף מסך ← בחרו את הטלוויזיה.',
-    tip: '★ הניחו את הטלפון רחוק, לרוחב, כך שיראה את כל הרצפה. כולם מסתכלים על המסך הגדול.', aria: 'הצגה על מסך גדול' }
+    fail: 'לא הצלחנו להגיע למסך. האם הטלפון והטלוויזיה מחוברים לאותה רשת Wi-Fi?', need: 'הקלידו 4 ספרות', aria: 'הצגה בטלוויזיה' }
 };
+const DEV = (() => { const u = navigator.userAgent || '';
+  if (/iPhone|iPad|iPod/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints > 1)) return 'ios';
+  return /Android/.test(u) ? 'and' : 'pc'; })();
 
 const CSS = `
 .cast-sheet{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center;background:rgba(43,33,24,.35)}
@@ -46,6 +59,12 @@ const CSS = `
 .cast-box summary::-webkit-details-marker{display:none}
 .cast-mini{font-size:13px!important;opacity:.85}
 .cast-on{background:#FFD84D!important}
+.cast-guide{background:#fff;border:3px solid #2b2118;border-radius:20px;padding:8px 12px;margin:8px 0}
+.cast-guide h3{font:900 19px Grandstander,Fredoka,sans-serif;margin:0 0 4px}
+.cast-guide ol{margin:0;padding-inline-start:22px}
+.cast-guide li{font-size:16px;line-height:1.35;margin:4px 0}
+.cast-guide li::marker{font-weight:900;color:#3E8E46}
+.cast-other .cast-guide{background:#FFFDF7;border-width:2px}
 `;
 
 let peer = null, call = null, data = null, audioDest = null, localMuted = false;
@@ -61,16 +80,21 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 export function setupCast({ canvas, button, lang = () => 'en', sound = null, onChange = null }) {
   const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
   const sheet = document.createElement('div'); sheet.className = 'cast-sheet'; sheet.hidden = true;
+  const G = k => `<div class="cast-guide"><h3 data-t="${k}_h"></h3><ol><li data-t="${k}1"></li><li data-t="${k}2"></li><li data-t="${k}3"></li></ol><p class="cast-mini" data-t="${k}_n"></p></div>`;
   sheet.innerHTML = `<div class="cast-box" role="dialog" aria-modal="true">
     <h2 data-t="title"></h2>
+    <p data-t="lead"></p><p class="cast-mini" data-t="before"></p>
+    ${G(DEV)}
+    <p data-t="tip"></p><p class="cast-mini" data-t="sound"></p>
+    <details class="cast-other"><summary data-t="other"></summary>${['ios','and','pc'].filter(k => k !== DEV).map(G).join('')}</details>
+    <details class="cast-codebox"><summary data-t="code_h"></summary>
     <div class="cast-quick"><button class="cast-btn wide" data-a="quick"></button><button class="cast-btn soft wide" data-a="other"></button></div>
     <div class="cast-new"><p data-t="s1"></p><span class="cast-url">${TV_URL}</span>
       <p data-t="s2"></p><div class="cast-row"><input class="cast-code" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="····"><button class="cast-btn" data-a="go"></button></div></div>
+    </details>
     <div class="cast-st"></div>
     <button class="cast-btn soft wide" data-a="stop"></button>
-    <p class="cast-mini" data-t="tip"></p>
-    <details><summary data-t="mirror"></summary><p class="cast-mini" data-t="ios"></p><p class="cast-mini" data-t="android"></p></details>
-    <button class="cast-btn soft wide" data-a="close"></button></div>`;
+    <button class="cast-btn wide" data-a="close"></button></div>`;
   document.body.appendChild(sheet);
   const q = s => sheet.querySelector(s), input = q('.cast-code'), stEl = q('.cast-st');
   let status = '', stKind = '', showNew = false;
@@ -78,8 +102,9 @@ export function setupCast({ canvas, button, lang = () => 'en', sound = null, onC
   function paint() {
     const u = T[lang()] || T.en, saved = lsGet(LSK), live = !!call;
     sheet.querySelector('.cast-box').dir = lang() === 'he' ? 'rtl' : 'ltr';
-    sheet.querySelectorAll('[data-t]').forEach(e => e.textContent = u[e.dataset.t]);
-    q('[data-a=go]').textContent = u.go; q('[data-a=other]').textContent = u.other; q('[data-a=stop]').textContent = u.stop; q('[data-a=close]').textContent = u.close;
+    sheet.querySelectorAll('[data-t]').forEach(e => { e.textContent = u[e.dataset.t] || ''; if (e.classList.contains('cast-mini') && e.closest('.cast-guide')) e.hidden = !u[e.dataset.t]; });
+    if (live || status === 'connecting' || stKind === 'err') q('.cast-codebox').open = true;
+    q('[data-a=go]').textContent = u.go; q('[data-a=other]').textContent = u.other2; q('[data-a=stop]').textContent = u.stop; q('[data-a=close]').textContent = u.close;
     q('[data-a=quick]').textContent = u.again + (saved || '');
     q('.cast-quick').hidden = live || !saved || showNew; q('.cast-new').hidden = live || (!!saved && !showNew);
     q('[data-a=stop]').hidden = !live;
@@ -126,7 +151,7 @@ export function setupCast({ canvas, button, lang = () => 'en', sound = null, onC
   input.addEventListener('keydown', e => { if (e.key === 'Enter') connect(input.value.trim()); });
   input.addEventListener('input', () => { input.value = input.value.replace(/\D/g, '').slice(0, 4); if (input.value.length === 4) connect(input.value); });
   q('[data-a=quick]').onclick = () => connect(lsGet(LSK) || '');
-  q('[data-a=other]').onclick = () => { showNew = true; setSt(''); setTimeout(() => input.focus(), 50); };
+  q('[data-a=other]').onclick = () => { showNew = true; q('.cast-codebox').open = true; setSt(''); setTimeout(() => input.focus(), 50); };
   q('[data-a=stop]').onclick = () => { hang(); setSt(''); };
   q('[data-a=close]').onclick = () => { sheet.hidden = true; };
   sheet.addEventListener('pointerdown', e => { if (e.target === sheet) sheet.hidden = true; });
