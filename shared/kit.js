@@ -738,3 +738,26 @@ export function setupGoal(o) {
   paint(); new MutationObserver(paint).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   return { get: () => on ? n : 0, paint };
 }
+
+/* ======================= START CARD FITS THE SCREEN (22 Nov, Edgar) =======================
+   "I want everything inside the home page. No scrolling." The start card shows all its content; if it is taller
+   than the space between the top bar and the bottom of the screen, the whole card is zoomed down to fit. */
+function fitHome() {
+  const top = document.querySelector('.top');
+  document.querySelectorAll('.card.home').forEach(card => {
+    if (card.hidden) return;
+    card.style.zoom = 1; card.style.setProperty('--hmax', 'none');
+    const r = card.getBoundingClientRect(), topB = top ? top.getBoundingClientRect().bottom : 0;
+    const avail = r.bottom - topB - 10, need = card.scrollHeight + (card.offsetHeight - card.clientHeight);
+    const z = need > avail ? Math.max(0.5, avail / need) : 1;
+    card.style.zoom = z;
+    card.style.setProperty('--hmax', Math.floor(avail / z) + 'px');   // fallback only if even the smallest zoom is not enough
+  });
+}
+if (typeof document !== 'undefined') {
+  let q = 0; const later = () => { if (!q) q = requestAnimationFrame(() => { q = 0; fitHome(); }); };
+  later(); addEventListener('resize', later); addEventListener('orientationchange', later);
+  document.fonts && document.fonts.ready.then(later); addEventListener('load', later);
+  document.querySelectorAll('.card.home').forEach(c => new MutationObserver(later)
+    .observe(c, { attributes: true, attributeFilter: ['hidden'], childList: true, subtree: true, characterData: true }));
+}

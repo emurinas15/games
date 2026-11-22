@@ -41,11 +41,6 @@ export function setupHowTo(o) {
   const after = typeof o.before === 'string' ? document.querySelector(o.before) : (o.before || document.getElementById('play'));
   const btn = document.createElement('button'); btn.className = 'ht-btn'; btn.type = 'button';
   after.insertAdjacentElement('afterend', btn);
-  // 20 Nov (Edgar): the start card shows the How-to-play button without scrolling — it grows just enough to fit it
-  const card = btn.closest('.card.home');
-  if (card) { const fit = () => { if (card.hidden) return; card.style.setProperty('--ht-need', Math.ceil(btn.offsetTop + btn.offsetHeight + 26) + 'px'); };
-    requestAnimationFrame(fit); addEventListener('resize', fit); document.fonts && document.fonts.ready.then(fit);
-    new MutationObserver(() => requestAnimationFrame(fit)).observe(card, { attributes: true, attributeFilter: ['hidden'], childList: true, subtree: true, characterData: true }); }
   const ov = document.createElement('div'); ov.className = 'ht'; ov.hidden = true;
   ov.innerHTML = '<div class="ht-box"><button class="ht-x" aria-label="close">✕</button><canvas></canvas><div class="ht-row"><div class="ht-dots"></div><button class="ht-play"></button></div></div>';
   document.body.appendChild(ov);

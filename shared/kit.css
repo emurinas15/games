@@ -73,9 +73,8 @@ details[open] summary::after{content:" ▴"}
 
 /* 16 Nov (Edgar): home screen — the game's picture (the kid, the animals) stays visible. The start card shows only the
    title and a BIG Play button; everything else (choices, how to play, privacy, for grown-ups) is below, by scrolling the card. */
-.card.home{max-height:min(calc(100vh - var(--safe-t) - 70px),max(var(--ht-need,0px),clamp(178px,34vh,300px)));padding-bottom:0}   /* --ht-need: set by howto.js so How to play always shows */
+.card.home{max-height:var(--hmax,calc(100vh - 90px));padding-bottom:12px}   /* 22 Nov (Edgar): everything on the start card shows, no scrolling — kit.js fitHome() shrinks the card (zoom) to fit */
 .card.home h1{font-size:30px}
 .card.home .sub{font-size:15px;margin-bottom:10px}
 .card.home #play{font-size:38px;padding:14px 0 12px;margin-bottom:12px}
-.card.home::after{content:'⌄';position:sticky;bottom:0;display:block;margin:0 -16px;padding:2px 0 6px;text-align:center;font:900 22px/1 Fredoka,sans-serif;color:var(--ink);opacity:.55;background:linear-gradient(rgba(255,248,236,0),var(--cream) 55%);pointer-events:none}
-@media (orientation:landscape) and (max-height:620px){.card.home.kid{left:auto;right:calc(env(safe-area-inset-right) + 14px);transform:none;width:min(300px,38vw);max-height:calc(100vh - 80px)}}   /* phone sideways: card on the right, the kid in the middle stays visible */
+@media (orientation:landscape) and (max-height:620px){.card.home.kid{left:auto;right:calc(env(safe-area-inset-right) + 14px);transform:none;width:min(300px,38vw);max-height:var(--hmax,calc(100vh - 80px))}}   /* phone sideways: card on the right, the kid in the middle stays visible */
