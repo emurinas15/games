@@ -180,7 +180,9 @@ document.querySelectorAll('#modes .lv').forEach(b=>b.onclick=()=>{mode=b.dataset
 /* ================= CANVAS ================= */
 const cv=$('c'),ctx=cv.getContext('2d');
 let W=0,H=0,DPR=1;
-function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;}
+function resize(){const oW=W,oH=H;DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;
+  // screen turned / resized mid-game: rebuild each course for the new size (hives at the outer edges, flowers in the middle)
+  if(oW&&(oW!==W||oH!==H)&&players.length&&state==='play'&&!portraitPlay())players.forEach(P=>{if(P.ref&&P.bee.st!=='sip')newCourse(P);});}
 addEventListener('resize',resize);resize();
 function toast(t,ms=4000){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.tm);if(ms)toast.tm=setTimeout(()=>e.classList.remove('on'),ms);}
 
@@ -244,7 +246,9 @@ function lanes(){return mode==='duo'?[{x:0,w:W/2,dir:1},{x:W/2,w:W/2,dir:-1}]:[{
 let players=[];
 function makePlayer(k){
   const ln=lanes()[k];
-  return {k,ln,dir:ln.dir,score:0,level:1,course:[],flower:null,ref:null,head:null,size:1,seenT:-9,badT:0,distBad:'',
+  // 22 Nov (Edgar): the lane is measured LIVE. It used to be measured when Play was pressed — usually with the phone
+  // still upright — so after turning it sideways the right child's hive sat in the middle and the flowers overlapped.
+  return {k,get ln(){return lanes()[k];},dir:ln.dir,score:0,level:1,course:[],flower:null,ref:null,head:null,size:1,seenT:-9,badT:0,distBad:'',
     bee:{st:'hive',x:0,y:0,t:0,from:null,mood:'happy',dir:ln.dir},old:null,pop:-9,ouchT:-9,fake:{x:0,y:0}};
 }
 function personFor(k){
@@ -257,7 +261,7 @@ const beeR=P=>P.ref.u*.24;
 // P.dir 1: hive on the left, flower on the right; -1: the other way round. 1 player "both sides": flips every level,
 // so the next bee waits where the child already is and the child goes back and forth.
 const hiveX=P=>P.dir>0?P.ln.x+P.ln.w*.07:P.ln.x+P.ln.w*.93;
-const flowerX=P=>mode==='duo'?(P.dir>0?P.ln.x+P.ln.w*.9:P.ln.x+P.ln.w*.1):(P.dir>0?P.ln.x+P.ln.w*.93:P.ln.x+P.ln.w*.07);
+const flowerX=P=>mode==='duo'?(P.dir>0?P.ln.x+P.ln.w*.85:P.ln.x+P.ln.w*.15):(P.dir>0?P.ln.x+P.ln.w*.93:P.ln.x+P.ln.w*.07);
 const beeStand=P=>P.ref.top-beeR(P)*1.1;     // the bee sits on top of the head while standing
 const home=P=>({x:hiveX(P)+P.dir*U(P)*.6,y:beeStand(P)});   // where the new bee waits, next to the hive
 /* the course for each level (Edgar, 19 Nov: gentler climb, gaps one at a time).
