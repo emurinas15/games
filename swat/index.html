@@ -482,6 +482,8 @@ function spawn(force,own=0){
   if(duo()&&!force&&thornsWanted()&&Math.random()<.5){const th=spiders.filter(o=>o.own===own&&o.type==='m'&&o.state!=='fly'&&o.state!=='gone').sort((a,b)=>a.x-b.x);
     if(th.length){let cx;if(th.length>=2){const i=Math.floor(Math.random()*(th.length-1));cx=(th[i].x+th[i+1].x)/2;}else cx=th[0].x+(Math.random()<.5?-1:1)*(th[0].s+s)*1.4;
       x=Math.max(xa,Math.min(xb,cx));y=H*(.29+Math.random()*.08);}}
+  for(const b of uiRects())if(hitsRect(x,y+s*.1,s*.75,s*.6,b,8))y=b.bottom+8+s*.6;   // 23 Nov: never behind the time/score boxes
+  if(cards.length&&!duo()&&story&&x+s*.75>W-storyCardW()-14)return false;
   if(spiders.some(o=>o.state!=='fly'&&Math.hypot(o.x-x,o.ty-y)<s*2.2))return false;   // don't stack spiders
   if(force==='m'){spiders.push({id:Math.random(),own,x,ty:y,y:-40,s:Math.max(16,F.sw*.14),type:'m',hp:1,state:'down',t0:tNow,life:2,hangT:0,dodgeReady:1e9,face:'happy',swing:0,sv:0,faceT:0,k:1});FX.zip();return true;}
   let type='n';const r=Math.random();
@@ -527,7 +529,7 @@ function hit(sp,rk){
   sp.hp-=rk.big?2:1;
   if(sp.hp<=0){ // flies off the screen
     sp.state='fly';sp.face='dizzy';sp.vx=(dx/d)*W*1.5+(Math.random()-.5)*150;sp.vy=-H*1.3;sp.spin=(Math.random()<.5?-1:1)*10;
-    addPts(sp.own||0,PTS[sp.type]*(rk.power?2:1),sp.x,sp.y);FX.whack();FX.poof();FX.whee();
+    addPts(sp.own||0,PTS[sp.type],sp.x,sp.y);   // 23 Nov: Strong arms = bigger rackets + double hits, no double points (was stronger than Zap)FX.whack();FX.poof();FX.whee();
     for(let i=0;i<7;i++){const a=i/7*Math.PI*2+Math.random()*.4;puffs.push({x:sp.x+Math.cos(a)*sp.s*.3,y:sp.y+Math.sin(a)*sp.s*.3,vx:Math.cos(a)*sp.s*3.2,vy:Math.sin(a)*sp.s*3.2,r:sp.s*(.35+Math.random()*.25),life:.75});}
     for(let i=0;i<6;i++){const a=Math.random()*Math.PI*2;strands.push({x:sp.x,y:sp.y,vx:Math.cos(a)*sp.s*6,vy:Math.sin(a)*sp.s*6,rot:a,len:sp.s*(.5+Math.random()*.5),life:.6});}
     for(let i=0;i<6;i++)pops.push({x:sp.x,y:sp.y,vx:(Math.random()-.5)*420,vy:(Math.random()-.7)*420,life:.7});
@@ -563,12 +565,12 @@ function fireSuper(kind,k){
     for(const sp of spiders){if(sp.state==='fly'||sp.state==='gone'||sp.y<0||sp.zap)continue;
       sp.zap={t:tNow+.9,t0:tNow,ev};if(sp.type!=='m'){sp.face='oops';sp.faceT=tNow+1;}if(sp.state==='dodge'){sp.state='hang';sp.y=sp.ty;}sp.life+=1.5;}}
   else if(kind==='ice'){FX.ice();iceUntil[o]=tNow+8;for(const sp of spiders)if(sp.own===o&&sp.type!=='m'&&sp.state!=='fly'&&sp.state!=='gone'){sp.ice=true;sp.life+=2;if(sp.state==='dodge'){sp.state='hang';sp.y=sp.ty;}}}
-  else {FX.power();powerUntil[k]=tNow+6;}
+  else {FX.power();powerUntil[k]=tNow+5;}   // 23 Nov: 5 s (was 6)
 }
 function zapFinish(sp){const {k,ev}=sp.zap;sp.zap=null;if(sp.state==='fly'||sp.state==='gone')return;
   // 23 Nov (Edgar): no yellow bolts from the top any more — the blue glow is the zap
   if(sp.type==='m'){popMace(sp);if(!story&&!ev.hurt&&duo()){ev.hurt=1;strikeT[k]=-9;strike(k,sp.x,sp.y);}return;}   // battle: zapped thorn balls cost ONE strike at most; story: safe
-  sp.state='fly';sp.face='dizzy';sp.ice=false;sp.vx=(Math.random()-.5)*W;sp.vy=-H*1.2;sp.spin=12;addPts(k,story?PTS[sp.type]:2,sp.x,sp.y);}   // story: full points
+  sp.state='fly';sp.face='dizzy';sp.ice=false;sp.vx=(Math.random()-.5)*W;sp.vy=-H*1.2;sp.spin=12;addPts(k,PTS[sp.type],sp.x,sp.y);}   // 23 Nov: every zapped spider gives its full points (was 2) — Zap is the top super
 // electric light-blue aura with little flickering sparks
 function drawZapAura(c,x,y,s,t,seed){   // the glow, behind the spider
   const f=.85+.15*Math.sin(t*38+seed),R=s*1.35*f;
@@ -802,37 +804,57 @@ function render(dt){
 }
 
 /* battle layer: strike slots, red flash, "out" halves, the super-pose cards (they fill with the holding player's colour) */
+/* 23 Nov (Edgar): super cards are round discs; holding the pose fills a thick, solid ring around the disc like a timer.
+   1 player / story: the whole ring (blue). 2 players: blue fills the left half (top → bottom), pink the right half; a full half fires. */
+const RING_COL=['#2F9BEA','#EE5E8F'];
+// 23 Nov (Edgar): nothing may sit on top of anything else — the on-screen buttons/boxes to keep clear of
+function uiRects(){const R=[...document.querySelectorAll('.brand,.tr,#hud.on .pill,#stopx.on')].map(e=>e.getBoundingClientRect()).filter(r=>r.width>0&&r.height>0);
+  if(story&&story.L&&story.L.lives&&$('hud').classList.contains('on')){const hb=$('hud').getBoundingClientRect();R.push({left:Math.max(12,hb.left),right:Math.max(12,hb.left)+story.L.lives*26+12,top:hb.bottom,bottom:hb.bottom+34});}   // story hearts row
+  return R;}
+const hitsRect=(x,y,rx,ry,r,m=6)=>x+rx>r.left-m&&x-rx<r.right+m&&y+ry>r.top-m&&y-ry<r.bottom+m;
+// a row of n slots from the bottom corner inwards, skipping over any button in the way
+function slotRow(k,n,y,r,step){const R=uiRects(),xs=[];let x=k?W-22:22;const d=k?-1:1;
+  while(xs.length<n&&x>0&&x<W){if(R.some(b=>hitsRect(x,y,r,r,b))){x+=d*4;continue;}xs.push(x);x+=d*step;}return xs;}
+function drawSuperDisc(c,cx,cy,cw,ch,kind,tier,prog,both,resting,coolLeft,coolLen,t0){
+  const pop=Math.min(1,(tNow-t0)/.25),R=Math.min(cw*.46,ch*.42),dy=ch*.06,y=cy+dy,lw=Math.max(7,R*.2);
+  const charge=Math.max(prog[0]||0,prog[1]||0),grow=1+.07*charge+(charge>0?.02*Math.sin(tNow*14):0);
+  c.save();c.translate(cx,y);c.scale(pop*grow,pop*grow);
+  if(charge>0&&!resting){const g=c.createRadialGradient(0,0,R*.8,0,0,R*1.45);g.addColorStop(0,'rgba(255,240,150,.75)');g.addColorStop(1,'rgba(255,240,150,0)');c.fillStyle=g;c.beginPath();c.arc(0,0,R*1.45,0,Math.PI*2);c.fill();}
+  sticker(c,ell(0,0,R,R),'#FFF8EC',3.5);
+  c.save();c.clip(ell(0,0,R-lw*.95,R-lw*.95));drawPoseKid(c,0,R*.42,R*.5,kind,tNow);c.restore();
+  // ring track
+  c.lineCap='butt';c.strokeStyle='#E9E1D2';c.lineWidth=lw;c.beginPath();c.arc(0,0,R-lw/2-1.5,0,Math.PI*2);c.stroke();
+  if(resting){   // resting: a grey clock-wedge that shrinks as the card gets ready again
+    const k=Math.max(0,coolLeft/coolLen);c.fillStyle='rgba(110,110,120,.6)';c.beginPath();c.moveTo(0,0);c.arc(0,0,R-1.5,-Math.PI/2,-Math.PI/2+Math.PI*2*k);c.closePath();c.fill();}
+  else{
+    const rr=R-lw/2-1.5,arcs=[];
+    if(!both)arcs.push([prog[0]||0,RING_COL[0],-Math.PI/2,1,2]);   // one player: full ring clockwise
+    else{arcs.push([prog[0]||0,RING_COL[0],-Math.PI/2,-1,1]);arcs.push([prog[1]||0,RING_COL[1],-Math.PI/2,1,1]);}   // blue left half, pink right half
+    for(const [p,col,a0,dir,span] of arcs){if(!(p>0))continue;const a1=a0+dir*Math.PI*span*p;
+      c.lineCap='round';c.beginPath();c.arc(0,0,rr,a0,a1,dir<0);c.strokeStyle=INK;c.lineWidth=lw+5;c.stroke();c.strokeStyle=col;c.lineWidth=lw;c.stroke();
+      c.strokeStyle='rgba(255,255,255,.55)';c.lineWidth=Math.max(2,lw*.22);c.beginPath();c.arc(0,0,rr+lw*.18,a0,a1,dir<0);c.stroke();}
+    if(both){c.strokeStyle=INK;c.lineWidth=2.5;c.beginPath();c.moveTo(0,-R);c.lineTo(0,-R+lw+3);c.moveTo(0,R);c.lineTo(0,R-lw-3);c.stroke();}}   // the two halves' start / finish marks
+  c.lineWidth=3.5;c.strokeStyle=INK;c.stroke(ell(0,0,R,R));
+  c.restore();
+  // tier stars just above the disc (no emoji badge — it overlapped the next disc)
+  for(let j=0;j<tier;j++){c.save();c.translate(cx+(j-(tier-1)/2)*R*.42,y-R-R*.16);sticker(c,starPath(R*.15),resting?'#E6E1D8':'#FFD84D',2);c.restore();}
+}
 function drawBattle(){
   const u=UI[lang];
   for(const k of [0,1]){const x0=k*W/2;
     if(tNow-flashT[k]<.5){ctx.fillStyle=`rgba(240,96,77,${.35*(1-(tNow-flashT[k])/.5)})`;ctx.fillRect(x0,0,W/2,H);}
     if(out[k]){ctx.fillStyle='rgba(255,248,236,.6)';ctx.fillRect(x0,0,W/2,H);bubbleC(u.out[k],x0+W/4,H*.5,22,k?'#FFE3E8':'#DDF3FF');}
     // 3 strike slots in the outer top corner of each half: a little thorn ball fills each one
-    const r=11;for(let i=0;i<MAXSTRIKE;i++){const x=k?W-22-i*27:22+i*27,y=H-30;
+    const r=11,xs=slotRow(k,MAXSTRIKE,H-30,r,27);for(let i=0;i<MAXSTRIKE;i++){const x=xs[i]??(k?W-22-i*27:22+i*27),y=H-30;
       if(i<strikes[k])drawMace(ctx,x,y,r*1.1,0);else{ctx.save();ctx.globalAlpha=.85;sticker(ctx,ell(x,y,r*.7,r*.7),'rgba(255,255,255,.8)',2.5);ctx.restore();}}
-    if(tNow<powerUntil[k]){const left=Math.ceil(powerUntil[k]-tNow);bubbleC('💪 '+left,x0+W/4,H-30,18,'#FFF1B8');}
-    if(tNow<iceUntil[k]){const left=Math.ceil(iceUntil[k]-tNow);bubbleC('🧊 '+left,x0+W/4,H-30,18,'#DDF3FF');}
+    if(tNow<powerUntil[k]){const left=Math.ceil(powerUntil[k]-tNow);bubbleC('💪 '+left,x0+W/4,H-74,18,'#FFF1B8');}
+    if(tNow<iceUntil[k]){const left=Math.ceil(iceUntil[k]-tNow);bubbleC('🧊 '+left,x0+W/4,H-74,18,'#DDF3FF');}
   }
   if(!cards.length)return;
   // the tier cards: a column in the middle, between the players — 20% smaller than the first version, and fit to the height
   const L=cardLayout();const {cw,ch}=L;
-  cards.forEach((c,i)=>{const tier=TIERS.findIndex(t=>t[0]===c.kind),cx=L.pos[tier].x,cy=L.pos[tier].y,pop=Math.min(1,(tNow-c.t0)/.25),resting=tNow<c.cool;
-    ctx.save();ctx.translate(cx,cy);ctx.scale(pop,pop);ctx.translate(-cx,-cy);
-    const p=new Path2D();p.roundRect(cx-cw/2,cy-ch/2,cw,ch,16);sticker(ctx,p,'rgba(255,248,236,.95)',3.5);
-    ctx.save();ctx.clip(p);
-    // 17 Nov (Edgar): the card itself fills up from the bottom in the colour of the player holding its pose (no star).
-    // One player holding → the whole card; both at once → blue on the left half, pink on the right half.
-    if(!resting){const both=c.prog[0]>0&&c.prog[1]>0;
-      for(const k of [0,1]){const pr=c.prog[k];if(!(pr>0))continue;const x0=both?(k?cx:cx-cw/2):cx-cw/2,w=both?cw/2:cw,hh=ch*pr;
-        ctx.fillStyle=k?'rgba(255,143,170,.8)':'rgba(110,190,245,.8)';ctx.fillRect(x0,cy+ch/2-hh,w,hh);
-        ctx.fillStyle='rgba(255,255,255,.6)';ctx.fillRect(x0,cy+ch/2-hh,w,Math.min(hh,3));}}   // light top edge
-    drawPoseKid(ctx,cx,cy+ch*.2,cw*.24,c.kind,tNow);
-    if(resting){const k=(c.cool-tNow)/COOL;ctx.fillStyle='rgba(120,120,130,.55)';ctx.fillRect(cx-cw/2,cy-ch/2,cw,ch*k);}   // greyed, refilling from the bottom
-    ctx.restore();ctx.lineWidth=3.5;ctx.strokeStyle=INK;ctx.stroke(p);   // outline back on top of the colour fill
-    // tier stars on top, emoji badge in the corner
-    for(let j=0;j<=tier;j++){ctx.save();ctx.translate(cx+(j-tier/2)*cw*.2,cy-ch/2+cw*.11);sticker(ctx,starPath(cw*.08),resting?'#E6E1D8':'#FFD84D',2);ctx.restore();}
-    ctx.font=`${Math.round(cw*.2)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(UI[lang].sup[c.kind].split(' ')[0],cx+cw*.33,cy+ch*.36);
-    ctx.restore();});
+  cards.forEach(c=>{const tier=TIERS.findIndex(t=>t[0]===c.kind),P=L.pos[tier],resting=tNow<c.cool;
+    drawSuperDisc(ctx,P.x,P.y,cw,ch,c.kind,tier+1,c.prog,true,resting,c.cool-tNow,COOL,c.t0);});
 }
 function bubbleC(txt,x,y,fs,fill){
   ctx.save();ctx.font=`700 ${fs}px Fredoka,sans-serif`;ctx.direction=lang==='he'?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';
@@ -959,7 +981,7 @@ function spawnThorn(){
   const nearOk=(x,y)=>x>bx.x0+ts&&x<bx.x1-ts&&y>H*.12&&y<H*.8&&!spiders.some(o=>o.state!=='fly'&&Math.hypot(o.x-x,o.ty-y)<(o.type==='m'?ts*2.2:o.s*.55+ts*1.1));
   let x=null,y=null;
   for(const sp of nb.sort(()=>Math.random()-.5)){   // beside or under a spider: centre the racket on the spider and you miss the thorns
-    for(const a of [0,Math.PI,Math.PI/2,Math.PI*.25,Math.PI*.75].sort(()=>Math.random()-.5)){const D=sp.s*.55+F.sw*.42,px=sp.x+Math.cos(a)*D,py=sp.ty+Math.sin(a)*D;if(nearOk(px,py)){x=px;y=py;break;}}
+    for(const a of [0,Math.PI,Math.PI/2,Math.PI*.25,Math.PI*.75].sort(()=>Math.random()-.5)){const D=sp.s*.8+F.sw*.42,px=sp.x+Math.cos(a)*D,py=sp.ty+Math.sin(a)*D;if(nearOk(px,py)){x=px;y=py;break;}}
     if(x!==null)break;}
   if(x===null)return false;
   spiders.push({id:Math.random(),own:0,x,ty:y,y:-40,s:ts,type:'m',hp:1,state:'down',t0:tNow,life:3.5,hangT:0,dodgeReady:1e9,face:'happy',swing:0,sv:0,faceT:0,k:1});FX.zip();return true;
@@ -1099,17 +1121,8 @@ function cardBox(){const hb=$('hud').getBoundingClientRect(),y0=(hb.bottom>0?hb.
 function storyCardW(){return cardBox().cw;}
 function storyCardPos(){const B=cardBox(),cw=B.cw,ch=cw*1.1,n=cards.length,mid=(B.y0+B.y1)/2,top=mid-(n*ch+(n-1)*B.gap)/2+ch/2;return cards.map((c,j)=>({c,x:W-cw/2-10,y:top+j*(ch+B.gap),cw,ch}));}
 function drawStoryCards(){
-  for(const {c,x:cx,y:cy,cw,ch} of storyCardPos()){
-    const pop=Math.min(1,(tNow-c.t0)/.25),resting=tNow<c.cool;
-    ctx.save();ctx.translate(cx,cy);ctx.scale(pop,pop);ctx.translate(-cx,-cy);
-    const p=new Path2D();p.roundRect(cx-cw/2,cy-ch/2,cw,ch,16);sticker(ctx,p,'rgba(255,248,236,.95)',3.5);
-    ctx.save();ctx.clip(p);
-    if(!resting&&c.prog[0]>0){const hh=ch*c.prog[0];ctx.fillStyle='rgba(110,190,245,.8)';ctx.fillRect(cx-cw/2,cy+ch/2-hh,cw,hh);ctx.fillStyle='rgba(255,255,255,.6)';ctx.fillRect(cx-cw/2,cy+ch/2-hh,cw,Math.min(hh,3));}
-    drawPoseKid(ctx,cx,cy+ch*.2,cw*.24,c.kind,tNow);
-    if(resting){const k=(c.cool-tNow)/COOL;ctx.fillStyle='rgba(120,120,130,.55)';ctx.fillRect(cx-cw/2,cy-ch/2,cw,ch*k);}
-    ctx.restore();ctx.lineWidth=3.5;ctx.strokeStyle=INK;ctx.stroke(p);
-    ctx.font=`${Math.round(cw*.2)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(UI[lang].sup[c.kind].split(' ')[0],cx+cw*.33,cy+ch*.36);
-    ctx.restore();}
+  for(const {c,x:cx,y:cy,cw,ch} of storyCardPos()){const resting=tNow<c.cool;
+    drawSuperDisc(ctx,cx,cy,cw,ch,c.kind,0,c.prog,false,resting,c.cool-tNow,(story.L.cool||COOL),c.t0);}
   if(story&&story.L&&story.L.lives){const n=story.L.lives,r=11,hb=$('hud').getBoundingClientRect(),y=(hb.bottom>0?hb.bottom:70)+20;   // hearts in a small row under the time
     if(tNow-flashT[0]<.5){ctx.fillStyle=`rgba(240,96,77,${.3*(1-(tNow-flashT[0])/.5)})`;ctx.fillRect(0,0,W,H);}
     for(let i=0;i<n;i++){const x=Math.max(12,hb.left)+r*1.4+i*r*2.4,lost=i>=n-strikes[0];ctx.save();ctx.translate(x,y);if(lost)ctx.globalAlpha=.35;sticker(ctx,heartPath(r),lost?'#E6E1D8':'#FF7A8A',2.5);ctx.restore();}}
