@@ -169,7 +169,7 @@ const UI={
   solo:"👤 1 player",duo:"👥 2 players",duonote:"Phone sideways · each player swats the spiders on their own side",
   both:"Both players: show me your arms and shoulders!",turn:"Turn the phone sideways for 2 players",
   pts:"points",hs:"High scores",hsnone:"No scores yet — play a round!",hsnew:"🏆 New high score!",name:"Your name",save:"Save",p1:"1 player",p2:"2 players",
-  out:["Blue is out!","Pink is out!"],newSup:"New super move:",ouch:"Ouch! Thorns!",grab:"Copy the pose!",
+  out:["Blue is out!","Pink is out!"],newSup:"New super move:",ouch:"Ouch! Thorns!",thornWarn:"⚠️ Watch out — thorns are coming!",grab:"Copy the pose!",
   sup:{zap:"⚡ Zap!",ice:"🧊 Ice!",power:"💪 Power rackets!"},supName:{zap:"Y arms",ice:"Ice crown",power:"Strong arms"},
   g6:"★ Points: purple spider 1 · red 3 · blue (sneaky) 4 · armoured 6. The top 5 scores are kept on this device only, with a first name if you like.",
   g7:"★ 2-player battle: from 15 s, small black thorn balls flash among the spiders for 2 seconds — touching one is a strike (−3 points). 5 strikes and that player is out; the other keeps playing to the end. Super poses come in 3 tiers and appear one by one in a small column in the middle, weakest first — 🧊 Ice crown (a quarter into the round), 💪 Strong arms (almost halfway), ⚡ Y arms (two-thirds) — and then stay on the screen. Whoever holds a pose for 2 seconds first gets it; the card then rests 10 s and can be won again by either player. ⚡ Y arms (arms up in a Y) zaps every spider on the screen for 2 points each — but every thorn ball on the screen is a strike. 🧊 Ice crown (hands together above the head) freezes the other player's spiders for 8 s: they need two hits, or one hit right in the middle. 💪 Strong arms (elbows out at shoulder height, hands up, like a goal post) gives you giant rackets for 6 s: double hits, double points. The poses need about the same accuracy as Easy in Jungle Pose. One player plays without these.",
@@ -189,7 +189,7 @@ const UI={
   solo:"👤 שחקן אחד",duo:"👥 שני שחקנים",duonote:"טלפון לרוחב · כל שחקן מעיף את העכבישים בצד שלו",
   both:"שני השחקנים: תראו לי את הידיים והכתפיים!",turn:"סובבו את הטלפון לרוחב כדי לשחק בשניים",
   pts:"נקודות",hs:"שיאים",hsnone:"עוד אין שיאים — שחקו סבב!",hsnew:"🏆 שיא חדש!",name:"השם שלך",save:"שמירה",p1:"שחקן אחד",p2:"שני שחקנים",
-  out:["הכחול בחוץ!","הוורוד בחוץ!"],newSup:"תנוחת־על חדשה:",ouch:"אאוץ׳! קוצים!",grab:"העתיקו את התנוחה!",
+  out:["הכחול בחוץ!","הוורוד בחוץ!"],newSup:"תנוחת־על חדשה:",ouch:"אאוץ׳! קוצים!",thornWarn:"⚠️ זהירות — קוצים בדרך!",grab:"העתיקו את התנוחה!",
   sup:{zap:"⚡ זאפ!",ice:"🧊 קרח!",power:"💪 מחבטי ענק!"},supName:{zap:"ידיים ב־Y",ice:"כתר קרח",power:"ידיים חזקות"},
   g6:"★ ניקוד: עכביש סגול 1 · אדום 3 · כחול (ערמומי) 4 · משוריין 6. חמשת השיאים נשמרים רק במכשיר הזה, עם שם פרטי אם רוצים.",
   g7:"★ קרב בשניים: מ־15 שניות מופיעים בין העכבישים ל־2 שניות כדורי קוצים שחורים קטנים — נגיעה בכדור היא פסילה (−3 נקודות). 5 פסילות והשחקן בחוץ; השני ממשיך עד הסוף. תנוחות־העל מגיעות ב־3 דרגות, אחת אחרי השנייה, מהחלשה לחזקה — 🧊 כתר קרח (ברבע הסבב), 💪 ידיים חזקות (כמעט באמצע), ⚡ ידיים ב־Y (בשני שלישים) — ונשארות על המסך. מי שמחזיק תנוחה 2 שניות ראשון — מקבל אותה; אחר כך הכרטיס נח 10 שניות ושוב אפשר לזכות בו. ⚡ ידיים ב־Y מחשמלות את כל העכבישים במסך, 2 נקודות לכל אחד — אבל כל כדור קוצים במסך הוא פסילה. 🧊 כתר קרח (כפות ידיים צמודות מעל הראש) מקפיא ל־8 שניות את העכבישים של השחקן השני: צריך שתי חבטות, או חבטה אחת בדיוק באמצע. 💪 ידיים חזקות (מרפקים לצדדים בגובה הכתפיים, ידיים למעלה, כמו שער) נותנות מחבטי ענק ל־6 שניות: חבטה כפולה, ניקוד כפול. התנוחות דורשות דיוק בערך כמו ״קל״ ב־Jungle Pose. שחקן יחיד משחק בלי אלה.",
@@ -448,6 +448,26 @@ function frame0(k=0){ // shoulders and size used to place the spiders
   if(mode==='camera'&&b.ok)return {shL:b.shL,shR:b.shR,sw:b.sw};
   const bx=sideBox(k),cx=(bx.x0+bx.x1)/2,sw=Math.min((bx.x1-bx.x0)*.36,H*.2),sy=duo()?H*.97-sw*1.45:H*.66;return {shL:{x:cx-sw/2,y:sy},shR:{x:cx+sw/2,y:sy},sw};
 }
+// 23 Nov (Edgar): in the 1-minute round nobody saw a blue spider — the levels are compressed there (1 and 2 players)
+const PROG=()=>(!G&&roundLen===60)?{r:12,h:22,b:32,step:6}:{r:30,h:45,b:60,step:10};
+/* 23 Nov (Edgar): 2-player thorn balls are the END GAME only — they start after every super pose and every spider colour
+   has appeared (warning banner first). Then 1 thorn ball with spiders around it, gradually 2, then up to 3 with one or two
+   spiders hanging between them. Thorn balls are 30% smaller and hang high: the bottom of the ball is never lower than 20% from the top. */
+function endStart(){return Math.max(PROG().b,(G?90:roundLen)*TIERS[TIERS.length-1][1])+3;}
+function thornsWanted(){const E0=endStart()+2.5,R=Math.max(6,(G?90:roundLen)-E0);return elapsed<E0?0:elapsed<E0+R*.35?1:elapsed<E0+R*.7?2:3;}
+function spawnDuoThorn(k){
+  const F=frame0(k),bx=sideBox(k),ms=Math.max(16,F.sw*.14),x0=bx.x0+Math.max(W*.1,ms*2),x1=bx.x1-Math.max(W*.1,ms*2);   // away from the score corners
+  const mine=spiders.filter(o=>o.own===k&&o.state!=='fly'&&o.state!=='gone'),th=mine.filter(o=>o.type==='m'),sp=mine.filter(o=>o.type!=='m');
+  const gap=F.sw*.75;   // room for one or two spiders between two thorn balls
+  const yTop=H*.1+ms,yBot=H*.2-ms*.6;
+  const hudR=[...document.querySelectorAll('#hud .pill,.topbar,.brand,.snd,.lang')].map(e=>e.getBoundingClientRect()).filter(r=>r.width&&r.top<yBot+ms&&r.bottom>yTop-ms);   // not hidden behind the score / time pills
+  const ok=x=>x>=x0&&x<=x1&&th.every(o=>Math.abs(o.x-x)>=gap)&&hudR.every(r=>x<r.left-ms||x>r.right+ms);
+  const cand=[];for(const o of sp.sort(()=>Math.random()-.5))for(const d of (Math.random()<.5?[-1,1]:[1,-1]))cand.push(o.x+d*(o.s*.6+ms+F.sw*.12));   // right beside a spider
+  for(let i=0;i<8;i++)cand.push(x0+Math.random()*(x1-x0));
+  const x=cand.find(ok);if(x===undefined)return false;
+  const y=yTop+Math.random()*Math.max(0,yBot-yTop);
+  spiders.push({id:Math.random(),own:k,x,ty:Math.min(y,yBot),y:-40,s:ms,type:'m',hp:1,state:'down',t0:tNow,life:4.5,hangT:0,dodgeReady:1e9,face:'happy',swing:0,sv:0,faceT:0,k:1});FX.zip();return true;
+}
 function spawn(force,own=0){
   const F=frame0(own),bx=sideBox(own),side=Math.random()<.5?-1:1,sh=side<0?F.shL:F.shR;
   const ang=[90,65,40,15,115][Math.floor(Math.random()*5)]*Math.PI/180;   // up, high diagonal, diagonal, sideways, across over the head
@@ -459,12 +479,16 @@ function spawn(force,own=0){
   const xa=bx.x0+s*1.2,xb=bx.x1-s*1.2;
   for(let a2=ang,k=0;k<12&&(x<xa||x>xb);k++){a2=a2<Math.PI/2?a2+Math.PI/36*2:a2-Math.PI/36*2;x=sh.x+side*Math.cos(a2)*dist;y=sh.y-Math.sin(a2)*dist;}
   x=Math.max(xa,Math.min(xb,x));y=Math.max(H*(H>W?.12:.2),Math.min(H*.78,y));
+  if(duo()&&!force&&thornsWanted()&&Math.random()<.5){const th=spiders.filter(o=>o.own===own&&o.type==='m'&&o.state!=='fly'&&o.state!=='gone').sort((a,b)=>a.x-b.x);
+    if(th.length){let cx;if(th.length>=2){const i=Math.floor(Math.random()*(th.length-1));cx=(th[i].x+th[i+1].x)/2;}else cx=th[0].x+(Math.random()<.5?-1:1)*(th[0].s+s)*1.4;
+      x=Math.max(xa,Math.min(xb,cx));y=H*(.29+Math.random()*.08);}}
   if(spiders.some(o=>o.state!=='fly'&&Math.hypot(o.x-x,o.ty-y)<s*2.2))return false;   // don't stack spiders
-  if(force==='m'){spiders.push({id:Math.random(),own,x,ty:y,y:-40,s:Math.max(22,F.sw*.2),type:'m',hp:1,state:'down',t0:tNow,life:2,hangT:0,dodgeReady:1e9,face:'happy',swing:0,sv:0,faceT:0,k:1});FX.zip();return true;}
+  if(force==='m'){spiders.push({id:Math.random(),own,x,ty:y,y:-40,s:Math.max(16,F.sw*.14),type:'m',hp:1,state:'down',t0:tNow,life:2,hangT:0,dodgeReady:1e9,face:'happy',swing:0,sv:0,faceT:0,k:1});FX.zip();return true;}
   let type='n';const r=Math.random();
-  if(elapsed>=60){if(r<.2)type='b';else if(r<.36)type='h';else if(r<.58)type='r';}
-  else if(elapsed>=45){if(r<.18)type='h';else if(r<.45)type='r';}
-  else if(elapsed>=30){if(r<.4)type='r';}
+  const P=PROG();
+  if(elapsed>=P.b){if(r<.2)type='b';else if(r<.36)type='h';else if(r<.58)type='r';}
+  else if(elapsed>=P.h){if(r<.18)type='h';else if(r<.45)type='r';}
+  else if(elapsed>=P.r){if(r<.4)type='r';}
   if(force)type=force;
   const iced=duo()&&tNow<iceUntil[own];   // story: Ice freezes only the spiders already there; new hot ones need a new ice crown
   spiders.push({id:Math.random(),own,x,ty:y,y:-40,s,type,hp:SPIDER[type].hp,state:'down',t0:tNow,life:3+(type==='h'?2:type==='f'?5:type==='r'||type==='b'?1:0)+(iced?2:0),hangT:0,dodgeReady:0,face:'happy',swing:0,sv:0,faceT:0,k:1,ice:iced});
@@ -535,10 +559,10 @@ function cardLayout(){const gap=6;let cw=Math.min(W*.2,H*.36)*.75,ch=cw*1.1;   /
   return {cw,ch,x0:W/2-cw/2-gap,x1:W/2+cw/2+gap,pos:[0,1,2].map(i=>({x:W/2,y:top+i*(ch+gap)}))};}
 function fireSuper(kind,k){
   const u=UI[lang],o=story?k:1-k;showLevel(u.sup[kind]);   // story: Ice freezes your own spiders (so they are easy to boop)
-  if(kind==='zap'){FX.zap();
+  if(kind==='zap'){FX.zap();let zapHurt=0;
     for(const sp of spiders){if(sp.state==='fly'||sp.state==='gone'||sp.y<0)continue;
       bolts.push({x:sp.x,y:sp.y,life:.5,seed:Math.random()*99});
-      if(sp.type==='m'){popMace(sp);if(!story){strikeT[k]=-9;strike(k,sp.x,sp.y);}continue;}   // story: Zap pops thorn balls safely   // every thorn ball on the screen = a strike
+      if(sp.type==='m'){popMace(sp);if(!story&&!zapHurt){zapHurt=1;strikeT[k]=-9;strike(k,sp.x,sp.y);}continue;}   // 23 Nov: zapping thorn balls costs ONE strike at most   // story: Zap pops thorn balls safely   // every thorn ball on the screen = a strike
       sp.state='fly';sp.face='dizzy';sp.ice=false;sp.vx=(Math.random()-.5)*W;sp.vy=-H*1.2;sp.spin=12;addPts(k,story?PTS[sp.type]:2,sp.x,sp.y);}}   // story: full points
   else if(kind==='ice'){FX.ice();iceUntil[o]=tNow+8;for(const sp of spiders)if(sp.own===o&&sp.type!=='m'&&sp.state!=='fly'&&sp.state!=='gone'){sp.ice=true;sp.life+=2;if(sp.state==='dodge'){sp.state='hang';sp.y=sp.ty;}}}
   else {FX.power();powerUntil[k]=tNow+6;}
@@ -633,21 +657,22 @@ function frame(now){
       elapsed+=dt;$('time').textContent=G?Math.max(0,G-(duo()?Math.max(...scores):score)):Math.max(0,Math.ceil(RL()-elapsed));
       if(story)storyTick(dt);else{
       // special spiders: banner exactly at 30 / 45 / 60 s, and one of them arrives 1-4 s later
-      const due=()=>tNow+1+Math.random()*3;let special=false;
+      const due=()=>tNow+1+Math.random()*3;let special=false;const P=PROG(),RT=G?90:roundLen;
       const promise=t=>{pending=[{type:t,at:due()},duo()?{type:t,at:due()}:null];};
-      if(elapsed>=60&&!announced.b){announced.b=1;special=true;showLevel(UI[lang].blue);promise('b');}
-      else if(elapsed>=45&&!announced.h){announced.h=1;special=true;showLevel(UI[lang].helmet);promise('h');}
-      else if(elapsed>=30&&!announced.r){announced.r=1;special=true;showLevel(UI[lang].red);promise('r');}
-      const lv=Math.floor(elapsed/10);
-      if(lv>level){level=lv;if(!special&&lv*10%30!==0)showLevel(UI[lang].level);}
+      if(elapsed>=P.b&&!announced.b){announced.b=1;special=true;showLevel(UI[lang].blue);promise('b');}
+      else if(elapsed>=P.h&&!announced.h){announced.h=1;special=true;showLevel(UI[lang].helmet);promise('h');}
+      else if(elapsed>=P.r&&!announced.r){announced.r=1;special=true;showLevel(UI[lang].red);promise('r');}
+      else if(duo()&&elapsed>=endStart()&&!announced.m){announced.m=1;special=true;showLevel(UI[lang].thornWarn,2200);FX.charge();}
+      const lv=Math.floor(elapsed/P.step);
+      if(lv>level){level=lv;if(!special&&lv*P.step!==P.r&&lv*P.step!==P.h&&lv*P.step!==P.b)showLevel(UI[lang].level);}
       // 2 players: each side gets its own spiders (up to 4 each, on its own half)
       const sides=duo()?[0,1]:[0],maxOn=duo()?Math.min(4,2+level):Math.min(5,2+level),interval=Math.max(.6,2.0-level*.25);
       for(const k of sides){
         if(duo()&&out[k])continue;
         if(pending[k]&&tNow>=pending[k].at&&spawn(pending[k].type,k))pending[k]=null;
         if(tNow>nextSpawn[k]&&spiders.filter(s=>s.own===k&&s.type!=='m'&&s.state!=='fly'&&s.state!=='gone').length<maxOn){spawn(null,k);nextSpawn[k]=tNow+interval*(.7+Math.random()*.6);}
-        // battle: thorn balls from 15 s — one per side, two from 35 s
-        if(duo()&&elapsed>=15&&tNow>nextMace[k]&&spiders.filter(s=>s.own===k&&s.type==='m'&&s.state!=='fly'&&s.state!=='gone').length<(elapsed>=35?2:1)){if(spawn('m',k))nextMace[k]=tNow+3+Math.random()*2;}
+        // battle END GAME: thorn balls (see endStart / thornsWanted / spawnDuoThorn)
+        if(duo()&&thornsWanted()&&tNow>nextMace[k]&&spiders.filter(s=>s.own===k&&s.type==='m'&&s.state!=='fly'&&s.state!=='gone').length<thornsWanted()){if(spawnDuoThorn(k))nextMace[k]=tNow+1.2+Math.random()*1.2;}
       }
       // battle: a super pose every 20 s; the first player to hold it for 2 s gets it
       if(duo()){
