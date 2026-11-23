@@ -559,13 +559,29 @@ function cardLayout(){const gap=6;let cw=Math.min(W*.2,H*.36)*.75,ch=cw*1.1;   /
   return {cw,ch,x0:W/2-cw/2-gap,x1:W/2+cw/2+gap,pos:[0,1,2].map(i=>({x:W/2,y:top+i*(ch+gap)}))};}
 function fireSuper(kind,k){
   const u=UI[lang],o=story?k:1-k;showLevel(u.sup[kind]);   // story: Ice freezes your own spiders (so they are easy to boop)
-  if(kind==='zap'){FX.zap();let zapHurt=0;
-    for(const sp of spiders){if(sp.state==='fly'||sp.state==='gone'||sp.y<0)continue;
-      bolts.push({x:sp.x,y:sp.y,life:.5,seed:Math.random()*99});
-      if(sp.type==='m'){popMace(sp);if(!story&&!zapHurt){zapHurt=1;strikeT[k]=-9;strike(k,sp.x,sp.y);}continue;}   // 23 Nov: zapping thorn balls costs ONE strike at most   // story: Zap pops thorn balls safely   // every thorn ball on the screen = a strike
-      sp.state='fly';sp.face='dizzy';sp.ice=false;sp.vx=(Math.random()-.5)*W;sp.vy=-H*1.2;sp.spin=12;addPts(k,story?PTS[sp.type]:2,sp.x,sp.y);}}   // story: full points
-  else if(kind==='ice'){FX.ice();iceUntil[o]=tNow+8;for(const sp of spiders)if(sp.own===o&&sp.type!=='m'&&sp.state!=='fly'&&sp.state!=='gone'){sp.ice=true;sp.life+=2;if(sp.state==='dodge'){sp.state='hang';sp.y=sp.ty;}}}
+  if(kind==='zap'){FX.zap();const ev={k,hurt:0};   // 23 Nov (Edgar): every spider and thorn ball glows electric light blue and shakes, then pops
+    for(const sp of spiders){if(sp.state==='fly'||sp.state==='gone'||sp.y<0||sp.zap)continue;
+      sp.zap={t:tNow+.9,t0:tNow,ev};if(sp.type!=='m'){sp.face='oops';sp.faceT=tNow+1;}if(sp.state==='dodge'){sp.state='hang';sp.y=sp.ty;}sp.life+=1.5;}}
+  else if(kind==='ice'){({x:sp.x,y:sp.y,life:.5,seed:Math.random()*99});
+FX.ice();iceUntil[o]=tNow+8;for(const sp of spiders)if(sp.own===o&&sp.type!=='m'&&sp.state!=='fly'&&sp.state!=='gone'){sp.ice=true;sp.life+=2;if(sp.state==='dodge'){sp.state='hang';sp.y=sp.ty;}}}
   else {FX.power();powerUntil[k]=tNow+6;}
+}
+function zapFinish(sp){const {k,ev}=sp.zap;sp.zap=null;if(sp.state==='fly'||sp.state==='gone')return;
+  bolts.push({x:sp.x,y:sp.y,life:.5,seed:Math.random()*99});
+  if(sp.type==='m'){popMace(sp);if(!story&&!ev.hurt&&duo()){ev.hurt=1;strikeT[k]=-9;strike(k,sp.x,sp.y);}return;}   // battle: zapped thorn balls cost ONE strike at most; story: safe
+  sp.state='fly';sp.face='dizzy';sp.ice=false;sp.vx=(Math.random()-.5)*W;sp.vy=-H*1.2;sp.spin=12;addPts(k,story?PTS[sp.type]:2,sp.x,sp.y);}   // story: full points
+// electric light-blue aura with little flickering sparks
+function drawZapAura(c,x,y,s,t,seed){   // the glow, behind the spider
+  const f=.85+.15*Math.sin(t*38+seed),R=s*1.35*f;
+  const g=c.createRadialGradient(x,y,s*.1,x,y,R);g.addColorStop(0,'rgba(235,252,255,.95)');g.addColorStop(.45,'rgba(80,200,255,.85)');g.addColorStop(.75,'rgba(30,150,240,.45)');g.addColorStop(1,'rgba(30,150,240,0)');
+  c.fillStyle=g;c.beginPath();c.arc(x,y,R,0,Math.PI*2);c.fill();
+}
+function drawZapSparks(c,x,y,s,t,seed){   // flickering sparks, in front of the spider
+  c.save();c.lineCap='round';c.lineJoin='round';
+  for(let i=0;i<5;i++){const a=seed+i*1.26+Math.floor(t*14)*.9,r0=s*.7,r1=s*(1.15+.3*((i*7+Math.floor(t*14))%3)/2);
+    c.beginPath();for(let j=0;j<=3;j++){const rr=r0+(r1-r0)*j/3,aa=a+(j%2?.22:-.12);const px=x+Math.cos(aa)*rr,py=y+Math.sin(aa)*rr;if(!j)c.moveTo(px,py);else c.lineTo(px,py);}
+    c.strokeStyle='#1E8FE0';c.lineWidth=Math.max(4,s*.12);c.stroke();c.strokeStyle='#F2FCFF';c.lineWidth=Math.max(2,s*.05);c.stroke();}
+  c.restore();
 }
 function showLevel(txt,ms=1300){const el=$('lvl');el.textContent=txt;
   // one line, shrinking the font until it fits the screen
@@ -629,6 +645,7 @@ let last=performance.now(),demoNext=0;
 function frame(now){
   const dt=Math.min(.05,(now-last)/1000);last=now;tNow+=dt;
   if(mode==='camera')track(now);
+  for(const sp of spiders)if(sp.zap&&tNow>=sp.zap.t)zapFinish(sp);
 
   if(state==='menu'){ // a couple of spiders dangling for show
     if(tNow>demoNext&&spiders.filter(s=>s.state!=='fly').length<3){level=0;elapsed=0;spawn();demoNext=tNow+1.5;}
@@ -703,7 +720,7 @@ function frame(now){
         for(const rk of rks){
           if(rk.own!==(sp.own||0))continue;   // 2 players: you can only swat your own spiders
           const key=rk.id+sp.id,over=Math.hypot(rk.x-sp.x,rk.y-sp.y)<rk.r+sp.s*.55;
-          if(over&&!prevHit.get(key)&&sp.state!=='fly'){if(sp.type==='m'){if(story&&sp.state!=='hang'){}else if(tNow-strikeT[sp.own]>=1){popMace(sp);strike(sp.own,sp.x,sp.y);}}else hit(sp,rk);}
+          if(over&&!prevHit.get(key)&&sp.state!=='fly'){if(sp.type==='m'){if((story&&sp.state!=='hang')||sp.zap){}else if(tNow-strikeT[sp.own]>=1){popMace(sp);strike(sp.own,sp.x,sp.y);}}else hit(sp,rk);}
           prevHit.set(key,over);
         }
       }
@@ -744,13 +761,15 @@ function render(dt){
   // threads and spiders
   for(const sp of spiders){
     const sw=Math.sin(tNow*1.7+sp.id*9)*.06+sp.swing*.25,len=Math.max(0,sp.y+20);
-    const bx=sp.x+Math.sin(sw)*len*.25,by=sp.y;
+    const zs=sp.zap&&sp.state!=='fly'?sp.s*.1:0,bx=sp.x+Math.sin(sw)*len*.25+(zs?Math.sin(tNow*95+sp.id*40)*zs:0),by=sp.y+(zs?Math.cos(tNow*83+sp.id*30)*zs*.7:0);
+    if(zs)drawZapAura(ctx,bx,by+(sp.type==='m'?0:sp.s*.1),sp.type==='m'?sp.s*1.3:sp.s,tNow,sp.id*50);
     if(sp.state!=='fly'){ctx.strokeStyle='rgba(255,255,255,.95)';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(sp.x,-10);ctx.quadraticCurveTo(sp.x,by*.5,bx,by-sp.s*.4);ctx.stroke();
       ctx.strokeStyle='rgba(43,33,24,.35)';ctx.lineWidth=1;ctx.stroke();}
     else{ctx.save();ctx.translate(sp.x,sp.y);ctx.rotate(sp.rot||0);ctx.scale(sp.k,sp.k);if(sp.type==='m')drawMace(ctx,0,0,sp.s,tNow);else drawSpider(ctx,0,0,sp.s,sp.type,sp.face,tNow,sp.hp,sp.id*10);ctx.restore();continue;}
-    if(sp.type==='m'){drawMace(ctx,bx,by,sp.s,tNow);continue;}
+    if(sp.type==='m'){drawMace(ctx,bx,by,sp.s,tNow);if(zs)drawZapSparks(ctx,bx,by,sp.s*1.3,tNow,sp.id*50);continue;}
     ctx.save();ctx.translate(bx,by);ctx.rotate(-sw*.6);drawSpider(ctx,0,0,sp.s,sp.type==='f'&&sp.ice?'fc':sp.type,sp.face,tNow,sp.hp,sp.id*10,lookAt(bx,by));ctx.restore();
     if(sp.ice)drawIce(ctx,bx,by+sp.s*.1,sp.s,tNow);
+    if(zs)drawZapSparks(ctx,bx,by+sp.s*.1,sp.s,tNow,sp.id*50);
     if(sp.type!=='n'&&sp.hp>0&&state==='play'){ // little hearts show the hits left
       for(let i=0;i<sp.hp;i++){ctx.save();ctx.translate(bx+(i-(sp.hp-1)/2)*sp.s*.32,by+sp.s*.85);sticker(ctx,ell(0,0,sp.s*.09,sp.s*.09),'#FFD84D',2);ctx.restore();}
     }
