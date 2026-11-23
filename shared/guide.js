@@ -5,8 +5,8 @@
 
    Two shapes:
      'face'  head + shoulders, head in the middle of the screen (Duck, Marbles, Glow Spots)
-     'body'  head in the middle, shoulders, arms and trunk visible (Spider Swat, Copy the Sprout, Freeze & Copy seated)
-     'full'  standing, head to toe (Freeze & Copy)
+     'body'  head in the middle, shoulders, arms and trunk visible (Spider Swat, Copy the Sprout, Jungle Pose seated)
+     'full'  standing, head to toe (Jungle Pose)
 
    Margins are deliberately wide: this is "about right", not a measurement.
    Every number that sets the target is in TARGET below so it is easy to tune later.
@@ -99,7 +99,7 @@ export function makeGuide(kind, snd = {}, over = {}) {   // txt: optional per-la
     else if (dy > ty) key = 'lower';          // head too low on the screen -> the phone is aimed too high
     else if (dy < -ty) key = 'raise';
     else if (obs.arms === false) key = 'arms';
-    else if (obs.feet === false) key = 'feet';   // 15 Nov (Freeze & Copy standing): both feet must be in the picture
+    else if (obs.feet === false) key = 'feet';   // 15 Nov (Jungle Pose standing): both feet must be in the picture
     g.inside = !key;
     if (g.inside) {
       g.prog += dt / HOLD; g.hintKey = 'hold';

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>Freeze & Copy · Bamboo Physio</title>
+<title>Jungle Pose · Bamboo Physio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Grandstander:wght@700;900&family=Fredoka:wght@500;600;700&family=Andika:wght@400;700&display=swap" rel="stylesheet">
@@ -33,7 +33,7 @@
 <button class="stopx" id="stopx" aria-label="Stop">✕</button>
 
 <div class="card home" id="start">
-  <h1 id="t-title">Freeze & Copy</h1>
+  <h1 id="t-title">Jungle Pose</h1>
   <p class="sub" id="t-sub"></p>
   <p class="ptime" id="ptime"></p>
   <div class="play-row"><button class="btn" id="play"><span id="t-play">Play</span></button><button class="btn story" id="story"><span>📖 Story</span></button></div>
@@ -79,7 +79,7 @@ import {makeGuide} from '../shared/guide.js';
 import {setupCast} from '../shared/cast.js';
 import {setupHowTo,seg,bigStar} from '../shared/howto.js';
 
-/* Freeze & Copy — v2 "animal statues" (14 Nov 2026, Edgar).
+/* Jungle Pose — v2 "animal statues" (14 Nov 2026, Edgar).
    Raise a hand to spin the animal wheel. The animal it lands on dances, shouts "Freeze!" and turns into a statue
    in its pose; the players copy the statue. Later spins can be MIX-UPS: the top half of one animal glued to the
    bottom half of another (seated: left arm of one, right arm of the other), with a silly mixed name.
@@ -89,7 +89,7 @@ import {setupHowTo,seg,bigStar} from '../shared/howto.js';
    every limb segment (no per-body-part weighting); the statue is shown on its own pedestal, not over the player. */
 
 const UI={
- en:{title:"Freeze & Copy",sub:"Spin the animal wheel, watch it freeze — and copy the statue!",subG:n=>"Copy "+n+" animal statues!",subG2:n=>"First to "+n+" statues wins!",statues:"statues",play:"Play",
+ en:{title:"Jungle Pose",sub:"Spin the animal wheel, watch it freeze — and copy the statue!",subG:n=>"Copy "+n+" animal statues!",subG2:n=>"First to "+n+" statues wins!",statues:"statues",play:"Play",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
   g1:"Raise a hand to spin the wheel. The animal dances, freezes into a funny pose, and you copy it — hold the copy until the jar fills. After a few spins come mix-ups: half one animal, half another. A game lasts 1½ minutes — copy as many statues as you can. One player tries to beat their record; two players race to copy first.",
   body:"Body",full:"Standing",seated:"Seated",who:"Players",solo:"👤 1 player",duo:"👥 2-player race",strict:"Copy",easy:"Easy",medium:"Medium",hard:"Hard",feet:"Step back — show me your feet!",
@@ -104,7 +104,7 @@ const UI={
   spin:"Spin",left:"s",timeup:"Time's up!",blue:"Blue",pink:"Pink",tie:"A tie!",nobody:"Step in front of the camera!",turn:"Turn the phone sideways to play",
   nocam:"No camera here — this game needs a camera.",aria:"Game area",
   story:"📖 Story",storyAt:n=>"📖 "+n+"/30",restart:"↺ Start the story over",theEnd:"The End!",roarBack:"Lion's roar is back!",storyAgain:"↺ Read it again",menu:"Back to the menu"},
- he:{title:"קופאים ומעתיקים",sub:"מסובבים את גלגל החיות, החיה קופאת — ומעתיקים את הפסל!",subG:n=>"מעתיקים "+n+" פסלי חיות!",subG2:n=>"מי שמגיע ראשון ל־"+n+" פסלים מנצח!",statues:"פסלים",play:"שחקו",
+ he:{title:"פוזה בג׳ונגל",sub:"מסובבים את גלגל החיות, החיה קופאת — ומעתיקים את הפסל!",subG:n=>"מעתיקים "+n+" פסלי חיות!",subG2:n=>"מי שמגיע ראשון ל־"+n+" פסלים מנצח!",statues:"פסלים",play:"שחקו",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
   g1:"מרימים יד כדי לסובב את הגלגל. החיה רוקדת, קופאת בתנוחה מצחיקה, ומעתיקים אותה — מחזיקים עד שהצנצנת מתמלאת. אחרי כמה סיבובים מגיעים ערבובים: חצי חיה אחת וחצי חיה אחרת. משחק נמשך דקה וחצי — מעתיקים כמה שיותר פסלים. שחקן אחד מנסה לשבור את השיא שלו; שני שחקנים מתחרים מי מעתיק ראשון.",
   body:"גוף",full:"עמידה",seated:"ישיבה",who:"שחקנים",solo:"👤 שחקן אחד",duo:"👥 מרוץ לשניים",strict:"העתקה",easy:"קל",medium:"בינוני",hard:"קשה",feet:"זוזו אחורה — תראו לי את הרגליים!",
@@ -141,7 +141,7 @@ function segs(){
 }
 let lastNew=false;
 function setLang(l){
-  lang=l;LS.set('bamboo-lang',l);const u=UI[l];
+  lang=l;LS.set('bamboo-lang',l);const u=UI[l];document.title=u.title+' · Bamboo Physio';
   document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
   for(const k of ['title','sub','play','privacy','grown','g1','body','who','strict','music','sfx','g2','g3','g4','legal','sec2','again'])
     {const e=$('t-'+k);if(e)e.textContent=u[k];}
@@ -180,6 +180,24 @@ const FX={
   tick(){tone({f0:1300,dur:.03,type:'triangle',vol:.1});},
   giggle(){[0,1,2,3].forEach(i=>tone({f0:700+i*60,f1:900+i*60,dur:.07,type:'triangle',vol:.12,at:i*.09}));}
 };
+/* 23 Nov (Edgar): in story mode each animal "talks" with its own sound when its speech bubble pops — no dubbing.
+   Lion lost his roar, so he squeaks every time (until the very end: ROAR). A little random pitch each time. */
+const VOICE={
+  lion(r){tone({f0:1500*r,f1:2400*r,dur:.11,type:'sine',vol:.22});tone({f0:2300*r,f1:1600*r,dur:.12,type:'triangle',vol:.14,at:.14});},
+  roar(){tone({f0:150,f1:70,dur:1.4,type:'sawtooth',vol:.32,filter:480,q:.8});tone({f0:200,f1:95,dur:1.3,type:'square',vol:.12,filter:900,q:1});noise({dur:1.3,freq:650,vol:.28});},
+  frog(r){for(let i=0;i<3;i++){tone({f0:270*r,f1:215*r,dur:.08,type:'sawtooth',vol:.26,at:i*.12,filter:950,q:3});tone({f0:250*r,f1:200*r,dur:.06,type:'square',vol:.1,at:i*.12+.05,filter:700,q:2});}},   // talks too fast: ribbit-ribbit-ribbit
+  elephant(r){tone({f0:420*r,f1:760*r,dur:.25,type:'sawtooth',vol:.17,filter:1100,q:2});tone({f0:760*r,f1:520*r,dur:.5,type:'sawtooth',vol:.2,at:.22,filter:1300,q:2});},   // trumpet
+  flamingo(r){[0,.22].forEach((a,i)=>tone({f0:(560+i*140)*r,f1:(500+i*110)*r,dur:.17,type:'square',vol:.14,at:a,filter:1500,q:4}));},   // a posh 'ha-HONK'
+  crab(r){for(let i=0;i<5;i++)noise({dur:.03,freq:3200+i*300,vol:.3,type:'highpass',at:i*.07});tone({f0:170*r,f1:115*r,dur:.32,type:'sawtooth',vol:.13,at:.4,filter:520,q:1});},   // click-click-click… hmph
+  bear(r){tone({f0:140*r,f1:230*r,dur:.35,type:'sawtooth',vol:.18,filter:600,q:1.5});tone({f0:230*r,f1:85*r,dur:.75,type:'sawtooth',vol:.19,at:.3,filter:480,q:1.5});},   // a big sleepy yawn-growl
+  penguin(r){[0,.16,.32].forEach(a=>tone({f0:950*r,f1:620*r,dur:.11,type:'sawtooth',vol:.15,at:a,filter:1600,q:3}));},   // wak-wak-wak
+  pal(r){VOICE.penguin(r*1.3);},
+  bunny(r){tone({f0:1900*r,f1:2700*r,dur:.08,type:'sine',vol:.18});for(let i=0;i<4;i++)noise({dur:.025,freq:4200,vol:.22,type:'highpass',at:.14+i*.065});},   // squeak + nibble-nibble
+  duck(r){tone({f0:620*r,f1:420*r,dur:.13,type:'sawtooth',vol:.42,filter:1300,q:3});tone({f0:640*r,f1:380*r,dur:.16,type:'sawtooth',vol:.38,at:.17,filter:1200,q:3});},   // quack-quack
+  spider(r){for(let i=0;i<5;i++)tone({f0:(1700+i*90)*r,f1:(2000+i*90)*r,dur:.05,type:'triangle',vol:.09,at:i*.075});},   // a tiny shy giggle
+  all(){VOICE.frog(1.1);VOICE.duck(1);setTimeout(()=>VOICE.elephant(1),120);setTimeout(()=>VOICE.lion(1.1),250);FX.great();}
+};
+function voice(who_,line){const r=.9+Math.random()*.22;if(who_==='lion'&&/ROA|רוו/.test(line||''))VOICE.roar();else(VOICE[who_]||VOICE.lion)(r);}
 
 /* ================= CAMERA + POSE TRACKING (on device) ================= */
 const video=$('v');
@@ -461,7 +479,9 @@ function sDrawBG(c,W,H,k,t){
 /* ---------- characters ---------- */
 const S_STAND={uaL:105,faL:95,uaR:75,faR:85,thL:95,shL:90,thR:85,shR:90,tr:-90};
 function sPose(pg){const p={...ANIMALS[IDX[pg.pose[0]]].poses[pg.pose[1]].pose};if(bodyMode!=='full')for(const k of LEGS)p[k]=90;return p;}
-function sFigure(id,x,ground,s,o={}){const i=IDX[id],pose=o.pose||S_STAND;drawAnimal({a:i,b:i,pose},x,ground-s*(bodyMode==='full'?.98:.55),s,o.t??10,o);}
+let STALK=null;   // {who, k 0..1}: the animal whose bubble just popped does a happy little hop
+function sFigure(id,x,ground,s,o={}){const i=IDX[id],pose=o.pose||S_STAND;
+  if(STALK&&STALK.who===id&&STALK.k<1)o={...o,hop:(o.hop||0)-Math.sin(STALK.k*Math.PI)*s*.16};drawAnimal({a:i,b:i,pose},x,ground-s*(bodyMode==='full'?.98:.55),s,o.t??10,o);}
 function sLionPose(pg){const p=sPose(pg);
  if(pg.lion==='stand')return S_STAND;
  if(pg.lion==='wobble')return {...p,tr:-78,uaL:-150,faL:-120,uaR:-30,faR:-60};
@@ -520,6 +540,14 @@ let story=false,sp=+LS.get(SKEY,'0')||0,whoKeep='solo',sFlip=null;
 if(!(sp>=0&&sp<=SN))sp=0;
 
 /* the comic card: 3:2, on the left; the child plays in the rest of the picture */
+/* 23 Nov (Edgar): every page first takes over the WHOLE screen as a little comic (3–5 s): it grows out of the card,
+   the speech bubbles pop up one by one, each with the speaking animal's own sound and a hop, then it shrinks back
+   into the card on the left and the child copies the pose. */
+const S_POP0=.55,S_GAP=1.15,S_HOLD=1.6,S_GROW=.4,S_SHRINK=.45;
+const sShowLen=i=>S_POP0+((i>=SN?SEND.length:SPAGES[i].b.length)-1)*S_GAP+S_HOLD;
+function fullRect(){const y=56,h0=H-y-10,w=Math.min(W-20,h0*1.5),h=w/1.5;return {x:(W-w)/2,y:y+(h0-h)/2,w,h};}
+const sLerpR=(A,B,k)=>({x:A.x+(B.x-A.x)*k,y:A.y+(B.y-A.y)*k,w:A.w+(B.w-A.w)*k,h:A.h+(B.h-A.h)*k});
+const sEase=k=>{k=Math.max(0,Math.min(1,k));return k*k*(3-2*k);};
 function storyRect(){const y=58,hMax=H-y-Math.max(50,H*.1),w=Math.min(W*.6,hMax*1.5);return {x:12,y:y+(hMax-w/1.5)/2,w,h:w/1.5};}
 
 /* speech bubbles drawn in page units (900 × 600), same layout rules as the comic preview:
@@ -528,7 +556,7 @@ function sWrap(t,maxW){const words=t.split(' '),lines=[];let cur='';
   for(const w of words){const tryL=cur?cur+' '+w:w;if(ctx.measureText(tryL).width>maxW&&cur){lines.push(cur);cur=w;}else cur=tryL;}
   if(cur)lines.push(cur);return lines;}
 function sBubbleX(pg,sp_,end){if(end)return .5;if(pg.dangle&&sp_==='spider')return .9;if(sp_==='pal')return .9;if(pg.solo)return sp_==='lion'?.42:.78;return sp_==='lion'?.27:.7;}
-function sBubbles(pg,end,count){
+function sBubbles(pg,end,count,age){
   const W=900,U=W/100,list=end?SEND:pg.b,col={};let prevTop=-99,prevH=0;
   ctx.save();ctx.direction=lang==='he'?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';
   list.forEach((b,k)=>{if(k>=count)return;
@@ -541,43 +569,55 @@ function sBubbles(pg,end,count){
     const L=Math.min(Math.max(cx,w/2/U+1.5),100-w/2/U-1.5),x=L*U,top=y*U;
     const tail=Math.max(x-w/2+U*3,Math.min(x+w/2-U*3,c*W));
     const fill=small?'#FFF1B8':who_==='all'?'#FFE3E8':'#fff';
+    const a=age?age(k):9;ctx.save();   // 23 Nov: each bubble POPS in from its tail: overshoot, then a little wiggle
+    if(a<.6){const q=Math.min(1,a/.28),sc=q<1?q*q*(3-2*q)*1.22:1+.22*Math.max(0,1-(a-.28)/.18)*Math.cos((a-.28)*30),px=tail,py=top+h+U*2;
+      ctx.translate(px,py);ctx.rotate(Math.sin(a*26)*.07*(1-a/.6));ctx.scale(Math.max(.01,sc),Math.max(.01,sc));ctx.translate(-px,-py);}
     const p=new Path2D();p.roundRect(x-w/2,top,w,h,Math.min(h/2,U*4));
     ctx.fillStyle='rgba(43,33,24,.15)';ctx.save();ctx.translate(0,U*.6);ctx.fill(p);ctx.restore();
     const tp=new Path2D();tp.moveTo(tail-U*1.3,top+h-2);tp.lineTo(tail,top+h+U*2);tp.lineTo(tail+U*1.3,top+h-2);tp.closePath();
     ctx.lineWidth=U*.55;ctx.strokeStyle=INK;ctx.lineJoin='round';ctx.fillStyle=fill;ctx.fill(tp);ctx.stroke(tp);ctx.fill(p);ctx.stroke(p);
     ctx.fillStyle=fill;ctx.fillRect(tail-U*1.1,top+h-U*.6,U*2.2,U*.9);   // join the tail to the bubble
-    ctx.fillStyle=INK;lines.forEach((l,i)=>ctx.fillText(l,x,top+U*1.2+f*1.15*(i+.5)+1));
+    ctx.fillStyle=INK;lines.forEach((l,i)=>ctx.fillText(l,x,top+U*1.2+f*1.15*(i+.5)+1));ctx.restore();
     prevTop=y;prevH=h/U;col[c]=y+h/U+3.2;});
   ctx.restore();
 }
 const sBubCount=pg=>(pg?pg.b:SEND).length;
-function drawStoryPage(R,i,t,count){   // i = page index, SN = the last page
+function drawStoryPage(R,i,t,count,age){   // i = page index, SN = the last page
   const end=i>=SN,pg=end?null:SPAGES[i],k=R.w/900;
   ctx.save();const clip=new Path2D();clip.roundRect(R.x,R.y,R.w,R.h,18);ctx.clip(clip);
-  ctx.translate(R.x,R.y);ctx.scale(k,k);sDrawPage(pg,end,t);sBubbles(pg,end,count);ctx.restore();
+  ctx.translate(R.x,R.y);ctx.scale(k,k);sDrawPage(pg,end,t);sBubbles(pg,end,count,age);ctx.restore();
   ctx.save();ctx.lineWidth=4;ctx.strokeStyle=INK;ctx.stroke(clip);ctx.restore();
 }
 function drawStory(){
-  const R=storyRect(),u=UI[lang];
+  const big=phase==='show'||phase==='shrink'||phase==='finale',u=UI[lang];
+  const zoom=phase==='show'?sEase(phaseT/S_GROW):phase==='shrink'?1-sEase(phaseT/S_SHRINK):phase==='finale'?sEase(phaseT/S_GROW):0;
+  const R=zoom>0?sLerpR(storyRect(),fullRect(),zoom):storyRect();
+  if(zoom>0){ctx.fillStyle=`rgba(43,33,24,${.6*zoom})`;ctx.fillRect(0,0,W,H);}   // the room goes dim behind the comic
   // card shadow
   ctx.save();ctx.fillStyle=INK;ctx.beginPath();ctx.roundRect(R.x,R.y+5,R.w,R.h,18);ctx.fill();ctx.restore();
   if(sFlip){ // page turn: the old page folds away, the new one unfolds
     const k=Math.min(1,sFlip.t/.6),half=k<.5,sx=Math.abs(Math.cos(k*Math.PI));
     ctx.save();ctx.translate(R.x+R.w/2,0);ctx.scale(Math.max(.02,sx),1);ctx.translate(-R.x-R.w/2,0);
     SLK=half?1:0;drawStoryPage(R,half?sFlip.from:sp,tNow,half?99:0);SLK=0;ctx.restore();}
-  else{SCHEER=phase==='cheer'||phase==='finale';const e=Math.max(0,Math.min(1,(phaseT-.35)/.7));SLK=phase==='cheer'?e*e*(3-2*e):0;drawStoryPage(R,sp,tNow,phase==='read'?Math.floor(phaseT/1.1)+1:99);SCHEER=false;SLK=0;}
+  else{SCHEER=phase==='cheer'||phase==='finale';const e=Math.max(0,Math.min(1,(phaseT-.35)/.7));SLK=phase==='cheer'?e*e*(3-2*e):0;const n=sBubCount(sp<SN?SPAGES[sp]:null),popped=phase==='show'||phase==='finale'?Math.floor((phaseT-S_POP0)/S_GAP)+1:99;
+    STALK=null;if(phase==='show'||phase==='finale'){const j=Math.min(n,popped)-1,b=j>=0?(sp<SN?SPAGES[sp].b:SEND)[j]:null;if(b)STALK={who:b[0],k:(phaseT-S_POP0-j*S_GAP)/.55};}
+    drawStoryPage(R,sp,tNow,popped,k=>phase==='show'||phase==='finale'?phaseT-S_POP0-k*S_GAP:9);STALK=null;SCHEER=false;SLK=0;}
   const fs=Math.max(15,Math.min(22,R.w*.045)),by=R.y+R.h+fs*1.05;
+  if(big)return;
   if(sp<SN&&target){bubble((lang==='he'?'מחקים: ':'Copy: ')+animalName(target),R.x+R.w/2,by,fs,'#E6F7DE');}
   bubble('📖 '+Math.min(sp+1,SN)+'/'+SN,R.x+R.w+8+(W-R.x-R.w-8)/2,64+fs*.2,fs,'#fff');
 }
 function storyTarget(){const pg=SPAGES[sp],a=IDX[pg.pose[0]];target=makeTarget(a,null,pg.pose[1]);target.frozen=true;}
-function storyPage(){state='play';meters=[0,0];winner=-1;if(sp>=SN){setPhase('finale');target=null;SFX.chime();
+function storyPage(){state='play';meters=[0,0];winner=-1;if(sp>=SN){setPhase('finale');sVoiced=0;target=null;SFX.chime();
     for(let k=0;k<40;k++)pops.push({x:W*.3,y:H*.3,vx:(Math.random()-.5)*W,vy:-H*(.4+Math.random()*.6),life:2});return;}
-  storyTarget();setPhase('read');}
+  storyTarget();setPhase('show');sVoiced=0;}
+let sVoiced=0;
+function sVoices(list){while(sVoiced<list.length&&phaseT>=S_POP0+sVoiced*S_GAP){const b=list[sVoiced];voice(b[0],b[1]);sVoiced++;}}
 function storyUpdate(dt,u){
   phaseT+=dt;
   if(sFlip){sFlip.t+=dt;if(sFlip.t>=.6){sFlip=null;storyPage();}return;}
-  if(phase==='read'){if(phaseT>Math.min(4,sBubCount(SPAGES[sp])*1.1+.3))setPhase('copy');}   // copying may start while the last bubbles appear
+  if(phase==='show'){sVoices(SPAGES[sp].b);if(phaseT>sShowLen(sp))setPhase('shrink');return;}
+  if(phase==='shrink'){if(phaseT>S_SHRINK)setPhase('copy');return;}
   if(phase==='read'||phase==='copy'){
     const p=people[0];lastMatch=[];
     if(p){const r=compare(target.pose,poseOf(p),TOL[strict]);lastMatch[0]={r,p};if(r.legsUnseen&&tNow-feetHintT>3){feetHintT=tNow;say(u.feet,1.4);}
@@ -588,7 +628,7 @@ function storyUpdate(dt,u){
       for(let k=0;k<14;k++)pops.push({x:W*.3,y:H*.3,vx:(Math.random()-.5)*W*.8,vy:-H*(.3+Math.random()*.5),life:1.2});setPhase('cheer');}
   }
   else if(phase==='cheer'){if(phaseT>1.15&&!storyUpdate.joined){storyUpdate.joined=true;SFX.boing();}if(phaseT>2.3){storyUpdate.joined=false;sFlip={from:sp,t:0};sp=Math.min(SN,sp+1);LS.set(SKEY,String(sp));FX.whoosh();target=null;lastMatch=[];}}
-  else if(phase==='finale'){if(phaseT>7)endGame(false);}
+  else if(phase==='finale'){sVoices(SEND);if(phaseT>7)endGame(false);}
 }
 function storyLabel(){const u=UI[lang],b=$('story');if(!b)return;subLine();b.querySelector('span').textContent=sp>0&&sp<SN?u.storyAt(sp+1):u.story;
   $('story-restart').hidden=!(sp>0);$('story-restart').textContent=u.restart;}

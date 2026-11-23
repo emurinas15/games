@@ -768,7 +768,7 @@ function setupSettings() {
 if (typeof document !== 'undefined') setupSettings();
 
 /* ======================= PLAY UNTIL: TIME OR A GOAL (20 Nov, Edgar) =======================
-   Score games (Spider Swat, Jump Race, Freeze & Copy, Bee & Flowers) can end at a goal instead of a clock:
+   Score games (Spider Swat, Jump Race, Jungle Pose, Bee & Flowers) can end at a goal instead of a clock:
    in Settings, "Play until" ⏱ Time / 🎯 Goal, and a slider for the goal (e.g. 10–100 jumps).
    setupGoal({ key, row, min, max, step, def, unit: {en,he}, hide, onChange }) → { get, paint }
      row  = element (or selector) the two new rows go after (default: start of the settings)

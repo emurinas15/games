@@ -82,7 +82,7 @@ export const STYLES = {
     if (i === 4) ev.push(['acoustic_bass', root + 12 > 55 ? root : root + 12, .18, .35, .08]);
     if (k === 0) ev.push(['timpani', root - 12, .22, 1.6, .3]);
     return ev; } },
-  /* Freeze & Copy: bouncy dance party — xylophone melody, nylon-guitar off-beat chops, hopping acoustic bass, a timpani 'freeze' thump each 2 bars */
+  /* Jungle Pose: bouncy dance party — xylophone melody, nylon-guitar off-beat chops, hopping acoustic bass, a timpani 'freeze' thump each 2 bars */
   dance: { bpm: 124, play(s) {
     const { mel, ch, root, i } = at(s), ev = [], k = ((s % STEPS) + STEPS) % STEPS % 32;
     if (mel != null) ev.push(['xylophone', mel, .26, .4, .2]);
