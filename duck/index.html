@@ -148,8 +148,9 @@ details[open] summary::after{content:" ▴"}
 
 <script type="module">
 import {loadSamples,playSample,SONG_NOTES} from '../shared/kit.js';
-import {camLoad,timeoutP} from '../shared/kit.js';
+import {lockOn,camLoad,timeoutP} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
+import {SEE,setupSee} from '../shared/see.js';
 import {setupHowTo,seg,bigStar} from '../shared/howto.js';
 /* ================= TEXT (EN / HE) ================= */
 const UI={
@@ -273,7 +274,7 @@ function makeBuses(a){
 function applyGains(now){
   if(!AC||!BUS.master)return;const t=AC.currentTime;
   const set=(n,v)=>{n.gain.cancelScheduledValues(t);if(now)n.gain.setValueAtTime(v,t);else n.gain.setTargetAtTime(v,t,.08);};
-  set(BUS.master,soundOn?1:0);set(BUS.sfx,sfxOn?1:0);set(BUS.music,musicOn?.205:0);set(BUS.pond,pondOn?.6:0);
+  set(BUS.master,soundOn?1:0);set(BUS.sfx,sfxOn?1:0);set(BUS.music,musicOn?.205*SEE.musicK:0);set(BUS.pond,pondOn?.6*SEE.ambK:0);
 }
 const MU={timer:null,step:0,next:0,on:false,nat:null};
 const mhz=m=>440*Math.pow(2,(m-69)/12);
@@ -521,6 +522,7 @@ function updateFloaters(dt){
 function waterY(x,t){return H*POND_TOP+Math.sin(x/W*9+t*1.3)*H*.004+Math.sin(x/W*23-t*2.1)*H*.002;}
 function drawPond(){
   const top=H*POND_TOP,t=tNow,lw=Math.max(2.5,Math.min(W,H)*.006);
+  if(SEE.on){ctx.fillStyle='#2F86C4';ctx.fillRect(0,top,W,H-top);ctx.fillStyle=INK;ctx.fillRect(0,top-lw/2,W,lw);return;}   // Easy to see: just plain water
   const p=new Path2D();p.moveTo(-4,H+4);for(let x=-4;x<=W+4;x+=8)p.lineTo(x,waterY(x,t));p.lineTo(W+4,H+4);p.closePath();
   const g=ctx.createLinearGradient(0,top,0,H);g.addColorStop(0,'#9FDCF0');g.addColorStop(1,'#5FAED6');
   ctx.save();ctx.fillStyle=g;ctx.fill(p);ctx.lineWidth=lw;ctx.strokeStyle=INK;ctx.lineJoin='round';
@@ -578,9 +580,10 @@ async function startCamera(){
   video.srcObject=stream;await video.play();
   const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
   const files=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
-  const opts=(delegate)=>({baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',delegate},runningMode:'VIDEO',numFaces:1});
+  const opts=(delegate)=>({baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',delegate},runningMode:'VIDEO',numFaces:3});
   try{tracker=await timeoutP(vision.FaceLandmarker.createFromOptions(files,opts('GPU')),30000);}
   catch(e){tracker=await vision.FaceLandmarker.createFromOptions(files,opts('CPU'));}
+  tracker=lockOn(tracker,{kind:'face',players:1});   // 23 Nov: follow only the child's face, never a grown-up behind
   camOK=true;
 }
 let lastVT=-1;
@@ -652,7 +655,7 @@ function updateLook(dt,s){
   duck.hr+=(want-duck.hr)*Math.min(1,dt*5);duck.look+=(amt-duck.look)*Math.min(1,dt*5);
 }
 
-function speed(){const D=DUCKS[kind];return D.base+D.range*level;}
+function speed(){const D=DUCKS[kind];return (D.base+D.range*level)*SEE.slow;}   // Easy to see: 20% slower
 function nextOffCount(){const D=DUCKS[kind];return D.offEvery[0]+Math.floor(Math.random()*(D.offEvery[1]-D.offEvery[0]+1));}
 function resetDuck(){const side=Math.random()<.5?-1:1;Object.assign(duck,{x:0,vs:0,vw:0,wob:0,dropT:0.55,sit:false,splashed:false,hr:0,look:0});newLeg(side);fly.x=fly.tx=side*.6;}
 
@@ -782,8 +785,9 @@ function frame(now){
   kidNeck+=((state==='menu'?H*.58:H*.82)-kidNeck)*Math.min(1,dt*4);
 
   // state logic
-  if(state==='menu'||state==='play'){updateBflies(dt);updateLook(dt,surface());}
-  updateFloaters(dt);
+  // Easy to see: no butterflies and nothing drifting on the pond (less to look at)
+  if(state==='menu'||state==='play'){if(SEE.on)bflies=[];else updateBflies(dt);updateLook(dt,surface());}
+  if(!SEE.on)updateFloaters(dt);else floaters=[];
   if(state==='menu'){
     updateFly(dt,1.1);
     const G=TILT_G.medium*DUCKS[kind].slip,need=K*(-1.3*duck.x-duck.vw)/G;
@@ -811,9 +815,11 @@ function frame(now){
       if(duck.dropT<=0){
         score+=dt;level=Math.min(1,level+dt/90);
         $('score').textContent=Math.floor(score);
-        if(Math.floor(score/10)>starsGiven){starsGiven++;SFX.star();stars.push({t:tNow});}
+        if(Math.floor(score/10)>starsGiven){starsGiven++;SFX.star();stars.push({t:tNow});SEE.say(String(starsGiven*10));}
         if(Math.random()<dt*.12)SFX.quack(0,1+Math.random()*.2);
         if(Math.abs(duck.x)>1.04)fallOff(Math.sign(duck.x),s);
+        // sound guide: beeps from the side the duck is walking off, faster when it is close to the edge
+        else SEE.beacon(Math.sign(duck.x),duck.sit?Math.max(.75,(Math.abs(duck.x)-.4)/.6):(Math.abs(duck.x)-.4)/.6);
       }
     }
   }
@@ -835,7 +841,8 @@ function frame(now){
 function render(now,dt){
   ctx.setTransform(DPR,0,0,DPR,0,0);
   const cam=mode==='camera'&&camOK&&state!=='menu';
-  if(cam&&video.readyState>=2){
+  if(SEE.on){SEE.bg(ctx,W,H);if(cam)SEE.ghost(ctx,video,W,H);}   // Easy to see: plain deep blue, the camera picture only a faint shadow
+  else if(cam&&video.readyState>=2){
     const m=coverMap();ctx.save();ctx.translate(W,0);ctx.scale(-1,1);
     ctx.drawImage(video,W-m.ox-m.vw*m.s,m.oy,m.vw*m.s,m.vh*m.s);ctx.restore();
     ctx.fillStyle='rgba(255,248,236,.08)';ctx.fillRect(0,0,W,H);
@@ -847,8 +854,9 @@ function render(now,dt){
   const showPad=(!(cam&&!head.ok&&state!=='over')||state==='menu')&&!(cam&&state==='ready');
   if(showPad&&state!=='over'||state==='menu'){
     ctx.save();ctx.translate(s.x,s.y);ctx.rotate(s.roll);
+    const dsz=s.half*1.05*(SEE.on?1.2:1);
+    if(SEE.on&&state!=='fall'&&state!=='ready')SEE.halo(ctx,state==='count'?0:duck.x*s.half,(state==='count'?-s.half*1.7:duck.dropT>0?-Math.pow(duck.dropT/.55,2)*H*.5:0)-dsz*.42,dsz*.9);   // the duck glows in the favourite colour
     drawPad(s.half);
-    const dsz=s.half*1.05;
     if(state!=='fall'&&!(state==='ready'||state==='count')){
       let yoff=0;if(duck.dropT>0)yoff=-Math.pow(duck.dropT/.55,2)*H*.5;
       ctx.save();ctx.translate(duck.x*s.half,yoff);if(duck.sit&&Math.abs(duck.vs)>.1){const back=Math.sign(duck.vs);for(let i=0;i<4;i++){ctx.fillStyle=`rgba(255,255,255,${.55-i*.12})`;ctx.fill(ell(-back*(dsz*.32+i*dsz*.16),-dsz*.06,dsz*(.09+i*.02),dsz*(.05+i*.01)));}}
@@ -864,6 +872,7 @@ function render(now,dt){
   drawPond();
   drawSplashes(dt);
   if(state==='fall'){const dz=Math.min(s.half*1.05,Math.min(W,H)*.32);
+    if(SEE.on)SEE.halo(ctx,duck.fx,duck.fy-dz*.42,dz*.9);
     if(!duck.splashed){ctx.save();ctx.translate(duck.fx,duck.fy);drawDuck(ctx,dz,{dir:duck.dir,tumble:duck.spin,wobble:1,t:tNow});ctx.restore();}
     else{const k=tNow-duck.splashed,pop=Math.min(1,Math.max(0,(k-.25)/.35)),bob=Math.sin(k*5)*dz*.025,sd=duck.swimDir||duck.dir,swimming=k>.75;
       // pops back up, shakes off, then paddles away out of the screen with a little wake behind it
@@ -912,6 +921,7 @@ function buildDucks(){
     {dur:2.2,cap:{en:'Keep it on — get stars! ⭐',he:'שומרים עליו — מקבלים כוכבים! ⭐'},draw(c,w,h,t,k){scene(c,w,h,t,0,-.2,0,-.6,{happy:1,stars:k});}}
   ]});
 }
+setupSee({onChange:()=>{applyGains();syncPond();}});
 setLang(lang);
 $('best').textContent=Math.floor(best);
 resetDuck();duck.dropT=0;

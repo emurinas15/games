@@ -83,6 +83,7 @@ html,body{background:#2E8C86}
 import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,startFaceTracker,coverMap,drawMirroredVideo,playSample,loadSamples,drawKid,monkeyCall} from '../shared/kit.js';
 import {camLoad} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
+import {SEE,setupSee} from '../shared/see.js';
 import {setupHowTo,seg,bigStar} from '../shared/howto.js';
 // the whole face must be in the picture with room above the head for the bananas
 const guide=makeGuide('face',{},{target:{size:r=>Math.min(r.w*.42,r.h*.26),sizeMin:.5,sizeMax:2.1,dx:.22,dy:.2}});
@@ -293,7 +294,7 @@ function clampY(p,s){p.y=Math.max(p.y,72+s*.9);p.x=Math.max(s*.5,Math.min(W-s*.5
 function climbPoint(F,d,h,s){const phi=PHI0+(PHI1-PHI0)*ease(Math.max(0,Math.min(1,h)));
   return clampY(faceTo(F,d*Math.sin(phi)*F.rx*1.12,-Math.cos(phi)*F.ry*1.06),s);}
 function bananaPoint(F,d,s){return clampY(faceTo(F,d*F.rx*.34,-F.ry*1.3),s*.6);}
-const monkeySize=F=>Math.max(34,F.rx*.62);
+const monkeySize=F=>Math.max(34,F.rx*.62)*(SEE.on?1.15:1);   // Easy to see: monkeys a bit bigger
 
 /* ================= GAME ================= */
 let state='menu',tNow=0,score=0,countT=0,lastNew=false;
@@ -348,7 +349,8 @@ function reading(lost){
   return r;
 }
 function burst(x,y,n,sz){for(let i=0;i<n;i++){const a=Math.random()*6.28,sp=sz*(2+Math.random()*4);stars.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-sz*2,r:a,life:1+Math.random()*.4,s:sz*(.1+Math.random()*.08)});}}
-function party(){const C=['#FFD84D','#FF8FB8','#7FC8F8','#8BD16B','#FF9A3C','#FFFFFF'];
+function party(){if(SEE.on)return;   // Easy to see: no confetti raining over the whole screen
+  const C=['#FFD84D','#FF8FB8','#7FC8F8','#8BD16B','#FF9A3C','#FFFFFF'];
   for(let i=0;i<70;i++)confetti.push({x:Math.random()*W,y:-20-Math.random()*H*.4,vx:(Math.random()-.5)*60,vy:H*(.25+Math.random()*.25),r:Math.random()*6,vr:(Math.random()-.5)*8,c:C[i%C.length],w:6+Math.random()*7,ban:i%6===0});}
 
 /* the face the monkeys sit on this frame (camera face, or the cartoon child's face) */
@@ -387,6 +389,7 @@ function frame(now){
     }
     else{
       const r=reading(lost);whyNow=r.why||(r.tilted?'level2':'');msg(whyNow);
+      if(r.tilted&&!r.why)SEE.beacon(r.roll>0?1:-1,.55);   // sound guide: beeps on the side of the monkey that is waiting (the low side)
       for(let i=0;i<2;i++){const m=mks[i];
         if(m.got){m.happy=1;m.reach=1;continue;}
         const sp=r.go[i]?BASE:0;
@@ -422,6 +425,7 @@ function drawPlayers(c,F,o){
       if(after<.45){reach=1;five=Math.min(1,cel/SLAP);if(after>0)p.x+=d*s*.06*Math.sin(Math.min(1,after/.15)*Math.PI);}   // hands up and slap
       else{reach=0;const ph=(after-.45)*7+i*Math.PI;dance=-Math.abs(Math.sin(ph))*s*.16;lean+=Math.sin(ph)*.12;}}   // hop + sway, side by side
     c.save();c.translate(p.x,p.y+dance);c.rotate(lean);c.scale(-d,1);   // each monkey faces the middle of the face
+    if(o.see)SEE.halo(c,0,-s*.15,s*1.05);   // Easy to see: each monkey glows in the favourite colour
     drawMonkey(c,0,0,s,{climb:m.ph,reach,five,happy:m.happy||(cel>=0?1:0),...MK_COL[i]});
     if(m.got){   // the banana: up in the hand while waiting, tucked under the other arm for the high five
       if(hiK>0){c.save();c.translate(-s*.36,-s*.02);c.rotate(-.5);drawBanana(c,0,0,s*.5,0);c.restore();}
@@ -437,9 +441,11 @@ function render(dt){
   if(cam&&state==='ready'){if(video.readyState>=2){drawMirroredVideo(ctx,video,W,H);ctx.fillStyle='rgba(30,90,86,.25)';ctx.fillRect(0,0,W,H);}else{ctx.fillStyle=BG;ctx.fillRect(0,0,W,H);}
     guide.draw(ctx,{x:0,y:0,w:W,h:H},lang);return;}
   const F=currentFace();
-  if(cam&&video.readyState>=2)drawMirroredVideo(ctx,video,W,H);
+  if(cam&&SEE.on){SEE.bg(ctx,W,H,BG);SEE.ghost(ctx,video,W,H,.25);   // Easy to see: plain green, the camera picture only a faint shadow,
+    ctx.fillStyle='rgba(255,248,236,.18)';ctx.beginPath();ctx.ellipse(F.cx,F.cy,F.rx*1.05,F.ry*1.05,F.rot,0,7);ctx.fill();}   // and a soft light shape for the face
+  else if(cam&&video.readyState>=2)drawMirroredVideo(ctx,video,W,H);
   else{ctx.fillStyle=BG;ctx.fillRect(0,0,W,H);drawKid(ctx,W,H,W/2,F.neck,F.hw,F.rot,tNow,0,F.pitch);}
-  if(state!=='over')drawPlayers(ctx,F,{mks,celebT,bananaIn,t:tNow});
+  if(state!=='over')drawPlayers(ctx,F,{mks,celebT,bananaIn,t:tNow,see:SEE.on});
   stars=stars.filter(o=>(o.life-=dt)>0);const s=monkeySize(F);
   for(const o of stars){o.vy+=s*6*dt;o.x+=o.vx*dt;o.y+=o.vy*dt;o.r+=dt*4;ctx.save();ctx.globalAlpha=Math.min(1,o.life*1.5);bigStar(ctx,o.x,o.y,o.s*1.6,o.r);ctx.restore();}
   confetti=confetti.filter(o=>o.y<H+40);
@@ -468,6 +474,7 @@ function render(dt){
     {dur:3,cap:{en:'High five! Yummy bananas!',he:'כיף! בננות טעימות!'},draw(c,w,h,t,k){scene(c,w,h,t,1,{h:[1,1],got:1,celebT:k*2.2});}}
   ]});
 }
+setupSee({onChange:()=>syncSound()});
 setLang(lang);
 loadBest();buildBasket();
 requestAnimationFrame(frame);

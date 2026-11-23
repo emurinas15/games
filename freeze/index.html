@@ -74,7 +74,7 @@
 
 <script type="module">
 import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom} from '../shared/kit.js';
-import {camLoad,timeoutP,setupGoal,goalText,fmtTime,goalBest} from '../shared/kit.js';
+import {lockOn,camLoad,timeoutP,setupGoal,goalText,fmtTime,goalBest} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
 import {setupCast} from '../shared/cast.js';
 import {setupHowTo,seg,bigStar} from '../shared/howto.js';
@@ -192,10 +192,11 @@ async function startCam(){
   const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
   const files=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
   const opts=(d,k)=>({baseOptions:{modelAssetPath:`https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_${k}/float16/1/pose_landmarker_${k}.task`,delegate:d},
-    runningMode:'VIDEO',numPoses:2,minPoseDetectionConfidence:.45,minPosePresenceConfidence:.45,minTrackingConfidence:.45});
+    runningMode:'VIDEO',numPoses:4,minPoseDetectionConfidence:.45,minPosePresenceConfidence:.45,minTrackingConfidence:.45});
   let err=null;
   for(const [d,k] of [['GPU','full'],['GPU','lite'],['CPU','lite']]){try{tracker=await timeoutP(vision.PoseLandmarker.createFromOptions(files,opts(d,k)),d==='GPU'?30000:120000);break;}catch(e){err=e;}}
   if(!tracker)throw err||new Error('model');
+  tracker=lockOn(tracker,{kind:'pose',players:()=>who==='duo'?2:1});   // 23 Nov: follow only the player(s), never a grown-up behind
   camOK=true;
 }
 function track(now){

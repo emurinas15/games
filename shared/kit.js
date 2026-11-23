@@ -40,7 +40,7 @@ function makeBuses(a) {
 export function applyGains(now) {
   const a = S.AC, B = S.BUS; if (!a || !B.master) return; const t = a.currentTime;
   const set = (n, v) => { n.gain.cancelScheduledValues(t); if (now) n.gain.setValueAtTime(v, t); else n.gain.setTargetAtTime(v, t, .08); };
-  set(B.master, S.soundOn ? 1 : 0); set(B.sfx, S.sfxOn ? 1 : 0); set(B.music, S.musicOn ? .205 * (S.musicVol ?? 1) : 0); set(B.amb, S.ambOn ? .6 * (S.ambVol ?? 1) : 0);
+  set(B.master, S.soundOn ? 1 : 0); set(B.sfx, S.sfxOn ? 1 : 0); set(B.music, S.musicOn ? .205 * (S.musicVol ?? 1) * (S.musicK ?? 1) : 0); set(B.amb, S.ambOn ? .6 * (S.ambVol ?? 1) * (S.ambK ?? 1) : 0);
 }
 document.addEventListener('visibilitychange', () => { if (!S.AC) return; if (document.hidden) S.AC.suspend(); else if (S.mu.on) S.AC.resume(); });
 
@@ -565,6 +565,83 @@ export function drawKid(c, W, H, cx, neckY, hw, roll, t, yaw = 0, pitch = 0) {
   return { top: { x: cx + Math.sin(roll) * -top, y: neckY + Math.cos(roll) * top }, r, fx, fy, to };
 }
 
+/* ======================= LOCK ON TO THE PLAYER (23 Nov, Edgar) =======================
+   "Sometimes the therapist stands behind the player and the control goes to the therapist's head or hands."
+   The trackers now look for a few extra people, and lockOn() keeps following the SAME person (or the same two
+   people in 2-player games) from frame to frame; everyone else in the picture is removed from the results
+   before the game sees them, so the game code does not change.
+   · Choosing: the biggest person (closest to the phone) near the middle of the picture. For the first 1.5 s the
+     choice can still move to a better candidate (the child settling in front of the phone); then it is locked.
+   · Following: each frame the locked person is the one nearest to where they were, of a similar size.
+   · Lost (child leaves the picture or is hidden): for 3 s only someone back at the same place, of the same size,
+     can take the lock again — a grown-up in the background can't. After 3 s the lock is free again.
+   · The lock is cleared when the game hasn't asked for a picture for 1.5 s (menus, end card), so each round
+     starts fresh. */
+const LOCK = { soft: 1500, lost: 3000, idle: 1500, step: .7, back: .8, size: [.7, 1.45], sizeBack: [.75, 1.35] };   // step/back in face (or shoulder) widths: a grown-up right next to the child is about 1 width away
+export function lockOn(tracker, o = {}) {
+  const kind = o.kind || 'face', want = typeof o.players === 'function' ? o.players : () => (o.players || 1);
+  let locks = [], lastCall = -1e9, lastN = 0, mem = 0;   // mem: size of the last player who was lost this round
+  const people = (res, asp) => {
+    const L = (kind === 'face' ? res.faceLandmarks : res.landmarks) || [], out = [];
+    L.forEach((lm, i) => {
+      const P = j => lm[j] && { x: lm[j].x * asp, y: lm[j].y, v: lm[j].visibility ?? 1 };
+      let a, b;
+      if (kind === 'face') { a = P(234); b = P(454); }
+      else { a = P(11); b = P(12); if (!(a && b && a.v > .3 && b.v > .3)) { const e1 = P(7), e2 = P(8);   // no shoulders: use the head
+          if (e1 && e2 && e1.v > .3 && e2.v > .3) { const c = { x: (e1.x + e2.x) / 2, y: (e1.y + e2.y) / 2 }, w = Math.hypot(e2.x - e1.x, e2.y - e1.y) * 2;
+            out.push({ i, x: c.x, y: c.y + w * .6, s: w }); }
+          return; } }
+      if (!a || !b) return;
+      out.push({ i, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, s: Math.max(1e-4, Math.hypot(b.x - a.x, b.y - a.y)) });
+    });
+    return out;
+  };
+  const score = (p, asp) => p.s * (1 - Math.min(.8, Math.abs(p.x / asp - .5) * 1.2 + Math.abs(p.y - .5) * .4));
+  function choose(res, img, now) {
+    const n = want(), vw = img.videoWidth || img.width || 640, vh = img.videoHeight || img.height || 480, asp = vw / vh;
+    if (now - lastCall > LOCK.idle || n !== lastN) { locks = []; mem = 0; }
+    lastCall = now; lastN = n;
+    const C = people(res, asp), used = new Set(), pick = [];
+    // 1) locked people: nearest candidate of a similar size, closest pairs first
+    const hard = locks.filter(l => now - l.born >= LOCK.soft), pairs = [];
+    for (const l of hard) for (const c of C) {
+      const lost = now - l.seen > 120, d = Math.hypot(c.x - l.x, c.y - l.y) / l.s, r = c.s / l.s, sz = lost ? LOCK.sizeBack : LOCK.size;
+      if (d < (lost ? LOCK.back : LOCK.step) && r > sz[0] && r < sz[1]) pairs.push({ l, c, d });
+    }
+    pairs.sort((a, b) => a.d - b.d);
+    const got = new Set();
+    for (const p of pairs) { if (got.has(p.l) || used.has(p.c.i)) continue; got.add(p.l); used.add(p.c.i); Object.assign(p.l, { x: p.c.x, y: p.c.y, s: p.c.s, seen: now }); p.l.idx = p.c.i; }
+    for (const l of hard) if (!got.has(l)) l.idx = -1;
+    // forget a lock that has been lost for too long
+    for (const l of locks) if (now - l.seen >= LOCK.lost) mem = Math.max(mem, l.s);
+    locks = locks.filter(l => now - l.seen < LOCK.lost);
+    // 2) soft (new) locks and free places: the best remaining candidates
+    const keep = locks.filter(l => now - l.born >= LOCK.soft), soft = locks.filter(l => now - l.born < LOCK.soft);
+    // after a player was lost mid-round, only someone about as big as them (as close to the phone) can take over
+    const free = C.filter(c => !used.has(c.i) && c.s >= mem * .7).sort((a, b) => score(b, asp) - score(a, asp));
+    const slots = Math.max(0, n - keep.length);
+    for (let k = 0; k < slots && free.length; k++) {
+      // a soft lock moves to the best candidate near it if there is one, else to the overall best
+      const sl = soft[k], c = free.shift();
+      if (sl) Object.assign(sl, { x: c.x, y: c.y, s: c.s, seen: now, idx: c.i });
+      else locks.push({ x: c.x, y: c.y, s: c.s, seen: now, born: now, idx: c.i });
+      used.add(c.i);
+    }
+    locks = locks.filter(l => now - l.born >= LOCK.soft || l.seen === now);
+    for (const l of locks) if (l.idx >= 0 && (l.seen === now)) pick.push(l.idx);
+    return pick;
+  }
+  const keys = kind === 'face' ? ['faceLandmarks', 'faceBlendshapes', 'facialTransformationMatrixes'] : ['landmarks', 'worldLandmarks', 'segmentationMasks'];
+  return new Proxy(tracker, { get(t, k) {
+    if (k === 'detectForVideo') return (img, now, ...rest) => {
+      const res = t.detectForVideo(img, now, ...rest); if (!res) return res;
+      const idx = choose(res, img, now), out = { ...res };
+      for (const key of keys) if (Array.isArray(res[key])) out[key] = idx.map(i => res[key][i]).filter(Boolean);
+      return out; };
+    if (k === 'lockReset') return () => { locks = []; mem = 0; };
+    const v = t[k]; return typeof v === 'function' ? v.bind(t) : v; } });
+}
+
 /* ======================= CAMERA / FACE TRACKING ======================= */
 export async function startFaceTracker(video) {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('nocam');
@@ -572,9 +649,10 @@ export async function startFaceTracker(video) {
   video.srcObject = stream; await video.play();
   const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
   const files = await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
-  const opts = d => ({ baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', delegate: d }, runningMode: 'VIDEO', numFaces: 1 });
-  try { return await timeoutP(vision.FaceLandmarker.createFromOptions(files, opts('GPU')), 30000); }
-  catch (e) { return await vision.FaceLandmarker.createFromOptions(files, opts('CPU')); }
+  const opts = d => ({ baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', delegate: d }, runningMode: 'VIDEO', numFaces: 3 });   // 23 Nov: look for 3 faces, lockOn keeps the player's
+  let t; try { t = await timeoutP(vision.FaceLandmarker.createFromOptions(files, opts('GPU')), 30000); }
+  catch (e) { t = await vision.FaceLandmarker.createFromOptions(files, opts('CPU')); }
+  return lockOn(t, { kind: 'face', players: 1 });
 }
 export function coverMap(video, W, H) { const vw = video.videoWidth || 640, vh = video.videoHeight || 480, s = Math.max(W / vw, H / vh); return { vw, vh, s, ox: (W - vw * s) / 2, oy: (H - vh * s) / 2 }; }
 /* landmarks -> mirrored screen points */
@@ -596,9 +674,10 @@ export async function startPoseTracker(video, opt = {}) {   // opt.numPoses: 2 f
   video.srcObject = stream; await video.play();
   const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
   const files = await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
-  const opts = d => ({ baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task', delegate: d }, runningMode: 'VIDEO', numPoses: opt.numPoses || 1 });
-  try { return await timeoutP(vision.PoseLandmarker.createFromOptions(files, opts('GPU')), 30000); }
-  catch (e) { return await vision.PoseLandmarker.createFromOptions(files, opts('CPU')); }
+  const opts = d => ({ baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task', delegate: d }, runningMode: 'VIDEO', numPoses: (opt.numPoses || 1) + 2 });   // 23 Nov: 2 extra, lockOn keeps the player(s)
+  let t; try { t = await timeoutP(vision.PoseLandmarker.createFromOptions(files, opts('GPU')), 30000); }
+  catch (e) { t = await vision.PoseLandmarker.createFromOptions(files, opts('CPU')); }
+  return lockOn(t, { kind: 'pose', players: opt.players || opt.numPoses || 1 });
 }
 /* every person the tracker sees -> an array of point functions like poseFrame's (null if the frame failed) */
 export function poseFrames(tracker, video, now, W, H) {

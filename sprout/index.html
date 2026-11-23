@@ -103,7 +103,7 @@ summary::after{content:" ▾"}details[open] summary::after{content:" ▴"}
 
 <script type="module">
 import {S,audio as kitAudio,musicStart,musicStop,bindSound} from '../shared/kit.js';
-import {camLoad,timeoutP} from '../shared/kit.js';
+import {lockOn,camLoad,timeoutP} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
 import {setupHowTo,seg,bigStar} from '../shared/howto.js';
 import {drawKid as kitKid,sticker as kitStk,ell as kitEll} from '../shared/kit.js';
@@ -358,8 +358,9 @@ async function startCamera(){
   video.srcObject=stream;await video.play();
   const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
   const files=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
-  const opts=d=>({baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',delegate:d},runningMode:'VIDEO',numPoses:1});
+  const opts=d=>({baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',delegate:d},runningMode:'VIDEO',numPoses:3});
   try{tracker=await timeoutP(vision.PoseLandmarker.createFromOptions(files,opts('GPU')),30000);}catch(e){tracker=await vision.PoseLandmarker.createFromOptions(files,opts('CPU'));}
+  tracker=lockOn(tracker,{kind:'pose',players:1});   // 23 Nov: follow only the child, never a grown-up behind
   camOK=true;
 }
 let camRect={x:0,y:0,w:0,h:0};

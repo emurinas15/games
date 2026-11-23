@@ -560,7 +560,7 @@ async function play(){
   if(story){$('best').textContent=story.target;$('t-best').textContent=ST[lang].goal;}
   if(!camTried){
     camTried=true;msg(UI[lang].ready);state='ready';
-    try{tracker=await camLoad(()=>startPoseTracker(video,{numPoses:2}));camOK=true;mode='camera';}
+    try{tracker=await camLoad(()=>startPoseTracker(video,{numPoses:2,players:()=>duo()?2:1}));camOK=true;mode='camera';}
     catch(e){mode='finger';msg('');const t=$('toast');t.textContent=UI[lang].nocam;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),5000);}
   } else mode=camOK?'camera':'finger';
   guide.reset();guides.forEach(g=>g.reset());

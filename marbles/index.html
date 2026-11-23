@@ -78,6 +78,7 @@
 import {INK,$,LS,S,audio,tone,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,drawRoom,drawKid,startFaceTracker,faceFrame,drawMirroredVideo} from '../shared/kit.js';
 import {camLoad,timeoutP} from '../shared/kit.js';
 import {makeGuide} from '../shared/guide.js';
+import {SEE,setupSee} from '../shared/see.js';
 import {setupHowTo,seg,bigStar} from '../shared/howto.js';
 const guide=makeGuide('face');
 
@@ -122,7 +123,8 @@ let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
 let size=LS.get('mp-size','medium'); if(!WIDTH[size])size='medium';
 let count=+LS.get('mp-count','3'); if(![3,5,7].includes(count))count=3;
 const dish='plate';
-function cfg(){return {n:count,rad:.095/WIDTH[size],G:6.5,curve:.9,damp:2.0,dead:.055,bee:[8,12],kick:.65,rim:.8,rimK:2.0};}   // 12 Nov: marbles roll 30% faster (G, bee kick and rim scaled together). 13 Nov: rim 30% less steep (rimK 2.86 -> 2.0)
+// 23 Nov (Edgar): bigger marbles — 30% larger, but never so big that 7 can't sit on the plate side by side
+function cfg(){return {n:count,rad:Math.min(.095*1.3/WIDTH[size],.85/count),G:6.5*SEE.slow,curve:.9,damp:2.0,dead:.055,bee:[8,12],kick:.65,rim:.8,rimK:2.0};}   // 12 Nov: marbles roll 30% faster (G, bee kick and rim scaled together). 13 Nov: rim 30% less steep (rimK 2.86 -> 2.0)
 const STEADY={g:1,d:1};
 // 16 Nov (Edgar): a new marble drops onto the plate every 10 s (with each star). Own records.
 let addOn=LS.get('mp-add','1')==='1';const MAX_ON=12;
@@ -369,7 +371,9 @@ function frame(now){
       physics(dt,s.roll,true);
       updateBee(dt,s);
       if(marbles.length){score+=dt;$('score').textContent=Math.floor(score);
-        if(Math.floor(score/10)>starsGiven){starsGiven++;SFX.star();stars.push({t:tNow});if(addOn)addMarble();}}
+        if(Math.floor(score/10)>starsGiven){starsGiven++;SFX.star();stars.push({t:tNow});SEE.say(String(starsGiven*10));if(addOn)addMarble();}}
+      // sound guide: beeps from the side of the marble nearest the edge, faster as it gets closer
+      const ed=marbles.reduce((a,m)=>!a||Math.abs(m.x)>Math.abs(a.x)?m:a,null);if(ed)SEE.beacon(Math.sign(ed.x),(Math.abs(ed.x)-.45)/.5);
       for(const m of [...marbles])if(Math.abs(m.x)>1.02)fallOff(m,s);
     }
   }
@@ -380,7 +384,8 @@ function frame(now){
 function render(s,dt){
   ctx.setTransform(DPR,0,0,DPR,0,0);
   const cam=mode==='camera'&&camOK&&state!=='menu';
-  if(cam&&video.readyState>=2){drawMirroredVideo(ctx,video,W,H);ctx.fillStyle='rgba(255,248,236,.08)';ctx.fillRect(0,0,W,H);}
+  if(SEE.on){SEE.bg(ctx,W,H);if(cam)SEE.ghost(ctx,video,W,H);}   // Easy to see: plain deep blue, the camera picture only a faint shadow
+  else if(cam&&video.readyState>=2){drawMirroredVideo(ctx,video,W,H);ctx.fillStyle='rgba(255,248,236,.08)';ctx.fillRect(0,0,W,H);}
   else drawRoom(ctx,W,H);
   if(!cam){const hw=Math.min(W*.46,H*.3);drawKid(ctx,W,H,W/2,kidNeck,hw,s.roll,tNow);}
   const show=state!=='over'&&!(cam&&!head.ok)&&!(cam&&state==='ready');
@@ -390,9 +395,10 @@ function render(s,dt){
     ctx.save();ctx.translate(s.x,s.y);ctx.rotate(s.roll+Math.sin(tNow*28)*.05*wob);
     drawDishBack(ctx,dish,h);
     const order=[...marbles].sort((a,b)=>a.id-b.id);
+    if(SEE.on)for(const m of order)SEE.halo(ctx,m.x*h,sh.dip(Math.min(1,Math.abs(m.x)))-r-(m.drop>0?m.drop*m.drop*h*.9:0),r*2.3);   // each marble glows
     for(const m of order){const cx=Math.max(-1,Math.min(1,m.x));let lift=Math.max(0,Math.abs(cx)-cfg().rim)/(1-cfg().rim)*h*.049;
       if(m.drop>0){m.drop=Math.max(0,m.drop-dt*2.8);lift+=m.drop*m.drop*h*.9;}   // new marble falling in
-      drawMarble(ctx,m.x*h,sh.dip(Math.abs(cx))-r-lift,r,m.col,m.spin);}
+      drawMarble(ctx,m.x*h,sh.dip(Math.abs(cx))-r-lift,r,SEE.on?SEE.color:m.col,m.spin);}   // Easy to see: all marbles in the favourite colour
     drawDishFront(ctx,dish,h);
     if(state==='ready'||state==='count'){ctx.globalAlpha=.9;}
     ctx.restore();
@@ -401,10 +407,11 @@ function render(s,dt){
   fallers=fallers.filter(f=>tNow-f.t<2.2);
   for(const f of fallers){
     if(!f.landed){f.vy+=H*2.2*dt;f.x+=f.vx*dt;f.y+=f.vy*dt;f.spin+=dt*10;if(f.y>H*.93){f.landed=true;f.y=H*.93;f.vx*=.5;clack();}}
-    if(f.landed){f.x+=f.vx*dt;f.spin+=f.vx*dt/f.r;ctx.globalAlpha=Math.max(0,Math.min(1,(2.2-(tNow-f.t))*2));drawMarble(ctx,f.x,f.y,f.r,f.col,f.spin);ctx.globalAlpha=1;}
-    else drawMarble(ctx,f.x,f.y,f.r,f.col,f.spin);
+    if(f.landed){f.x+=f.vx*dt;f.spin+=f.vx*dt/f.r;ctx.globalAlpha=Math.max(0,Math.min(1,(2.2-(tNow-f.t))*2));drawMarble(ctx,f.x,f.y,f.r,SEE.on?SEE.color:f.col,f.spin);ctx.globalAlpha=1;}
+    else drawMarble(ctx,f.x,f.y,f.r,SEE.on?SEE.color:f.col,f.spin);
   }
-  if(bee.on)drawBee(ctx,bee.x,bee.y,s.half*.28,tNow,bee.phase==='out'?-bee.side:bee.side*-1);
+  if(bee.on&&(!SEE.on||bee.phase==='sit'))drawBee(   // Easy to see: the bee doesn't fly across the screen, it is only seen on the plate
+   ctx,bee.x,bee.y,s.half*.28,tNow,bee.phase==='out'?-bee.side:bee.side*-1);
   stars=stars.filter(o=>tNow-o.t<1.2);
   for(const o of stars){const k=(tNow-o.t)/1.2,sc=.6+Math.sin(Math.min(1,k*3)*Math.PI/2)*.6;ctx.save();ctx.translate(s.x,s.y-s.half*1.1-k*s.half*1.2);ctx.rotate(k*2);ctx.scale(sc,sc);
     ctx.globalAlpha=1-k*k;sticker(ctx,starPath(s.half*.24),'#FFD84D',4);ctx.restore();}
@@ -431,6 +438,7 @@ function render(s,dt){
     {dur:2.6,cap:{en:'Stars ⭐ — and a new marble!',he:'כוכבים ⭐ — וגולה חדשה!'},draw(c,w,h,t,k){scene(c,w,h,t,0,[...base,.6],{stars:seg(k,0,.6),drop:Math.pow(1-seg(k,.3,.7),2)*1.5});}}
   ]});
 }
+setupSee();
 setLang(lang);
 $('best').textContent=Math.floor(best);
 resetMarbles();
