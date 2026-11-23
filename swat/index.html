@@ -562,8 +562,7 @@ function fireSuper(kind,k){
   if(kind==='zap'){FX.zap();const ev={k,hurt:0};   // 23 Nov (Edgar): every spider and thorn ball glows electric light blue and shakes, then pops
     for(const sp of spiders){if(sp.state==='fly'||sp.state==='gone'||sp.y<0||sp.zap)continue;
       sp.zap={t:tNow+.9,t0:tNow,ev};if(sp.type!=='m'){sp.face='oops';sp.faceT=tNow+1;}if(sp.state==='dodge'){sp.state='hang';sp.y=sp.ty;}sp.life+=1.5;}}
-  else if(kind==='ice'){({x:sp.x,y:sp.y,life:.5,seed:Math.random()*99});
-FX.ice();iceUntil[o]=tNow+8;for(const sp of spiders)if(sp.own===o&&sp.type!=='m'&&sp.state!=='fly'&&sp.state!=='gone'){sp.ice=true;sp.life+=2;if(sp.state==='dodge'){sp.state='hang';sp.y=sp.ty;}}}
+  else if(kind==='ice'){FX.ice();iceUntil[o]=tNow+8;for(const sp of spiders)if(sp.own===o&&sp.type!=='m'&&sp.state!=='fly'&&sp.state!=='gone'){sp.ice=true;sp.life+=2;if(sp.state==='dodge'){sp.state='hang';sp.y=sp.ty;}}}
   else {FX.power();powerUntil[k]=tNow+6;}
 }
 function zapFinish(sp){const {k,ev}=sp.zap;sp.zap=null;if(sp.state==='fly'||sp.state==='gone')return;
