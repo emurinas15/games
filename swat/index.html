@@ -567,7 +567,7 @@ FX.ice();iceUntil[o]=tNow+8;for(const sp of spiders)if(sp.own===o&&sp.type!=='m'
   else {FX.power();powerUntil[k]=tNow+6;}
 }
 function zapFinish(sp){const {k,ev}=sp.zap;sp.zap=null;if(sp.state==='fly'||sp.state==='gone')return;
-  bolts.push({x:sp.x,y:sp.y,life:.5,seed:Math.random()*99});
+  // 23 Nov (Edgar): no yellow bolts from the top any more — the blue glow is the zap
   if(sp.type==='m'){popMace(sp);if(!story&&!ev.hurt&&duo()){ev.hurt=1;strikeT[k]=-9;strike(k,sp.x,sp.y);}return;}   // battle: zapped thorn balls cost ONE strike at most; story: safe
   sp.state='fly';sp.face='dizzy';sp.ice=false;sp.vx=(Math.random()-.5)*W;sp.vy=-H*1.2;sp.spin=12;addPts(k,story?PTS[sp.type]:2,sp.x,sp.y);}   // story: full points
 // electric light-blue aura with little flickering sparks
