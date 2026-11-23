@@ -109,6 +109,7 @@ body.casting .toast{visibility:hidden}
 import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,camLoad,timeoutP,goalText,fmtTime,goalBest,lockOn} from '../shared/kit.js';
 import {setupCast} from '../shared/cast.js';
 import {setupHowTo,bigStar,ease} from '../shared/howto.js';
+import {makeGuide} from '../shared/guide.js';
 import {drawKid} from '../bee/art.js';
 import {drawBat,drawFruit,drawWarn,drawLane,drawOrchard,drawDusk,drawPhew,FRUITS,FRUIT_NAMES,BOWS} from './art.js';
 
@@ -128,7 +129,7 @@ const UI={
   unlocked:"🦇 New! Crazy bats is open. Turn it on in Settings ⚙️ → Speed.",
   music:"Music",amb:"Evening sounds",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
   g1:"A fruit sits on the child's head and follows it. Before each bat, a round bat sign appears where it will come from and its edge fills up (2.5 s normal, 1.5 s fast). A bat from the side at fruit height: duck under it. A low bat from the side: stand up tall (so the child can't just stay down). A bat from the top: step to the side. 3 dodges = the next level and a new fruit; 10 levels. If the bat gets the fruit, a new one drops onto the head — no points are taken off. 2 players: each has their own bats on their half; in “All 10 levels” the first to finish wins.",
-  g2:"★ Stand the phone or tablet up sideways, at about chest height of the child, so the camera sees the head and shoulders. The game starts when the head is in the sunny stripe in the middle of the screen. If the child walks much closer or farther, the bats wait until they're back in place.",
+  g2:"★ Stand the phone or tablet up sideways, at about chest height of the child. Before the game a see-through outline shows where to stand (from the belt up, head in the middle): step into it and hold still until it fills green. If the child walks much closer or farther, the bats wait until they're back in place.",
   g3:"★ The bat sign doesn't blink — it fills up, grows a little and wiggles, so it is safe for children with epilepsy.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
   ready:"Getting ready…",go:"Go!",turn:"Turn the phone sideways to play",nocam:"No camera here. Drag your finger to move the head.",aria:"Game area",
@@ -145,7 +146,7 @@ const UI={
   unlocked:"🦇 חדש! עטלפים משוגעים נפתח. מפעילים בהגדרות ⚙️ ← מהירות.",
   music:"מוזיקה",amb:"צלילי ערב",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
   g1:"פרי יושב על הראש של הילד ונע איתו. לפני כל עטלף מופיע סימן עגול של עטלף במקום שממנו הוא יגיע, והשוליים שלו מתמלאים (2.5 שניות ברגיל, 1.5 במהיר). עטלף מהצד בגובה הפרי: מתכופפים מתחתיו. עטלף נמוך מהצד: נעמדים זקוף (כדי שלא אפשר פשוט להישאר למטה). עטלף מלמעלה: זזים הצידה. 3 התחמקויות = השלב הבא ופרי חדש; 10 שלבים. אם העטלף לוקח את הפרי, פרי חדש נוחת על הראש — לא מורידים נקודות. 2 שחקנים: לכל אחד העטלפים שלו בחצי שלו; ב„כל 10 השלבים” מי שמסיים ראשון מנצח.",
-  g2:"★ העמידו את הטלפון או הטאבלט לרוחב, בערך בגובה החזה של הילד, כך שהמצלמה רואה את הראש והכתפיים. המשחק מתחיל כשהראש בפס השמש באמצע המסך. אם הילד מתקרב או מתרחק הרבה, העטלפים מחכים עד שהוא חוזר למקום.",
+  g2:"★ העמידו את הטלפון או הטאבלט לרוחב, בערך בגובה החזה של הילד. לפני המשחק צורה שקופה מראה איפה לעמוד (מהחגורה ומעלה, הראש באמצע): נכנסים לתוכה ומחזיקים בלי לזוז עד שהיא מתמלאת בירוק. אם הילד מתקרב או מתרחק הרבה, העטלפים מחכים עד שהוא חוזר למקום.",
   g3:"★ סימן העטלף לא מהבהב — הוא מתמלא, גדל קצת ומתנדנד, כך שהוא בטוח לילדים עם אפילפסיה.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
   ready:"מתכוננים…",go:"יוצאים!",turn:"סובבו את הטלפון לרוחב כדי לשחק",nocam:"אין כאן מצלמה. גררו את האצבע כדי להזיז את הראש.",aria:"אזור המשחק",
@@ -242,24 +243,23 @@ function track(now){
   if(!tracker||video.readyState<2||video.currentTime===lastVT)return false;lastVT=video.currentTime;
   let res;try{res=tracker.detectForVideo(video,now);}catch(e){return false;}
   const m=vmap(),L=res.landmarks||[];
+  // found by the SHOULDERS (like Spider Swat) — from a few metres away the face is often too small to be sure of
   people=L.map(lm=>{const p=lm.map(q=>({x:m.ox+(1-q.x)*m.vw*m.s,y:m.oy+q.y*m.vh*m.s,v:q.visibility??1}));
-    const hs=[0,7,8].filter(i=>p[i].v>.4),hy=hs.length?hs.reduce((a,i)=>a+p[i].y,0)/hs.length:p[0].y;
-    return {nose:p[0],hx:p[0].x,hy,sw:Math.hypot(p[11].x-p[12].x,p[11].y-p[12].y),cx:p[0].x,ok:p[0].v>.5};}).filter(p=>p.ok);
+    const sw=Math.hypot(p[11].x-p[12].x,p[11].y-p[12].y),sx=(p[11].x+p[12].x)/2,sy=(p[11].y+p[12].y)/2;
+    const hs=[0,7,8].filter(i=>p[i].v>.4);
+    const hx=hs.length?hs.reduce((a,i)=>a+p[i].x,0)/hs.length:sx, hy=hs.length?hs.reduce((a,i)=>a+p[i].y,0)/hs.length:sy-sw*.75;
+    const nose=p[0].v>.4?p[0]:{x:hx,y:hy};
+    return {nose,hx,hy,sw,cx:sx,ok:p[11].v>=.4&&p[12].v>=.4&&sw>4};}).filter(p=>p.ok);
   people.sort((a,b)=>a.cx-b.cx);
   if(mode==='solo'&&people.length>1)people=[people.reduce((a,b)=>b.sw>a.sw?b:a)];
   return true;
 }
-const SIZE=()=>mode==='duo'?[.16,.3,.6]:[.08,.15,.34];   // shoulder width ÷ lane width: min, ideal, max
-function fit(p,lane){
-  if(!p)return 'find';
-  const [mn,mid,mx]=SIZE(),r=p.sw/lane.w;
-  if(p.nose.y<H*BAND[0])return r>=mid*.85?'high_back':'high_tilt';
-  if(p.nose.y>H*BAND[1])return r<=mid*1.15?'low_closer':'low_tilt';
-  if(r<mn)return 'closer';
-  if(r>mx)return 'back';
-  return '';
-}
-
+/* 23 Nov (Edgar): the same setup as Spider Swat — the see-through outline that fills green while the child holds still.
+   1 player: the Swat 'reach' outline, a little lower and smaller so the fruit ends up around the middle of the screen
+   with room to duck and to stand up again. 2 players: Swat's 2-player outline (reachLow) on each half. Hands not required. */
+const GTXT={en:{find:'Stand in front of the camera'},he:{find:'עמדו מול המצלמה'}};
+const guide=makeGuide('reach',{},{...GTXT,target:{y:.46,size:r=>Math.min(r.w*.22,r.h*.25),portrait:null}});
+const guides=[makeGuide('reachLow',{},GTXT),makeGuide('reachLow',{},GTXT)];
 /* ================= PLAYERS ================= */
 function lanes(){return mode==='duo'?[{x:0,w:W/2,dir:1},{x:W/2,w:W/2,dir:-1}]:[{x:0,w:W,dir:1}];}
 let players=[];
@@ -341,9 +341,11 @@ async function play(){
     catch(e){console.warn(e);toast(UI[lang].nocam,6000);}}
   players=lanes().map((_,k)=>makePlayer(k));elapsed=0;pops=[];lastRes=null;lastSec=99;setupT=0;badT=0;
   $('stopx').classList.add('on');musicStart();
+  guide.reset();guides.forEach(g=>g.reset());
   if(camOK)state='setup';
   else{players.forEach(P=>{const u=Math.min(H*.2,P.ln.w*.25);P.ref={top:H*.5-u*.45,u,sw:u};P.fake={x:P.ln.x+P.ln.w/2,y:H*.5};});startCount();}
 }
+function hideGuides(){guide.hide();guides.forEach(g=>g.hide());}
 function startCount(){state='count';countT=tNow;lastCount=9;}
 $('play').onclick=play;$('again').onclick=()=>play();
 $('menu').onclick=()=>{$('end').hidden=true;$('start').hidden=false;state='menu';segs();};
@@ -356,7 +358,7 @@ addEventListener('pointerup',()=>press=false);
 function moveFake(e){const k=mode==='duo'&&e.clientX>W/2?1:0,P=players[k];if(P)P.fake={x:e.clientX,y:e.clientY};}
 
 function endGame(quit){
-  state='over';musicStop();$('stopx').classList.remove('on');
+  hideGuides();state='over';musicStop();$('stopx').classList.remove('on');
   if(quit){state='menu';$('start').hidden=false;segs();return;}
   FX.whistle();
   const A=players[0],B=players[1];
@@ -450,13 +452,13 @@ function frame(now){
   if(camOK)track(now);
   if(portraitPlay()){render(dt);requestAnimationFrame(frame);return;}
   if(state==='setup'){
-    const ok=players.every(P=>!fit(personFor(P.k),P.ln));
-    if(ok){setupT+=dt;
-      players.forEach(P=>{const p=personFor(P.k);P.cal=P.cal||[];P.cal.push(p);});
-      if(setupT>1.2){players.forEach(P=>{const c=P.cal.slice(-20),sw=c.reduce((a,p)=>a+p.sw,0)/c.length,hy=c.reduce((a,p)=>a+p.hy,0)/c.length;
-        P.ref={sw,u:sw,top:hy-sw*.45};P.head=null;});startCount();}}
-    else{setupT=Math.max(0,setupT-dt*2);players.forEach(P=>P.cal=[]);}
-    badT=setupT>0?0:badT+dt;
+    const ob=p=>p?{x:p.nose.x,y:p.nose.y,size:p.sw}:null;
+    players.forEach(P=>{const p=personFor(P.k);if(p){P.cal=P.cal||[];P.cal.push(p);if(P.cal.length>20)P.cal.shift();}});
+    const done=mode==='duo'?guides.map((g,k)=>g.update(dt,ob(personFor(k)),{...lanes()[k],y:0,h:H})==='done').every(Boolean):guide.update(dt,ob(personFor(0)),{x:0,y:0,w:W,h:H})==='done';
+    if(done){players.forEach(P=>{const c=P.cal&&P.cal.length?P.cal:null;
+        const sw=c?c.reduce((a,p)=>a+p.sw,0)/c.length:Math.min(W,H)*.2,hy=c?c.reduce((a,p)=>a+p.hy,0)/c.length:H*.46;
+        P.ref={sw,u:sw,top:hy-sw*.45};P.head=null;});
+      hideGuides();startCount();}
   }
   else if(state==='count'){
     const n=3-Math.floor(tNow-countT);if(n!==lastCount){lastCount=n;if(n>0)SFX.tick();}
@@ -494,26 +496,6 @@ function drawTurnPhone(){
   ctx.strokeStyle=INK;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.arc(cx,cy,s*.85,-Math.PI*.9,-Math.PI*.55);ctx.stroke();
   bubble(UI[lang].turn,W/2,H*.72,Math.max(18,Math.min(26,W*.05)));
 }
-function drawSetup(fs){
-  const y0=H*BAND[0],y1=H*BAND[1],g=ctx.createLinearGradient(0,y0-H*.06,0,y1+H*.06);
-  g.addColorStop(0,'rgba(255,226,120,0)');g.addColorStop(.25,'rgba(255,226,120,.45)');g.addColorStop(.75,'rgba(255,226,120,.45)');g.addColorStop(1,'rgba(255,226,120,0)');
-  ctx.fillStyle=g;ctx.fillRect(0,y0-H*.06,W,y1-y0+H*.12);
-  const u=UI[lang],L=lanes();
-  bubble(mode==='duo'?u.two:u.band,W/2,H*.17,fs);
-  L.forEach((ln,k)=>{const p=personFor(k),why=fit(p,ln),cx=ln.x+ln.w/2;
-    if(why&&(why!=='find'||mode==='solo'||people.length))bubble(u[why],cx,H*.86,fs*.8,'#FFF3C4');
-    if(p){const ok=!why;drawFruit(ctx,p.hx,p.hy-p.sw*.7,Math.max(14,p.sw*.22),FRUITS[0],tNow,{mood:ok?'yay':'happy'});}});
-  if(badT>5)L.forEach((ln,k)=>drawGhost(ln,k,personFor(k),fs));
-  if(setupT>0){const n=Math.ceil(Math.min(1,setupT/1.2)*5);for(let i=0;i<5;i++)sticker(ctx,ell(W/2+(i-2)*fs*1.3,H-fs*1.3,fs*.42,fs*.42),i<n?'#FFD84D':'#fff',3);}
-}
-function drawGhost(ln,k,p,fs){
-  const mid=SIZE()[1]*ln.w,T=2.6,q=(tNow%T)/T,m=ease(Math.min(1,q/.6));
-  const to={x:ln.x+ln.w/2,y:H*(BAND[0]+BAND[1])/2,sw:mid};
-  const from=p?{x:p.nose.x,y:p.nose.y,sw:p.sw}:{x:ln.dir>0?ln.x-mid:ln.x+ln.w+mid,y:to.y,sw:mid};
-  const sw=from.sw+(to.sw-from.sw)*m,x=from.x+(to.x-from.x)*m,ny=from.y+(to.y-from.y)*m,s=sw/.9,bob=q<.6?Math.abs(Math.sin(q*30))*s*.06:0;
-  ctx.save();ctx.globalAlpha=.6;drawKid(ctx,x,ny+1.65*s-bob,s,'stand',mode==='duo'?['#BFE3FF','#FFD1DC'][k]:'#BFE3FF',tNow);ctx.restore();
-  if(q>.6)bubble(UI[lang].like,to.x,to.y-s*2.1,fs*.85,'#FFF3C4');
-}
 function drawPlayer(P){
   const u=UI[lang],f=P.fruit,fp=fruitPos(P),r=FR(P),ln=P.ln;
   if(mode==='duo'){ctx.save();ctx.beginPath();ctx.rect(ln.x,0,ln.w,H);ctx.clip();}
@@ -546,7 +528,7 @@ function render(dt){
   if(portraitPlay()){drawTurnPhone();return;}
   drawOrchard(ctx,W,H,tNow);
   const fs=Math.max(18,Math.min(26,W*.035));
-  if(state==='setup'){drawSetup(fs);return drawPops(dt);}
+  if(state==='setup'){if(mode==='duo')guides.forEach((g,k)=>g.draw(ctx,{...lanes()[k],y:0,h:H},lang));else guide.draw(ctx,{x:0,y:0,w:W,h:H},lang);return drawPops(dt);}
   if(mode==='duo'){ctx.save();ctx.setLineDash([2,14]);ctx.lineCap='round';ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(W/2,90);ctx.lineTo(W/2,H-20);ctx.stroke();ctx.restore();}
   if(!camOK)players.forEach(P=>{if(P.head){const u2=P.ref.u*.55,stand=P.ref.top,duck=P.head.y-stand>P.ref.u*.3;drawKid(ctx,P.head.x,P.head.y+u2*2.35*(duck?.72:1),u2,duck?'mid':'stand',mode==='duo'?['#BFE3FF','#FFD1DC'][P.k]:'#BFE3FF',tNow);}});
   if(state==='play'||state==='over'||state==='count')players.forEach(drawPlayer);
@@ -626,7 +608,7 @@ function icons(){
   ]});
 }
 
-window.__P=()=>players;window.__state=()=>({state,elapsed});
+window.__P=()=>players;window.__setup=()=>{camOK=true;players=lanes().map((_,k)=>makePlayer(k));guide.reset();guides.forEach(g=>g.reset());state='setup';$('start').hidden=true;};window.__sim=a=>{people=a;};window.__state=()=>({state,elapsed});
 setLang(lang);icons();
 document.fonts&&document.fonts.ready.then(icons);
 requestAnimationFrame(frame);
