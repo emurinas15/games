@@ -291,6 +291,24 @@ export const STYLES = {
     else ev.push(['~cajonS', 0, .12, 0, 0, sw]);          // ghost taps
     if (i === 0 && k % 16 === 0) ev.push(['~tamb', 0, .3, 0, 0]);   // tambourine every 8 beats (2 bars), very gentle
     return ev.map(e => (e[2] *= 1.05, e)); } },
+  /* Fruit Bat (23 Nov): a warm evening in the orchard — woody recorder on the tune, rippling harp, soft vibraphone
+     off-beat chords, plucked acoustic bass, a gentle shaker; little harp "flutters" (like wings) at the end of each 8 bars.
+     Same core melody, C major. */
+  orchard: { bpm: 108, play(s) {
+    const { mel, ch, root, i, sec } = at(s), ev = [], k = ((s % STEPS) + STEPS) % STEPS, b8 = k % 64, sw = i % 2 ? .035 : 0;
+    if (sec === 'end' && k >= STEPS - 8) {
+      if (i === 0) { ev.push(['recorder', 72, .3, 1.8, .35]); ch.forEach((n, j) => ev.push(['orchestral_harp', n + 12, .16, 2.4, .4, j * .06])); ev.push(['acoustic_bass', root, .22, 1.6, .1]); ev.push(['vibraphone', 84, .12, 2.5, .5, .2]); }
+      return ev; }
+    if (mel != null) ev.push(['recorder', mel, .27, .42, .3, sw]);
+    if (i === 0) ev.push(['acoustic_bass', root, .22, .5, .08]);
+    if (i === 4) ev.push(['acoustic_bass', root + 7 > 52 ? root - 5 : root + 7, .17, .4, .08]);
+    if (i === 3) ev.push(['acoustic_bass', root + 12 > 55 ? root : root + 12, .1, .2, .08, sw]);
+    const arp = [ch[0], ch[1], ch[2], ch[1] + 12][i % 4];
+    if (i % 2 === 0) ev.push(['orchestral_harp', arp, .1, .9, .35]);
+    if (i === 2 || i === 6) for (const n of ch) ev.push(['vibraphone', n + 12, .045, .5, .45]);
+    ev.push(['~shaker', 0, i % 2 ? .3 : .16, 0, 0, sw]);
+    if (b8 === 60) [79, 81, 84, 86, 88].forEach((n, j) => ev.push(['orchestral_harp', n, .07 + j * .01, .5, .4, j * .05]));
+    return ev; } },
   /* Banana Head (18 Nov, Edgar): tropical, funny and goofy — bouncy marimba melody with little 'slide-up' grace notes,
      staccato bassoon 'boop' bass doubled by a plucky acoustic bass, low marimba off-beat chords (calypso), bongos and a
      shaker, a goofy xylophone run + slide whistle at the end of every 8 bars, and monkeys 'ooh-ooh-ah-ah' far in the

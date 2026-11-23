@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Fruit Bat · Bamboo Physio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Grandstander:wght@700;900&family=Fredoka:wght@500;600;700&family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/kit.css">
+<style>
+.stopx{position:fixed;left:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:7;width:44px;height:44px;border-radius:50%;background:#fff;border:3px solid var(--ink);font:900 20px Fredoka,sans-serif;box-shadow:0 3px 0 var(--ink);display:none;cursor:pointer}
+.stopx.on{display:block}
+.snd.cast{font-size:19px}
+.lv b{display:block;font:700 14px Fredoka,sans-serif}
+.levels.modes .lv{max-width:170px}
+.levels.modes .lv canvas{width:110px;height:64px}
+.btn2{display:block;margin:10px auto 0;background:#fff;border:3px solid var(--ink);border-radius:999px;padding:6px 18px;font:700 16px Fredoka,sans-serif;color:var(--ink);box-shadow:0 3px 0 var(--ink);cursor:pointer}
+.btn2:active{transform:translateY(3px);box-shadow:0 0 0 var(--ink)}
+.best{font:700 15px Fredoka,sans-serif;margin:-4px 0 8px;text-align:center;min-height:18px}
+.vs-names{display:flex;justify-content:center;gap:28px;font:700 15px Fredoka,sans-serif;margin:-2px 0 10px}
+.seg button.locked{opacity:.55;background:repeating-linear-gradient(0deg,#f3eefa,#f3eefa)}
+.crazy-info{background:#F3EAFB;border:3px solid var(--ink);border-radius:16px;padding:8px 12px;margin:4px 0 8px;font:600 14px Fredoka,sans-serif}
+.crazy-info.shake{animation:shk .45s}
+@keyframes shk{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.unlock{font:700 16px Fredoka,sans-serif;background:#F3EAFB;border:3px solid var(--ink);border-radius:16px;padding:6px 12px;margin:0 auto 10px;max-width:340px}
+body.casting .toast{visibility:hidden}
+@media (max-height:520px){
+  .card{padding:10px 14px 8px}
+  h1{font-size:26px}
+  .sub{display:none}
+  .levels{margin:0 0 8px}
+  .levels.modes .lv canvas{width:76px;height:44px}
+  .btn{font-size:24px;padding:6px 0 5px}
+  .note{margin:6px 4px 2px}
+  .big-score{font-size:46px}
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<video id="v" playsinline muted></video>
+
+<div class="top">
+  <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 33 C 10 20, 20 9, 34 6 C 33 20, 24 31, 8 33 Z" fill="#7DCB6B" stroke="#2b2118" stroke-width="3.5" stroke-linejoin="round"/><path d="M11 30 C 17 23, 23 16, 29 11" fill="none" stroke="#2b2118" stroke-width="2.5" stroke-linecap="round"/></svg><span>Bamboo Physio</span></div>
+  <div class="tr"><button class="snd cast" id="cast">📺</button><button class="snd" id="snd" aria-pressed="false">🔊</button>
+  <div class="lang"><button id="lang-en" aria-pressed="true">EN</button><button id="lang-he" aria-pressed="false">עב</button></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+<button class="stopx" id="stopx" aria-label="Stop">✕</button>
+
+<div class="card home" id="start">
+  <h1 id="t-title">Fruit Bat</h1>
+  <p class="sub" id="t-sub"></p>
+  <button class="btn" id="play"><span id="t-play">Play</span></button>
+  <div class="levels modes" id="modes">
+    <button class="lv" data-m="solo"><canvas width="220" height="128"></canvas><b id="t-solo"></b></button>
+    <button class="lv" data-m="duo"><canvas width="220" height="128"></canvas><b id="t-duo"></b></button>
+  </div>
+  <div class="best" id="best"></div>
+  <p class="note" id="t-privacy"></p>
+  <details id="grown">
+    <summary id="t-grown">For grown-ups</summary>
+    <div class="g-body">
+      <div class="g-row"><span id="t-until">Play until</span>
+        <div class="seg" id="until-seg"><button data-v="levels"></button><button data-v="time"></button></div></div>
+      <div class="g-row"><span id="t-speed">Speed</span>
+        <div class="seg" id="speed-seg"><button data-v="normal"></button><button data-v="fast"></button><button data-v="crazy"></button></div></div>
+      <div class="crazy-info" id="crazy-info"></div>
+      <div class="g-row"><span id="t-music">Music</span>
+        <div class="seg" id="music-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-amb">Evening sounds</span>
+        <div class="seg" id="amb-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-sfx">Sound effects</span>
+        <div class="seg" id="sfx-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <p id="t-g1"></p>
+      <p id="t-g2"></p>
+      <p id="t-g3"></p>
+      <p class="mini" id="t-legal"></p>
+    </div>
+  </details>
+</div>
+
+<div class="card" id="end" hidden>
+  <h1 id="t-over"></h1>
+  <div class="big-score" dir="ltr"><span id="final">0</span></div>
+  <div class="vs-names" dir="ltr"><span id="n-left"></span><span id="n-right"></span></div>
+  <div class="unlock" id="unlock" hidden></div>
+  <button class="btn" id="again"><span id="t-again">Play again</span></button>
+  <button class="btn2" id="menu"></button>
+  <p class="note" id="t-privacy2"></p>
+</div>
+
+<script type="module">
+/* Fruit Bat — Edgar 23 Nov 2026.
+   A fruit sits on the child's head (it follows the head). A hungry fruit bat wants it.
+   · Before every bat: a round sticker with the bat peeking out appears where it will come from; its edge fills up
+     (2.5 s normal, 1.5 s fast) and a soft see-through stripe shows its path. It grows a little and wiggles at the end.
+     No blinking (safe for children with epilepsy).
+   · From the side at fruit height  -> DUCK under it.
+   · From the side, LOW (so the child can't just stay down) -> STAND UP tall.
+   · From the top, straight down over the fruit -> STEP to the side.
+   · 3 dodges = next level, and a new fruit (what fruit bats really eat). 10 levels; a bat every 4 s at level 1,
+     every 2 s at level 10 (fast: 3.2 s -> 1.6 s, bats overlap now and then).
+   · Settings: play until all 10 levels / 1 minute; speed normal / fast / crazy bats (locked until all 10 levels are done).
+   · Grab = the bat flies off munching; a new fruit drops onto the head after 1 s. No points are taken off.
+   Only the head is tracked (where it is + how big the shoulders are). Nothing is recorded or sent. */
+import {INK,$,LS,S,audio,tone,noise,SFX,musicStart,musicStop,bindSound,ell,sticker,starPath,camLoad,timeoutP,goalText,fmtTime,goalBest,lockOn} from '../shared/kit.js';
+import {setupCast} from '../shared/cast.js';
+import {setupHowTo,bigStar,ease} from '../shared/howto.js';
+import {drawKid} from '../bee/art.js';
+import {drawBat,drawFruit,drawWarn,drawLane,drawOrchard,drawDusk,drawPhew,FRUITS,FRUIT_NAMES,BOWS} from './art.js';
+
+const ROUND=60,LEVELS=10,PER=3,BAND=[.4,.6];
+const IV=[4.0,3.8,3.5,3.3,3.0,2.8,2.6,2.4,2.2,2.0];   // seconds between bats, by level (normal)
+const SPEED={
+  normal:{warn:2.5,iv:1,  side:1.9, dive:1.45,gap:1.1, pair:0},
+  fast:  {warn:1.5,iv:.8, side:1.4, dive:1.1, gap:.8,  pair:0},
+  crazy: {warn:1.2,iv:.62,side:1.15,dive:.9,  gap:.55, pair:.35}   // unlocked by finishing all 10 levels
+};
+const UI={
+ en:{title:"Fruit Bat",sub:"Keep the fruit on your head — don't let the bat get it!",subT:"Dodge as many bats as you can in 1 minute!",play:"Play",solo:"1 player",duo:"2 players",
+  privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
+  until:"Play until",levels:"🏁 All 10 levels",time:"⏱ 1 minute",speed:"Speed",normal:"Normal",fast:"Fast",crazy:"🦇 Crazy bats",crazyL:"🔒 Crazy bats",
+  crazyLocked:"🔒 Crazy bats is locked. To open it: in “Play until” choose “🏁 All 10 levels” and finish level 10 (normal or fast). Then come back here to Settings ⚙️ → Speed and tap “🦇 Crazy bats”.",
+  crazyOpen:"🦇 Crazy bats is open! Bats come faster, sometimes two at once. Turn it on here: Speed → “🦇 Crazy bats”.",
+  unlocked:"🦇 New! Crazy bats is open. Turn it on in Settings ⚙️ → Speed.",
+  music:"Music",amb:"Evening sounds",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
+  g1:"A fruit sits on the child's head and follows it. Before each bat, a round bat sign appears where it will come from and its edge fills up (2.5 s normal, 1.5 s fast). A bat from the side at fruit height: duck under it. A low bat from the side: stand up tall (so the child can't just stay down). A bat from the top: step to the side. 3 dodges = the next level and a new fruit; 10 levels. If the bat gets the fruit, a new one drops onto the head — no points are taken off. 2 players: each has their own bats on their half; in “All 10 levels” the first to finish wins.",
+  g2:"★ Stand the phone or tablet up sideways, at about chest height of the child, so the camera sees the head and shoulders. The game starts when the head is in the sunny stripe in the middle of the screen. If the child walks much closer or farther, the bats wait until they're back in place.",
+  g3:"★ The bat sign doesn't blink — it fills up, grows a little and wiggles, so it is safe for children with epilepsy.",
+  legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
+  ready:"Getting ready…",go:"Go!",turn:"Turn the phone sideways to play",nocam:"No camera here. Drag your finger to move the head.",aria:"Game area",
+  band:"Put your head in the sunny stripe",two:"Two players: both heads in the sunny stripe",high_back:"Head too high — step back a little",high_tilt:"Head too high — tilt the phone down a little",low_closer:"Head too low — come a little closer",low_tilt:"Head too low — tilt the phone up a little",like:"Stand like this",
+  closer:"Come a little closer",back:"Step back a little",find:"Stand in front of the camera",wait:"The bats are waiting…",
+  yum:"Yum!",phew:"Phew!",level:n=>"Level "+n,allDone:"All 10 levels!",
+  blue:"Blue",pink:"Pink",winL:"Blue wins!",winR:"Pink wins!",tie:"A tie!",best:n=>"Best: "+n+" 🦇",bestT:t=>"Fastest: "+t,newBest:"New record!",great:"Great job!",
+  dodged:n=>n+" bats dodged",reached:n=>"Level "+n,playagain:"Play again",menu:"Menu"},
+ he:{title:"עטלף הפירות",sub:"שמרו על הפרי שעל הראש — אל תתנו לעטלף לקחת אותו!",subT:"התחמקו מכמה שיותר עטלפים בדקה אחת!",play:"שחקו",solo:"שחקן אחד",duo:"2 שחקנים",
+  privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
+  until:"משחקים עד",levels:"🏁 כל 10 השלבים",time:"⏱ דקה אחת",speed:"מהירות",normal:"רגיל",fast:"מהיר",crazy:"🦇 עטלפים משוגעים",crazyL:"🔒 עטלפים משוגעים",
+  crazyLocked:"🔒 עטלפים משוגעים נעול. כדי לפתוח: ב„משחקים עד” בחרו „🏁 כל 10 השלבים” וסיימו את שלב 10 (רגיל או מהיר). אחר כך חזרו לכאן, להגדרות ⚙️ ← מהירות, ולחצו על „🦇 עטלפים משוגעים”.",
+  crazyOpen:"🦇 עטלפים משוגעים פתוח! העטלפים מהירים יותר, ולפעמים שניים בבת אחת. מפעילים כאן: מהירות ← „🦇 עטלפים משוגעים”.",
+  unlocked:"🦇 חדש! עטלפים משוגעים נפתח. מפעילים בהגדרות ⚙️ ← מהירות.",
+  music:"מוזיקה",amb:"צלילי ערב",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
+  g1:"פרי יושב על הראש של הילד ונע איתו. לפני כל עטלף מופיע סימן עגול של עטלף במקום שממנו הוא יגיע, והשוליים שלו מתמלאים (2.5 שניות ברגיל, 1.5 במהיר). עטלף מהצד בגובה הפרי: מתכופפים מתחתיו. עטלף נמוך מהצד: נעמדים זקוף (כדי שלא אפשר פשוט להישאר למטה). עטלף מלמעלה: זזים הצידה. 3 התחמקויות = השלב הבא ופרי חדש; 10 שלבים. אם העטלף לוקח את הפרי, פרי חדש נוחת על הראש — לא מורידים נקודות. 2 שחקנים: לכל אחד העטלפים שלו בחצי שלו; ב„כל 10 השלבים” מי שמסיים ראשון מנצח.",
+  g2:"★ העמידו את הטלפון או הטאבלט לרוחב, בערך בגובה החזה של הילד, כך שהמצלמה רואה את הראש והכתפיים. המשחק מתחיל כשהראש בפס השמש באמצע המסך. אם הילד מתקרב או מתרחק הרבה, העטלפים מחכים עד שהוא חוזר למקום.",
+  g3:"★ סימן העטלף לא מהבהב — הוא מתמלא, גדל קצת ומתנדנד, כך שהוא בטוח לילדים עם אפילפסיה.",
+  legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
+  ready:"מתכוננים…",go:"יוצאים!",turn:"סובבו את הטלפון לרוחב כדי לשחק",nocam:"אין כאן מצלמה. גררו את האצבע כדי להזיז את הראש.",aria:"אזור המשחק",
+  band:"שימו את הראש בפס השמש",two:"2 שחקנים: שני הראשים בפס השמש",high_back:"הראש גבוה מדי — התרחקו קצת",high_tilt:"הראש גבוה מדי — הטו קצת את הטלפון למטה",low_closer:"הראש נמוך מדי — התקרבו קצת",low_tilt:"הראש נמוך מדי — הטו קצת את הטלפון למעלה",like:"עמדו ככה",
+  closer:"התקרבו קצת",back:"התרחקו קצת",find:"עמדו מול המצלמה",wait:"העטלפים מחכים…",
+  yum:"יאמי!",phew:"פיו!",level:n=>"שלב "+n,allDone:"כל 10 השלבים!",
+  blue:"כחול",pink:"ורוד",winL:"הכחול ניצח!",winR:"הוורוד ניצח!",tie:"תיקו!",best:n=>"שיא: "+n+" 🦇",bestT:t=>"הכי מהר: "+t,newBest:"שיא חדש!",great:"כל הכבוד!",
+  dodged:n=>n+" עטלפים עקפתם",reached:n=>"שלב "+n,playagain:"עוד פעם",menu:"תפריט"}
+};
+
+let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
+let mode=LS.get('bat-mode','solo'); if(!['solo','duo'].includes(mode))mode='solo';
+let until=LS.get('bat-until','levels'); if(!['levels','time'].includes(until))until='levels';
+let crazyOpen=LS.get('bat-crazy','0')==='1';
+let speed=LS.get('bat-speed','normal'); if(!SPEED[speed]||(speed==='crazy'&&!crazyOpen))speed='normal';
+const QS=new URLSearchParams(location.search),FAKE=QS.has('fake')||QS.has('bot'),BOT=QS.has('bot'),SPEEDUP=+QS.get('speedup')||1;   // ?fake = drag a finger as the head; ?bot = plays by itself (testing)
+if(QS.has('unlock')){crazyOpen=true;}
+if(FAKE){if(SPEED[QS.get('speed')])speed=QS.get('speed');if(QS.get('mode'))mode=QS.get('mode');if(QS.get('until'))until=QS.get('until');}   // test overrides
+S.track='orchard'; S.amb='night'; S.ambOn=LS.get('bat-amb','1')==='1';
+const syncSound=bindSound(()=>UI[lang],{ambKey:'bat-amb'});
+let casting=false;
+const cast=setupCast({canvas:$('c'),button:$('cast'),lang:()=>lang,sound:()=>(audio(),S),onChange:v=>{casting=v;document.body.classList.toggle('casting',v);}});
+
+const bestKey=()=>'bat-best-'+speed;
+function segs(){
+  const u=UI[lang];
+  document.querySelectorAll('#until-seg button').forEach(b=>{b.textContent=u[b.dataset.v];b.setAttribute('aria-pressed',b.dataset.v===until);});
+  document.querySelectorAll('#speed-seg button').forEach(b=>{const v=b.dataset.v,lock=v==='crazy'&&!crazyOpen;b.textContent=lock?u.crazyL:u[v];b.classList.toggle('locked',lock);b.setAttribute('aria-pressed',v===speed);});
+  $('crazy-info').textContent=crazyOpen?u.crazyOpen:u.crazyLocked;
+  document.querySelectorAll('#modes .lv').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===mode));
+  let bt='';
+  if(mode==='solo'){if(until==='time'){const b=+LS.get(bestKey(),'0')||0;if(b)bt=u.best(b);}else{const g=goalBest('bat-'+speed,LEVELS);if(g.best)bt=u.bestT(fmtTime(g.best));}}
+  $('best').textContent=bt;
+  $('t-sub').textContent=until==='time'?u.subT:u.sub;
+}
+let lastRes=null;
+function setLang(l){
+  lang=l;LS.set('bamboo-lang',l);const u=UI[l];
+  document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
+  for(const k of ['title','play','privacy','grown','until','speed','music','amb','sfx','g1','g2','g3','legal','solo','duo'])
+    {const e=$('t-'+k);if(e)e.textContent=u[k];}
+  $('t-privacy2').textContent=u.privacy;$('menu').textContent=u.menu;document.title=u.title+' · Bamboo Physio';
+  $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
+  $('c').setAttribute('aria-label',u.aria);
+  segs();syncSound();cast.paint&&cast.paint();if(lastRes&&!$('end').hidden)fillEnd();
+}
+$('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
+document.querySelectorAll('#until-seg button').forEach(b=>b.onclick=()=>{until=b.dataset.v;LS.set('bat-until',until);SFX.tink();segs();});
+document.querySelectorAll('#speed-seg button').forEach(b=>b.onclick=()=>{
+  if(b.dataset.v==='crazy'&&!crazyOpen){audio();tone({f0:300,f1:200,dur:.18,type:'triangle',vol:.15});const e=$('crazy-info');e.classList.remove('shake');void e.offsetWidth;e.classList.add('shake');return;}
+  speed=b.dataset.v;LS.set('bat-speed',speed);SFX.tink();segs();});
+document.querySelectorAll('#modes .lv').forEach(b=>b.onclick=()=>{mode=b.dataset.m;LS.set('bat-mode',mode);SFX.tink();segs();});
+
+/* ================= CANVAS ================= */
+const cv=$('c'),ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;}
+addEventListener('resize',resize);resize();
+function toast(t,ms=4000){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.tm);if(ms)toast.tm=setTimeout(()=>e.classList.remove('on'),ms);}
+
+/* ================= SOUND ================= */
+const FX={
+  squeak(){[0,.07,.14].forEach((d,i)=>tone({f0:2500+i*250,f1:3400+i*200,dur:.05,type:'sine',vol:.07,at:d}));},
+  whoosh(){noise({dur:.45,freq:650,vol:.16});tone({f0:120,f1:90,dur:.3,type:'sine',vol:.06});},
+  nom(){tone({f0:320,f1:220,dur:.09,type:'triangle',vol:.2});tone({f0:300,f1:200,dur:.09,type:'triangle',vol:.2,at:.14});tone({f0:280,f1:190,dur:.09,type:'triangle',vol:.18,at:.28});
+    [0,.06,.12].forEach((d,i)=>tone({f0:2200+i*300,f1:3000,dur:.05,type:'sine',vol:.06,at:.45+d}));},
+  phew(){tone({f0:880,f1:1320,dur:.14,type:'triangle',vol:.2});SFX.sparkle();},
+  aww(){tone({f0:1500,f1:800,dur:.32,type:'sine',vol:.06,at:.05});},
+  plop(){SFX.plunk();},
+  level(){SFX.chime();},
+  whistle(){tone({f0:1900,f1:2100,dur:.5,type:'sine',vol:.14});tone({f0:2000,f1:2250,dur:.5,type:'sine',vol:.08});},
+  win(){[784,988,1175,1568].forEach((f,i)=>tone({f0:f,dur:.28,type:'triangle',vol:.28,at:i*.08}));}
+};
+
+/* ================= CAMERA + POSE TRACKING (on device) ================= */
+const video=$('v');
+let tracker=null,camOK=false,lastVT=-1,people=[];
+const vmap=()=>{const vw=video.videoWidth||640,vh=video.videoHeight||480,s=Math.max(W/vw,H/vh);return {vw,vh,s,ox:(W-vw*s)/2,oy:(H-vh*s)/2};};
+async function startCam(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('nocam');
+  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:false});
+  video.srcObject=stream;await video.play();
+  const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
+  const files=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+  const opts=(d,k)=>({baseOptions:{modelAssetPath:`https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_${k}/float16/1/pose_landmarker_${k}.task`,delegate:d},
+    runningMode:'VIDEO',numPoses:4,minPoseDetectionConfidence:.45,minPosePresenceConfidence:.45,minTrackingConfidence:.45});
+  let err=null;
+  for(const [d,k] of [['GPU','full'],['GPU','lite'],['CPU','lite']]){try{tracker=await timeoutP(vision.PoseLandmarker.createFromOptions(files,opts(d,k)),d==='GPU'?30000:120000);break;}catch(e){err=e;}}
+  if(!tracker)throw err||new Error('model');
+  tracker=lockOn(tracker,{kind:'pose',players:()=>mode==='duo'?2:1});   // follow only the player(s), never a grown-up behind
+  camOK=true;
+}
+function track(now){
+  if(!tracker||video.readyState<2||video.currentTime===lastVT)return false;lastVT=video.currentTime;
+  let res;try{res=tracker.detectForVideo(video,now);}catch(e){return false;}
+  const m=vmap(),L=res.landmarks||[];
+  people=L.map(lm=>{const p=lm.map(q=>({x:m.ox+(1-q.x)*m.vw*m.s,y:m.oy+q.y*m.vh*m.s,v:q.visibility??1}));
+    const hs=[0,7,8].filter(i=>p[i].v>.4),hy=hs.length?hs.reduce((a,i)=>a+p[i].y,0)/hs.length:p[0].y;
+    return {nose:p[0],hx:p[0].x,hy,sw:Math.hypot(p[11].x-p[12].x,p[11].y-p[12].y),cx:p[0].x,ok:p[0].v>.5};}).filter(p=>p.ok);
+  people.sort((a,b)=>a.cx-b.cx);
+  if(mode==='solo'&&people.length>1)people=[people.reduce((a,b)=>b.sw>a.sw?b:a)];
+  return true;
+}
+const SIZE=()=>mode==='duo'?[.16,.3,.6]:[.08,.15,.34];   // shoulder width ÷ lane width: min, ideal, max
+function fit(p,lane){
+  if(!p)return 'find';
+  const [mn,mid,mx]=SIZE(),r=p.sw/lane.w;
+  if(p.nose.y<H*BAND[0])return r>=mid*.85?'high_back':'high_tilt';
+  if(p.nose.y>H*BAND[1])return r<=mid*1.15?'low_closer':'low_tilt';
+  if(r<mn)return 'closer';
+  if(r>mx)return 'back';
+  return '';
+}
+
+/* ================= PLAYERS ================= */
+function lanes(){return mode==='duo'?[{x:0,w:W/2,dir:1},{x:W/2,w:W/2,dir:-1}]:[{x:0,w:W,dir:1}];}
+let players=[];
+function makePlayer(k){
+  return {k,get ln(){return lanes()[k];},t:0,level:1,lvEv:0,ev:0,hits:0,done:false,doneT:0,bats:[],nextT:2,last:[],lastSide:1,ref:null,head:null,seenT:-9,badT:0,distBad:'',paused:false,
+    fruit:{has:true,kind:FRUITS[0],drop:1,yay:-9,back:0},msgs:[],lvT:-9,fake:{x:0,y:0}};
+}
+function personFor(k){
+  if(mode==='solo')return people[0]||null;
+  if(people.length>=2)return people[k];
+  const p=people[0];if(!p)return null;return (p.cx<W/2?0:1)===k?p:null;
+}
+const U=P=>P.ref.u;
+const FR=P=>U(P)*.25;                          // fruit radius
+const HIT=P=>U(P)*.55;                         // bat body + fruit: touching distance
+const standY=P=>P.ref.top-FR(P)*.85;           // the fruit's height while the child stands
+const laneY=(P,type)=>type==='low'?Math.min(H-U(P)*.35,standY(P)+U(P)*1.02):standY(P);
+const batR=P=>U(P)*.3;
+const fruitPos=P=>({x:P.head?P.head.x:P.ln.x+P.ln.w/2,y:(P.head?P.head.y:P.ref.top)-FR(P)*.85});
+const topY=()=>Math.max(78,H*.13);             // where the top warning sits (under the top bar)
+
+/* which bat comes next (Edgar: high bats -> duck; low bats so the child can't stay ducked; top bats -> step aside) */
+function pickType(P){
+  const L=P.level,r=Math.random(),last=P.last[P.last.length-1],twice=P.last.length>=2&&P.last[P.last.length-2]===last;
+  let t;
+  if(L===1)t='high';
+  else if(L===2)t=last==='top'?'high':(r<.5?'top':'high');
+  else if(L===3)t=last==='high'&&r<.65?'low':(r<.25?'top':'high');
+  else t=last==='high'&&r<.5?'low':(r<.4?'top':r<.8?'high':'low');
+  if(twice&&t===last&&L>=2)t=t==='top'?'high':t==='high'?(L>=3?'low':'top'):'top';
+  return t;
+}
+function makeBat(P,type,cfg,side){
+  const ln=P.ln,u=U(P),f=fruitPos(P),R=Math.max(22,Math.min(46,u*.38));
+  const lvk=1+.025*(P.level-1),b={type,st:'warn',t:0,warn:cfg.warn,R,judged:false,mood:'hungry'};
+  if(type==='top'){
+    b.x=Math.max(ln.x+u*.7,Math.min(ln.x+ln.w-u*.7,f.x));b.y=-u;b.vx=0;b.vy=H/cfg.dive*lvk;b.wx=b.x;b.wy=topY()+R*.2;b.dirv={x:0,y:1};
+  } else {
+    const dir=mode==='duo'?ln.dir:side;   // 2 players: always from your own outer edge
+    b.dir=dir;b.y=laneY(P,type);b.x=dir>0?ln.x-u:ln.x+ln.w+u;b.vx=dir*W/cfg.side*lvk;b.vy=0;
+    b.wx=dir>0?ln.x+R*1.25:ln.x+ln.w-R*1.25;b.wy=b.y;b.dirv={x:dir,y:0};
+  }
+  b.arr=P.t+b.warn+(type==='top'?(f.y-b.y)/b.vy:Math.abs(f.x-b.x)/Math.abs(b.vx));
+  return b;
+}
+function spawn(P){
+  const cfg=SPEED[speed];
+  const type=pickType(P),side=P.level<=2?-P.lastSide:(Math.random()<.5?1:-1);
+  const b=makeBat(P,type,cfg,side);
+  // never two bats at the fruit at almost the same moment (always possible to dodge); crazy pairs are the exception
+  const clash=P.bats.filter(o=>o.st!=='gone'&&!o.judged).some(o=>Math.abs(o.arr-b.arr)<cfg.gap);
+  if(clash){P.nextT=P.t+.25;return;}
+  P.bats.push(b);P.last.push(type);if(P.last.length>4)P.last.shift();if(type!=='top')P.lastSide=b.dir;
+  FX.squeak();
+  if(cfg.pair&&P.level>=3&&Math.random()<cfg.pair){   // crazy bats: a second one, one you can dodge together with the first
+    const t2=type==='top'?'low':type==='low'?'top':'high',b2=makeBat(P,t2,cfg,-b.dir||1);
+    if(t2==='high'&&type==='high'){b2.dir=-b.dir;} b2.warn+=.25;b2.arr+=.25;
+    if(!(mode==='duo'&&t2!=='top'&&type!=='top'))P.bats.push(b2);
+  }
+  const iv=IV[Math.min(LEVELS,P.level)-1]*cfg.iv*(.88+Math.random()*.24);
+  P.nextT=P.t+iv;
+}
+function levelUp(P){
+  P.lvEv=0;
+  if(P.level>=LEVELS){
+    if(until==='levels'&&!P.done){P.done=true;P.doneT=elapsed;return;}
+    return;   // 1 minute: stay on level 10
+  }
+  P.level++;P.lvT=P.t;P.fruit.kind=FRUITS[P.level-1];P.fruit.yay=P.t;FX.level();
+}
+
+/* ================= GAME ================= */
+let badT=0,state='menu',tNow=0,countT=0,lastCount=9,elapsed=0,setupT=0,pops=[],lastSec=99;
+async function play(){
+  audio();SFX.go();
+  $('start').hidden=true;$('end').hidden=true;
+  if(!camOK&&!FAKE){toast(UI[lang].ready,0);state='loading';
+    try{await camLoad(startCam);$('toast').classList.remove('on');}
+    catch(e){console.warn(e);toast(UI[lang].nocam,6000);}}
+  players=lanes().map((_,k)=>makePlayer(k));elapsed=0;pops=[];lastRes=null;lastSec=99;setupT=0;badT=0;
+  $('stopx').classList.add('on');musicStart();
+  if(camOK)state='setup';
+  else{players.forEach(P=>{const u=Math.min(H*.2,P.ln.w*.25);P.ref={top:H*.5-u*.45,u,sw:u};P.fake={x:P.ln.x+P.ln.w/2,y:H*.5};});startCount();}
+}
+function startCount(){state='count';countT=tNow;lastCount=9;}
+$('play').onclick=play;$('again').onclick=()=>play();
+$('menu').onclick=()=>{$('end').hidden=true;$('start').hidden=false;state='menu';segs();};
+$('stopx').onclick=()=>endGame(true);
+
+let press=false;
+cv.addEventListener('pointerdown',e=>{if(camOK)return;press=true;moveFake(e);});
+cv.addEventListener('pointermove',e=>{if(press)moveFake(e);});
+addEventListener('pointerup',()=>press=false);
+function moveFake(e){const k=mode==='duo'&&e.clientX>W/2?1:0,P=players[k];if(P)P.fake={x:e.clientX,y:e.clientY};}
+
+function endGame(quit){
+  state='over';musicStop();$('stopx').classList.remove('on');
+  if(quit){state='menu';$('start').hidden=false;segs();return;}
+  FX.whistle();
+  const A=players[0],B=players[1];
+  lastRes={mode,until,a:A.ev,b:B?B.ev:0,la:A.level,lb:B?B.level:0,da:A.done,db:B?B.done:false,secs:elapsed,newBest:false,gb:null,unlocked:false};
+  if(until==='levels'&&players.some(P=>P.done)){
+    if(mode==='solo')lastRes.gb=goalBest('bat-'+speed,LEVELS,A.doneT);
+    if(!crazyOpen&&speed!=='crazy'){crazyOpen=true;LS.set('bat-crazy','1');lastRes.unlocked=true;}
+  }
+  if(until==='time'&&mode==='solo'){const b=+LS.get(bestKey(),'0')||0;if(A.ev>b){lastRes.newBest=b>0;LS.set(bestKey(),String(A.ev));}}
+  setTimeout(FX.win,500);confetti();
+  fillEnd();$('end').hidden=false;
+}
+function fillEnd(){
+  const u=UI[lang],R=lastRes;
+  if(R.mode==='duo'){
+    $('final').textContent=R.a+' : '+R.b;
+    let w=R.until==='levels'?(R.da&&!R.db?0:R.db&&!R.da?1:-1):-1;
+    if(w<0)w=R.a===R.b?-1:(R.a>R.b?0:1);
+    $('t-over').textContent=w<0?u.tie:(w===0?u.winL:u.winR);
+    $('n-left').textContent='🔵 '+u.reached(R.la);$('n-right').textContent='🩷 '+u.reached(R.lb);
+  } else if(R.until==='levels'&&R.da){
+    $('t-over').textContent='🏁 '+u.allDone;$('final').textContent='🦇 '+R.a+' · '+fmtTime(R.secs);
+    $('n-left').textContent=R.gb&&R.gb.best?(R.gb.isNew?'⭐ ':'')+u.bestT(fmtTime(R.gb.best)):'';$('n-right').textContent='';
+  } else {
+    $('final').textContent='🦇 '+R.a;$('t-over').textContent=R.newBest?u.newBest:u.great;
+    $('n-left').textContent=u.reached(R.la);$('n-right').textContent=R.until==='time'?u.best(Math.max(R.a,+LS.get(bestKey(),'0')||0)):'';
+  }
+  $('unlock').hidden=!R.unlocked;$('unlock').textContent=u.unlocked;
+  $('t-again').textContent=u.playagain;$('t-privacy2').textContent=u.privacy;
+}
+function confetti(){for(let i=0;i<40;i++)pops.push({x:W*(.2+Math.random()*.6),y:H*.35,vx:(Math.random()-.5)*W*.9,vy:-H*(.4+Math.random()*.7),life:1.6+Math.random()*.6,c:['#FFD84D','#FF9FB0','#7DCB6B','#B79CF2'][i%4]});}
+
+const portraitPlay=()=>H>W*1.05&&['setup','count','play'].includes(state);
+
+/* ?bot: plays by itself, perfectly (to check timings) */
+function botHead(P){
+  const u=U(P),cx=P.ln.x+P.ln.w/2,stand=P.ref.top+u*.45;let tx=P.bx??cx,ty=stand;
+  const next=P.bats.filter(b=>!b.judged&&b.st!=='gone'&&b.st!=='grab').sort((a,b)=>a.arr-b.arr)[0];
+  if(next&&next.arr-P.t<1.2){if(next.type==='high')ty=stand+u*.85;if(next.type==='top'){if(P.bdir==null||P.bfor!==next){P.bfor=next;P.bdir=next.x<cx?1:-1;}tx=next.x+P.bdir*u*1.1;}}
+  else if(!next||next.arr-P.t>1.6){tx=cx;}
+  P.bx=tx;const F=P.fake;F.x+=(tx-F.x)*.15;F.y+=(ty-F.y)*.15;
+}
+function readHead(P,dt){
+  if(camOK){
+    const p=personFor(P.k);
+    if(!p)return;
+    const top=p.hy-P.ref.u*.45;
+    if(P.head){const k=Math.min(1,dt*22);P.head.x+=(p.hx-P.head.x)*k;P.head.y+=(top-P.head.y)*k;}else P.head={x:p.hx,y:top};
+    P.seenT=tNow;
+    const r=p.sw/P.ref.sw;P.distBad=r>1.35?'back':r<.75?'closer':'';
+  } else {if(BOT)botHead(P);const F=P.fake;P.head={x:F.x,y:F.y-P.ref.u*.45};P.seenT=tNow;P.distBad='';}
+}
+const segDist=(px,py,x0,y0,x1,y1)=>{const dx=x1-x0,dy=y1-y0,L=dx*dx+dy*dy,k=L?Math.max(0,Math.min(1,((px-x0)*dx+(py-y0)*dy)/L)):0;return Math.hypot(px-(x0+dx*k),py-(y0+dy*k));};
+function stepPlayer(P,dt){
+  readHead(P,dt);
+  const lost=tNow-P.seenT>.5;
+  if(lost||P.distBad){P.badT+=dt;if(P.badT>.4)P.paused=true;}else{P.badT=0;P.paused=false;}
+  if(P.paused||P.done)return;
+  P.t+=dt;
+  const f=P.fruit,fp=fruitPos(P),hit=HIT(P),u=U(P);
+  if(!f.has&&P.t>=f.back){f.has=true;f.drop=0;FX.plop();}
+  if(f.drop<1)f.drop=Math.min(1,f.drop+dt*2.6);
+  if(P.t>=P.nextT)spawn(P);
+  for(const b of P.bats){
+    b.t+=dt;
+    if(b.st==='warn'){if(b.t>=b.warn){b.st='fly';b.t=0;FX.whoosh();}continue;}
+    if(b.st==='fly'){
+      const x0=b.x,y0=b.y;b.x+=b.vx*dt;b.y+=b.vy*dt;
+      if(!b.judged){
+        if(f.has&&f.drop>.7&&segDist(fp.x,fp.y,x0,y0,b.x,b.y)<hit){   // got it!
+          b.judged=true;b.st='grab';b.carry=f.kind;b.mood='yum';b.t=0;b.vx*=.6;b.vy=b.type==='top'?H*.25:0;
+          f.has=false;f.back=P.t+1;P.hits++;FX.nom();P.msgs.push({txt:UI[lang].yum,x:fp.x,y:fp.y,t:P.t,col:'#FF9FB0'});
+        } else {
+          const past=b.type==='top'?b.y-fp.y>hit:(b.x-fp.x)*b.dir>hit;
+          if(past){b.judged=true;b.mood='aww';
+            if(f.has){P.ev++;P.lvEv++;f.yay=P.t;FX.phew();FX.aww();P.msgs.push({txt:UI[lang].phew,x:fp.x,y:fp.y,t:P.t,col:'#B8F0A0',stars:1});
+              if(P.lvEv>=PER)levelUp(P);}
+          }
+        }
+      }
+    } else if(b.st==='grab'){b.x+=b.vx*dt;b.vy-=H*1.1*dt;b.y+=b.vy*dt;}
+    const ln=P.ln;if(b.x<ln.x-u*2.5||b.x>ln.x+ln.w+u*2.5||b.y>H+u*2||b.y<-u*3)b.st='gone';
+  }
+  P.bats=P.bats.filter(b=>b.st!=='gone');
+  P.msgs=P.msgs.filter(m=>P.t-m.t<1.2);
+}
+
+let last=performance.now();
+function frame(now){
+  const dt=Math.max(0,Math.min(.05,(now-last)/1000))*SPEEDUP;last=now;tNow+=dt;
+  if(camOK)track(now);
+  if(portraitPlay()){render(dt);requestAnimationFrame(frame);return;}
+  if(state==='setup'){
+    const ok=players.every(P=>!fit(personFor(P.k),P.ln));
+    if(ok){setupT+=dt;
+      players.forEach(P=>{const p=personFor(P.k);P.cal=P.cal||[];P.cal.push(p);});
+      if(setupT>1.2){players.forEach(P=>{const c=P.cal.slice(-20),sw=c.reduce((a,p)=>a+p.sw,0)/c.length,hy=c.reduce((a,p)=>a+p.hy,0)/c.length;
+        P.ref={sw,u:sw,top:hy-sw*.45};P.head=null;});startCount();}}
+    else{setupT=Math.max(0,setupT-dt*2);players.forEach(P=>P.cal=[]);}
+    badT=setupT>0?0:badT+dt;
+  }
+  else if(state==='count'){
+    const n=3-Math.floor(tNow-countT);if(n!==lastCount){lastCount=n;if(n>0)SFX.tick();}
+    players.forEach(P=>readHead(P,dt));
+    if(tNow-countT>=3){state='play';elapsed=0;SFX.boing();}
+  }
+  else if(state==='play'){
+    players.forEach(P=>stepPlayer(P,dt));
+    if(!players.some(P=>P.paused))elapsed+=dt;
+    if(until==='levels'){if(players.some(P=>P.done))endGame(false);}
+    else{const left=Math.ceil(ROUND-elapsed);if(left<=5&&left<lastSec&&left>0)SFX.tick();lastSec=left;if(elapsed>=ROUND)endGame(false);}
+  }
+  render(dt);
+  requestAnimationFrame(frame);
+}
+
+/* ================= DRAWING ================= */
+function drawMirrored(){const m=vmap();ctx.save();ctx.translate(W,0);ctx.scale(-1,1);ctx.drawImage(video,W-m.ox-m.vw*m.s,m.oy,m.vw*m.s,m.vh*m.s);ctx.restore();}
+function bubble(txt,x,y,fs,fill='#fff'){
+  ctx.save();ctx.font=`700 ${fs}px Fredoka,sans-serif`;ctx.direction=lang==='he'?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';
+  const w=ctx.measureText(txt).width+fs*1.4,h=fs*1.9;x=Math.max(w/2+6,Math.min(W-w/2-6,x));y=Math.max(h/2+4,Math.min(H-h/2-6,y));
+  ctx.fillStyle=INK;ctx.beginPath();ctx.roundRect(x-w/2,y-h/2+4,w,h,h/2);ctx.fill();
+  ctx.fillStyle=fill;ctx.strokeStyle=INK;ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,h/2);ctx.fill();ctx.stroke();
+  ctx.fillStyle=INK;ctx.fillText(txt,x,y+1);ctx.restore();
+}
+function bigText(txt,x,y,fs,col='#FFD84D',sc=1){
+  ctx.save();ctx.translate(x,y);ctx.scale(sc,sc);ctx.font=`900 ${fs}px Grandstander,Fredoka,sans-serif`;ctx.direction=lang==='he'?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.lineJoin='round';ctx.lineWidth=fs*.14;ctx.strokeStyle=INK;ctx.fillStyle=INK;ctx.fillText(txt,0,fs*.08);ctx.strokeText(txt,0,0);ctx.fillStyle=col;ctx.fillText(txt,0,0);ctx.restore();
+}
+function drawTurnPhone(){
+  ctx.fillStyle='rgba(255,248,236,.92)';ctx.fillRect(0,0,W,H);
+  const cx=W/2,cy=H*.42,s=Math.min(W,H)*.22,k=(tNow%2.4)/2.4,rot=-Math.PI/2*Math.min(1,Math.max(0,(k-.3)*3));
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(rot);const p=new Path2D();p.roundRect(-s*.32,-s*.58,s*.64,s*1.16,s*.12);sticker(ctx,p,'#fff',5);
+  ctx.fillStyle='#DDF3FF';ctx.fillRect(-s*.24,-s*.46,s*.48,s*.92);ctx.restore();
+  ctx.strokeStyle=INK;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.arc(cx,cy,s*.85,-Math.PI*.9,-Math.PI*.55);ctx.stroke();
+  bubble(UI[lang].turn,W/2,H*.72,Math.max(18,Math.min(26,W*.05)));
+}
+function drawSetup(fs){
+  const y0=H*BAND[0],y1=H*BAND[1],g=ctx.createLinearGradient(0,y0-H*.06,0,y1+H*.06);
+  g.addColorStop(0,'rgba(255,226,120,0)');g.addColorStop(.25,'rgba(255,226,120,.45)');g.addColorStop(.75,'rgba(255,226,120,.45)');g.addColorStop(1,'rgba(255,226,120,0)');
+  ctx.fillStyle=g;ctx.fillRect(0,y0-H*.06,W,y1-y0+H*.12);
+  const u=UI[lang],L=lanes();
+  bubble(mode==='duo'?u.two:u.band,W/2,H*.17,fs);
+  L.forEach((ln,k)=>{const p=personFor(k),why=fit(p,ln),cx=ln.x+ln.w/2;
+    if(why&&(why!=='find'||mode==='solo'||people.length))bubble(u[why],cx,H*.86,fs*.8,'#FFF3C4');
+    if(p){const ok=!why;drawFruit(ctx,p.hx,p.hy-p.sw*.7,Math.max(14,p.sw*.22),FRUITS[0],tNow,{mood:ok?'yay':'happy'});}});
+  if(badT>5)L.forEach((ln,k)=>drawGhost(ln,k,personFor(k),fs));
+  if(setupT>0){const n=Math.ceil(Math.min(1,setupT/1.2)*5);for(let i=0;i<5;i++)sticker(ctx,ell(W/2+(i-2)*fs*1.3,H-fs*1.3,fs*.42,fs*.42),i<n?'#FFD84D':'#fff',3);}
+}
+function drawGhost(ln,k,p,fs){
+  const mid=SIZE()[1]*ln.w,T=2.6,q=(tNow%T)/T,m=ease(Math.min(1,q/.6));
+  const to={x:ln.x+ln.w/2,y:H*(BAND[0]+BAND[1])/2,sw:mid};
+  const from=p?{x:p.nose.x,y:p.nose.y,sw:p.sw}:{x:ln.dir>0?ln.x-mid:ln.x+ln.w+mid,y:to.y,sw:mid};
+  const sw=from.sw+(to.sw-from.sw)*m,x=from.x+(to.x-from.x)*m,ny=from.y+(to.y-from.y)*m,s=sw/.9,bob=q<.6?Math.abs(Math.sin(q*30))*s*.06:0;
+  ctx.save();ctx.globalAlpha=.6;drawKid(ctx,x,ny+1.65*s-bob,s,'stand',mode==='duo'?['#BFE3FF','#FFD1DC'][k]:'#BFE3FF',tNow);ctx.restore();
+  if(q>.6)bubble(UI[lang].like,to.x,to.y-s*2.1,fs*.85,'#FFF3C4');
+}
+function drawPlayer(P){
+  const u=UI[lang],f=P.fruit,fp=fruitPos(P),r=FR(P),ln=P.ln;
+  if(mode==='duo'){ctx.save();ctx.beginPath();ctx.rect(ln.x,0,ln.w,H);ctx.clip();}
+  // warnings + lanes first (under everything)
+  for(const b of P.bats)if(b.st==='warn'){const k=b.t/b.warn;
+    if(b.type==='top')drawLane(ctx,'v',b.x,b.wy,b.x,H,HIT(P)*.9,k);else drawLane(ctx,'h',ln.x,b.y,ln.x+ln.w,b.y,HIT(P)*.9,k);}
+  // the fruit
+  const danger=P.bats.some(b=>!b.judged&&(b.st==='fly'||(b.st==='warn'&&b.t/b.warn>.45)));
+  if(f.has){const dy=(1-ease(f.drop))*-H*.35,mood=P.t-f.yay<.8?'yay':danger?'oh':'happy',sc=P.t-P.lvT<.5?1+.4*(1-(P.t-P.lvT)*2):1;
+    drawFruit(ctx,fp.x,fp.y+dy,r*sc,f.kind,tNow,{mood,wob:Math.sin(tNow*3+P.k)*.06});}
+  // bats
+  for(const b of P.bats){
+    if(b.st==='warn')continue;
+    const look=Math.max(-1,Math.min(1,(fp.x-b.x)/(U(P)*2))),lookY=Math.max(-1,Math.min(1,(fp.y-b.y)/(U(P)*2)));
+    drawBat(ctx,b.x,b.y+Math.sin(tNow*9+b.arr)*U(P)*.03,batR(P),tNow+b.arr,{mood:b.mood,look,lookY,dive:b.type==='top'&&b.st==='fly'?.8:0,carry:b.st==='grab'?b.carry:null,
+      tilt:b.type==='top'?0:b.dir*.12,flap:b.st==='grab'?7:11,bow:mode==='duo'?BOWS[P.k]:null});
+  }
+  // warning badges on top so they are always seen
+  if(P.t-P.lvT<1.6&&P.level>1)bigText(u.level(P.level),ln.x+ln.w/2,H*.3,Math.min(90,H*.13,ln.w*.16),'#FFD84D',1+.3*Math.max(0,1-(P.t-P.lvT)*4));
+  for(const m of P.msgs){const k=(P.t-m.t)/1.2;if(m.stars)drawPhew(ctx,m.x,m.y,r*1.2,k);if(k<.8)bigText(m.txt,m.x,m.y-r*2.4-k*r,Math.max(22,r*1.1),m.col,1+.2*Math.max(0,1-k*5));}
+  for(const b of P.bats)if(b.st==='warn')drawWarn(ctx,b.wx,b.wy,b.R,b.t/b.warn,b.dirv,tNow);
+  if(mode==='duo')ctx.restore();
+  if(P.paused&&state==='play'){const tfs=Math.max(15,Math.min(22,W*.026));bubble(P.distBad?u[P.distBad]:u.find,ln.x+ln.w/2,H*.5,tfs,'#FFF3C4');bubble(u.wait,ln.x+ln.w/2,H*.5+tfs*2.6,tfs*.8,'#fff');}
+}
+function render(dt){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  const u=UI[lang],live=camOK&&video.readyState>=2;
+  if(state==='menu'||state==='loading'){drawDusk(ctx,W,H,tNow);drawDemo();drawPops(dt);return;}
+  if(live){drawMirrored();ctx.fillStyle='rgba(255,248,236,.1)';ctx.fillRect(0,0,W,H);} else drawDusk(ctx,W,H,tNow);
+  if(portraitPlay()){drawTurnPhone();return;}
+  drawOrchard(ctx,W,H,tNow);
+  const fs=Math.max(18,Math.min(26,W*.035));
+  if(state==='setup'){drawSetup(fs);return drawPops(dt);}
+  if(mode==='duo'){ctx.save();ctx.setLineDash([2,14]);ctx.lineCap='round';ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(W/2,90);ctx.lineTo(W/2,H-20);ctx.stroke();ctx.restore();}
+  if(!camOK)players.forEach(P=>{if(P.head){const u2=P.ref.u*.55,stand=P.ref.top,duck=P.head.y-stand>P.ref.u*.3;drawKid(ctx,P.head.x,P.head.y+u2*2.35*(duck?.72:1),u2,duck?'mid':'stand',mode==='duo'?['#BFE3FF','#FFD1DC'][P.k]:'#BFE3FF',tNow);}});
+  if(state==='play'||state==='over'||state==='count')players.forEach(drawPlayer);
+  if(state==='count'){const n=3-Math.floor(tNow-countT),k=(tNow-countT)%1;
+    if(n>0)bigText(String(n),W/2,H*.42,Math.min(150,H*.22),'#fff',1+.25*Math.max(0,1-k*4));}
+  else if(state==='play'||state==='over'){
+    if(state==='play'&&elapsed<.9)bigText(u.go,W/2,H*.3,Math.min(110,H*.17),'#FFD84D',1+.3*Math.max(0,1-elapsed*4));
+    drawHud(fs);
+  }
+  drawPops(dt);
+}
+/* bottom row: dodges + level (with 3 little fruits that fill up), and a picture timer in the middle (1 minute mode) */
+function drawHud(fs){
+  const u=UI[lang],y0=H-fs*.95-12;
+  const pw=(t,f=fs)=>{ctx.save();ctx.font=`700 ${f}px Fredoka,sans-serif`;const w=ctx.measureText(t).width+f*1.4;ctx.restore();return w;};
+  const row=(P,fromRight)=>{
+    let x=fromRight?W-12:66;const put=(t,f,fill)=>{const w=pw(t,f),cx=fromRight?x-w/2:x+w/2;bubble(t,cx,y0,f,fill);x+=fromRight?-(w+8):(w+8);};
+    put('🦇 '+P.ev,fs,mode==='duo'?['#DDF3FF','#FFE3E8'][P.k]:'#FFF3C4');
+    put(u.level(P.level),fs*.8,'#fff');
+    // level progress: 3 small fruits
+    const r=fs*.42;for(let i=0;i<PER;i++){const cx=fromRight?x-r*1.2:x+r*1.2;ctx.save();if(i>=P.lvEv)ctx.globalAlpha=.35;drawFruit(ctx,cx,y0,r,P.fruit.kind,tNow,{mood:i<P.lvEv?'yay':'happy'});ctx.restore();x+=fromRight?-r*2.5:r*2.5;}
+  };
+  if(mode==='duo'){row(players[0],false);row(players[1],true);}else row(players[0],true);
+  if(state==='play'){const r=Math.max(24,Math.min(44,H*.075)),cy=H-r-14;
+    if(until==='time'){const left=Math.max(0,ROUND-elapsed);drawPie(W/2,cy,r,left/ROUND,left<=10,'');}
+    else{const lv=Math.max(...players.map(P=>P.level-1+P.lvEv/PER));drawPie(W/2,cy,r,lv/LEVELS,false,'🏁');}}
+}
+function drawPie(x,y,r,f,warn,label){
+  const mixc=(a,b,k)=>{const h=s=>[1,3,5].map(i=>parseInt(s.slice(i,i+2),16)),A=h(a),B=h(b);return 'rgb('+A.map((v,i)=>Math.round(v+(B[i]-v)*k)).join(',')+')';};
+  const sc=warn?1+.06*Math.max(0,Math.sin(tNow*6)):1;
+  ctx.save();ctx.translate(x,y);ctx.scale(sc,sc);
+  ctx.fillStyle='rgba(43,33,24,.25)';ctx.beginPath();ctx.arc(0,4,r+5,0,7);ctx.fill();
+  sticker(ctx,ell(0,0,r+4,r+4),label?'#fff':'rgba(255,255,255,.7)',4);
+  f=Math.min(1,f);if(f>0){ctx.fillStyle=label?'#B79CF2':mixc('#5CC26A','#FFFFFF',1-f);ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,r,-Math.PI/2,-Math.PI/2+f*Math.PI*2);ctx.closePath();ctx.fill();
+    ctx.strokeStyle=INK;ctx.lineWidth=2.5;ctx.stroke();}
+  if(label){ctx.font=`${r*.9}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,0,r*.05);}
+  ctx.restore();
+}
+function drawPops(dt){
+  pops=pops.filter(p=>(p.life-=dt)>0);
+  for(const p of pops){p.vy+=H*1.2*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.life*5);ctx.globalAlpha=Math.min(1,p.life*2);
+    sticker(ctx,starPath(12),p.c||'#FFD84D',2.5);ctx.restore();}
+}
+/* menu: a child with a fruit on the head ducks under a bat, on a loop */
+function drawDemo(){
+  const s=Math.min(W*.06,H*.09),gy=H*.86,cx=W*.5,T=3.6,k=(tNow%T)/T;
+  const duck=k>.3&&k<.72,dk=duck?Math.min(1,(k-.3)*12,(.72-k)*12):0;
+  const r=drawKid(ctx,cx,gy,s,dk>.5?'mid':'stand','#BFE3FF',tNow);
+  const fr=s*.55,fy=r.headY-fr*.85;drawFruit(ctx,cx,fy,fr,FRUITS[Math.floor(tNow/T)%FRUITS.length],tNow,{mood:k>.25&&k<.6?'oh':k>.6&&k<.85?'yay':'happy'});
+  const standF=gy-s*2.75;   // fruit height when standing
+  if(k<.35){drawWarn(ctx,W*.06+s*.7,standF,s*.7,k/.35,{x:1,y:0},tNow);}
+  else{const q=(k-.35)/.5,bx=-s*2+(W+s*4)*q;drawBat(ctx,bx,standF,s*.75,tNow,{mood:bx>cx?'aww':'hungry',look:bx<cx?1:-1,tilt:.12});}
+}
+function icons(){
+  const [soloC,duoC]=[...document.querySelectorAll('#modes canvas')].map(c=>c.getContext('2d'));
+  soloC.clearRect(0,0,220,128);drawKid(soloC,110,122,30,'mid','#BFE3FF',0);drawFruit(soloC,110,58,13,'fig',0,{mood:'oh'});drawBat(soloC,48,34,17,.2,{mood:'hungry',look:1,tilt:.12});
+  duoC.clearRect(0,0,220,128);drawKid(duoC,52,122,30,'stand','#BFE3FF',0);drawKid(duoC,168,122,30,'stand','#FFD1DC',0);
+  drawFruit(duoC,52,34,12,'banana',0);drawFruit(duoC,168,34,12,'mango',.4);drawBat(duoC,110,26,15,.3,{mood:'hungry',dive:.8});
+}
+
+/* ================= HOW TO PLAY ================= */
+{
+  const SZ=(w,h)=>Math.min(w*.09,h*.17);
+  function scene(c,w,h,t,{x,pose='stand',fruit='fig',mood='happy'}){
+    const s=SZ(w,h),gy=h*.92;c.fillStyle='rgba(141,208,110,.7)';c.beginPath();c.ellipse(w/2,h*.92,w*.46,h*.06,0,0,7);c.fill();
+    const r=drawKid(c,x,gy,s,pose,'#BFE3FF',t),fr=s*.5;drawFruit(c,x,r.headY-fr*.85,fr,fruit,t,{mood});
+    return {s,gy,fy:gy-s*2.75};
+  }
+  setupHowTo({lang:()=>lang,play:()=>play(),steps:[
+    {dur:3.2,cap:{en:'Keep the fruit on your head 🍑',he:'שומרים על הפרי שעל הראש 🍑'},draw(c,w,h,t,k){const S2=scene(c,w,h,t,{x:w*.5,mood:k>.5?'oh':'happy'});drawWarn(c,w*.1,S2.fy,S2.s*.6,Math.min(1,k*1.4),{x:1,y:0},t);}},
+    {dur:3.6,cap:{en:'A bat from the side? Duck! 🦇',he:'עטלף מהצד? מתכופפים! 🦇'},draw(c,w,h,t,k){const d=k>.15&&k<.8;const S2=scene(c,w,h,t,{x:w*.5,pose:d?'mid':'stand',mood:d?'oh':'yay'});const bx=-S2.s+(w+S2.s*2)*ease(Math.min(1,k/.85));drawBat(c,bx,S2.fy,S2.s*.6,t,{mood:bx>w*.5?'aww':'hungry',look:1,tilt:.12});}},
+    {dur:3.6,cap:{en:'A low bat? Stand up tall! 🧍',he:'עטלף נמוך? נעמדים זקוף! 🧍'},draw(c,w,h,t,k){const d=k<.25;const S2=scene(c,w,h,t,{x:w*.5,pose:d?'mid':'stand',mood:k>.85?'yay':'happy'});const bx=w+S2.s-(w+S2.s*2)*ease(Math.min(1,k/.85));drawBat(c,bx,S2.fy+S2.s*1.15,S2.s*.6,t,{mood:bx<w*.5?'aww':'hungry',look:-1,tilt:-.12});}},
+    {dur:3.6,cap:{en:'A bat from the top? Step aside! ↔️',he:'עטלף מלמעלה? זזים הצידה! ↔️'},draw(c,w,h,t,k){const x=w*.5+w*.2*ease(Math.min(1,Math.max(0,(k-.2)/.25)));const S2=scene(c,w,h,t,{x,mood:k>.85?'yay':'oh'});
+      if(k<.45)drawWarn(c,w*.5,h*.16,S2.s*.6,k/.45,{x:0,y:1},t);else drawBat(c,w*.5,h*.1+(h*.9)*ease((k-.45)/.55),S2.s*.6,t,{mood:'hungry',dive:.8,lookY:1});}},
+    {dur:3,cap:{en:'3 dodges = next level and a new fruit! ⭐',he:'3 התחמקויות = שלב חדש ופרי חדש! ⭐'},draw(c,w,h,t,k){const S2=scene(c,w,h,t,{x:w*.5,fruit:k<.4?'fig':'banana',mood:'yay'});
+      for(let i=0;i<6;i++){const a=i/6*6.3+k*2,rr=h*(.1+k*.15);bigStar(c,w*.5+Math.cos(a)*rr,S2.fy+Math.sin(a)*rr,12*(1.2-k*.6),a);}}}
+  ]});
+}
+
+window.__P=()=>players;window.__state=()=>({state,elapsed});
+setLang(lang);icons();
+document.fonts&&document.fonts.ready.then(icons);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
