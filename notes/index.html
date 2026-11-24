@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Rainbow Notes · Bamboo Physio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Grandstander:wght@700;900&family=Fredoka:wght@500;600;700&family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/kit.css">
+<style>
+.stopx{position:fixed;left:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:7;width:44px;height:44px;border-radius:50%;background:#fff;border:3px solid var(--ink);font:900 20px Fredoka,sans-serif;box-shadow:0 3px 0 var(--ink);display:none;cursor:pointer}
+.stopx.on{display:block}
+.skip{position:fixed;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:7;background:#fff;border:3px solid var(--ink);border-radius:999px;padding:6px 16px;font:700 17px Fredoka,sans-serif;color:var(--ink);box-shadow:0 3px 0 var(--ink);display:none;cursor:pointer}
+.skip.on{display:block}
+.snd.cast{font-size:19px}
+.lv b{display:block;font:700 14px Fredoka,sans-serif}
+.levels.modes .lv{max-width:170px}
+.levels.modes .lv canvas{width:110px;height:64px}
+.songs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:2px 0 12px}
+.song{background:#fff;border:3px solid var(--ink);border-radius:999px;padding:5px 13px 4px;font:700 15px Fredoka,sans-serif;color:var(--ink);box-shadow:0 3px 0 var(--ink);cursor:pointer}
+.song[aria-pressed="true"]{background:#FFE58A}
+.song:active{transform:translateY(3px);box-shadow:0 0 0 var(--ink)}
+.btn2{display:block;margin:10px auto 0;background:#fff;border:3px solid var(--ink);border-radius:999px;padding:6px 18px;font:700 16px Fredoka,sans-serif;color:var(--ink);box-shadow:0 3px 0 var(--ink);cursor:pointer}
+.btn2:active{transform:translateY(3px);box-shadow:0 0 0 var(--ink)}
+.best{font:700 15px Fredoka,sans-serif;margin:-4px 0 8px;text-align:center;min-height:18px}
+.sub-end{font:700 17px Fredoka,sans-serif;margin:0 0 10px;text-align:center}
+body.casting .toast{visibility:hidden}
+@media (max-height:520px){
+  .card{padding:10px 14px 8px}
+  h1{font-size:26px}
+  .sub{display:none}
+  .levels{margin:0 0 8px}
+  .levels.modes .lv canvas{width:76px;height:44px}
+  .btn{font-size:24px;padding:6px 0 5px}
+  .note{margin:6px 4px 2px}
+  .song{font-size:14px;padding:4px 10px 3px}
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<video id="v" playsinline muted></video>
+
+<div class="top">
+  <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 33 C 10 20, 20 9, 34 6 C 33 20, 24 31, 8 33 Z" fill="#7DCB6B" stroke="#2b2118" stroke-width="3.5" stroke-linejoin="round"/><path d="M11 30 C 17 23, 23 16, 29 11" fill="none" stroke="#2b2118" stroke-width="2.5" stroke-linecap="round"/></svg><span>Bamboo Physio</span></div>
+  <div class="tr"><button class="snd cast" id="cast">📺</button><button class="snd" id="snd" aria-pressed="false">🔊</button>
+  <div class="lang"><button id="lang-en" aria-pressed="true">EN</button><button id="lang-he" aria-pressed="false">עב</button></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+<button class="stopx" id="stopx" aria-label="Stop">✕</button>
+<button class="skip" id="skip"></button>
+
+<div class="card home" id="start">
+  <h1 id="t-title">Rainbow Notes</h1>
+  <p class="sub" id="t-sub"></p>
+  <div class="songs" id="songs"></div>
+  <button class="btn" id="play"><span id="t-play">Play</span></button>
+  <div class="levels modes" id="modes">
+    <button class="lv" data-m="solo"><canvas width="220" height="128"></canvas><b id="t-solo"></b></button>
+    <button class="lv" data-m="duo"><canvas width="220" height="128"></canvas><b id="t-duo"></b></button>
+  </div>
+  <div class="best" id="best"></div>
+  <p class="note" id="t-privacy"></p>
+  <details id="grown">
+    <summary id="t-grown">For grown-ups</summary>
+    <div class="g-body">
+      <div class="g-row"><span id="t-reach">Reach</span>
+        <div class="seg" id="reach-seg"><button data-v="near"></button><button data-v="far"></button></div></div>
+      <div class="g-row"><span id="t-group">Repeated notes</span>
+        <div class="seg" id="group-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-next">Show the next note</span>
+        <div class="seg" id="next-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-chords">Piano chords</span>
+        <div class="seg" id="chords-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <div class="g-row"><span id="t-sfx">Sound effects</span>
+        <div class="seg" id="sfx-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
+      <p id="t-g1"></p>
+      <p id="t-g2"></p>
+      <p id="t-g3"></p>
+      <p id="t-g4"></p>
+      <p class="mini" id="t-legal"></p>
+    </div>
+  </details>
+</div>
+
+<div class="card" id="end" hidden>
+  <h1 id="t-over"></h1>
+  <div class="big-score" dir="ltr"><span id="final">0</span></div>
+  <div class="sub-end" id="endsub"></div>
+  <button class="btn" id="again"><span id="t-again">Play again</span></button>
+  <button class="btn2" id="menu"></button>
+  <p class="note" id="t-privacy2"></p>
+</div>
+
+<script type="module">
+/* Rainbow Notes — Edgar 24 Nov 2026.
+   Play a well-known song by reaching for its notes. 8 heights on the screen = 8 notes of the scale, coloured in rainbow
+   order (low red → high pink). Each note is a round sticker with a ♪ inside. Repeated notes come together as a double
+   or triple note (touch once, it plays them in rhythm). The note sits at its height, at a random place left or right.
+   The camera finds the child's hands (they glow); brushing a note plays it on the piano — no need to be exact.
+   Up to 5 songs, all old and free of copyright. Upper body, like Spider Swat (can be played sitting).
+   2 players: each has half the screen, and the next note always jumps over to the other player — they play the song together.
+   Nothing is recorded or sent. */
+import {INK,$,LS,S,audio,tone,SFX,bindSound,ell,sticker,starPath,camLoad,timeoutP,fmtTime,lockOn,loadSamples,playSample} from '../shared/kit.js';
+import {setupCast} from '../shared/cast.js';
+import {setupHowTo,ease} from '../shared/howto.js';
+import {makeGuide} from '../shared/guide.js';
+import {NOTE_COL,drawNote,drawMiniNote,drawHandGlow,twinkle,drawLadder,drawReachKid,drawBackdrop,clusterOffsets,clusterHalfW,hexA} from './art.js';
+
+/* ================= SONGS =================
+   All melodies are old and in the public domain (no copyright): Twinkle Twinkle (French tune, 1761), Mary Had a Little Lamb
+   (1830), Happy Birthday (the Hill sisters' 1893 tune; public domain), Row Row Row Your Boat (1852), Old MacDonald (traditional).
+   scale = the 8 piano notes (MIDI) for the 8 heights, low → high.  notes = "height:beats ...".  chords = "chord:beats ..." ('-' = none). */
+const CH={C:[36,48,52,55],F:[41,53,57,60],G:[43,55,59,62],D:[38,50,54,57],Bb:[46,53,58,62]};
+const SONGS=[
+ {id:'twinkle',icon:'⭐',en:'Twinkle Twinkle',he:'נצנץ נצנץ כוכב קטן',spb:.55,scale:[60,62,64,65,67,69,71,72],
+  notes:'0:1 0:1 4:1 4:1 5:1 5:1 4:2 3:1 3:1 2:1 2:1 1:1 1:1 0:2 4:1 4:1 3:1 3:1 2:1 2:1 1:2 4:1 4:1 3:1 3:1 2:1 2:1 1:2 0:1 0:1 4:1 4:1 5:1 5:1 4:2 3:1 3:1 2:1 2:1 1:1 1:1 0:2',
+  chords:'C:4 F:2 C:2 F:2 C:2 G:2 C:2 C:2 F:2 C:2 G:2 C:2 F:2 C:2 G:2 C:4 F:2 C:2 F:2 C:2 G:2 C:2'},
+ {id:'birthday',icon:'🎂',en:'Happy Birthday',he:'יום הולדת שמח',spb:.5,scale:[60,62,64,65,67,69,70,72],
+  notes:'0:.75 0:.25 1:1 0:1 3:1 2:2 0:.75 0:.25 1:1 0:1 4:1 3:2 0:.75 0:.25 7:1 5:1 3:1 2:1 1:2 6:.75 6:.25 5:1 3:1 4:1 3:3',
+  chords:'-:1 F:3 C:3 C:3 F:3 F:3 Bb:3 F:3 C:1 F:3'},
+ {id:'mary',icon:'🐑',en:'Mary Had a Little Lamb',he:'למרי היה כבש קטן',spb:.5,scale:[60,62,64,65,67,69,71,72],
+  notes:'2:1 1:1 0:1 1:1 2:1 2:1 2:2 1:1 1:1 1:2 2:1 4:1 4:2 2:1 1:1 0:1 1:1 2:1 2:1 2:1 2:1 1:1 1:1 2:1 1:1 0:4',
+  chords:'C:4 C:4 G:4 C:4 C:4 C:4 G:4 C:4'},
+ {id:'row',icon:'🚣',en:'Row, Row, Row Your Boat',he:'חתור, חתור בסירה',spb:.22,scale:[60,62,64,65,67,69,71,72],
+  notes:'0:3 0:3 0:2 1:1 2:3 2:2 1:1 2:2 3:1 4:6 7:1 7:1 7:1 4:1 4:1 4:1 2:1 2:1 2:1 0:1 0:1 0:1 4:2 3:1 2:2 1:1 0:6',
+  chords:'C:36 C:3 G:3 C:6'},
+ {id:'farm',icon:'🐄',en:'Old MacDonald',he:'לדוד משה הייתה חווה',spb:.45,scale:[62,64,66,67,69,71,72,74],
+  notes:'3:1 3:1 3:1 0:1 1:1 1:1 0:2 5:1 5:1 4:1 4:1 3:3 0:1 3:1 3:1 3:1 0:1 1:1 1:1 0:2 5:1 5:1 4:1 4:1 3:3 0:.5 0:.5 '+
+        '3:1 3:1 3:1 0:.5 0:.5 3:1 3:1 3:2 3:.5 3:.5 3:1 3:.5 3:.5 3:1 3:.5 3:.5 3:.5 3:.5 3:1 3:1 3:1 3:1 3:1 0:1 1:1 1:1 0:2 5:1 5:1 4:1 4:1 3:4',
+  chords:'G:4 C:2 G:2 G:2 D:2 G:4 G:4 C:2 G:2 G:2 D:2 G:4 G:16 G:4 C:2 G:2 G:2 D:2 G:4'}
+];
+function parse(song){
+  let b=0;const ev=song.notes.trim().split(/\s+/).map(tk=>{const [s,d]=tk.split(':');const e={slot:+s,dur:+d,beat:b};b+=+d;return e;});
+  let cb=0;const ch=song.chords.trim().split(/\s+/).map(tk=>{const [n,d]=tk.split(':');const e={name:n,beat:cb,dur:+d};cb+=+d;return e;}).filter(e=>e.name!=='-');
+  return {ev,ch,beats:b};
+}
+/* targets: one per note, or repeated notes together (double / triple, never more than 3) */
+function makeTargets(ev,group){
+  const T=[];for(const e of ev){const L=T[T.length-1];
+    if(group&&L&&L.slot===e.slot&&L.notes.length<3)L.notes.push(e);else T.push({slot:e.slot,notes:[e]});}
+  T.forEach(t=>{t.beat=t.notes[0].beat;t.dur=t.notes.reduce((a,n)=>a+n.dur,0);});
+  return T;
+}
+
+const UI={
+ en:{title:"Rainbow Notes",sub:"Touch the notes with your hands and play a song!",play:"Play",solo:"1 player",duo:"2 players",
+  privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
+  reach:"Reach",near:"Near",far:"Far",group:"Repeated notes",together:"Together (×2, ×3)",apart:"One by one",next:"Show the next note",chords:"Piano chords",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
+  g1:"A song is played one note at a time. Each note appears at its own height on the screen — 8 heights for the 8 notes of the scale, low notes low and high notes high, in rainbow colours (red is the lowest, pink the highest). The rainbow ladder on the side shows which height is which. The note sits at a random place to the left or right of the child, and the child brushes it with either hand — the hands glow, and it doesn't need to be exact. Then the note plays on the piano and the next one appears. There is no time limit and nothing to lose: the song goes at the child's pace. When the song is finished, the whole song plays back as the child played it.",
+  g2:"★ Repeated notes: “Together” shows notes that repeat (like the “Twin-kle twin-kle”) as one double or triple note — one touch plays them in rhythm. “One by one” gives every note its own reach (more movement). Reach: Near keeps the notes close to the body; Far makes the child stretch the arms all the way out. Show the next note: a see-through note shows where the next one will be, so the child can plan the movement.",
+  g3:"★ Set the phone or tablet sideways, about chest height of the child. Before the game a see-through outline shows where to sit or stand (from the belt up, both hands in view): fit into it and hold still until it fills green. Works sitting in a chair.",
+  g4:"★ 2 players: each player has their own half of the screen. The notes take turns — every note jumps over to the other player, so they play the song together. Nobody wins: they finish it as a team.",
+  legal:"A home practice game by Bamboo Physio. Not a medical device. All songs are traditional melodies in the public domain. © 2026 Bamboo Physio · Piano sound: FluidR3_GM by Frank Wen, CC BY 3.0",
+  ready:"Getting ready…",go:"Go!",turn:"Turn the phone sideways to play",nocam:"No camera here. Touch the notes with your finger.",aria:"Game area",
+  find:"Sit in front of the camera",wait:"The notes are waiting…",reachIt:"Reach for the note!",yourTurn:"Your turn!",
+  yourSong:"Your song! 🎶",together:"Your song — together! 🎶",skip:"Skip ⏭",
+  done:"You played it!",doneTwo:"You played it together!",fast:t=>"Fastest: "+t,newBest:"New record! ⭐",notes:n=>n+" notes",
+  playagain:"Play again",other:"Another song",best:t=>"Fastest: "+t},
+ he:{title:"תווי הקשת",sub:"געו בתווים עם הידיים ונגנו שיר!",play:"שחקו",solo:"שחקן אחד",duo:"2 שחקנים",
+  privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
+  reach:"טווח הושטה",near:"קרוב",far:"רחוק",group:"תווים חוזרים",together:"ביחד (×2, ×3)",apart:"אחד אחד",next:"להראות את התו הבא",chords:"אקורדים בפסנתר",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
+  g1:"השיר מתנגן תו אחרי תו. כל תו מופיע בגובה משלו על המסך — 8 גבהים ל־8 התווים של הסולם, תווים נמוכים למטה ותווים גבוהים למעלה, בצבעי הקשת (אדום הכי נמוך, ורוד הכי גבוה). סולם הקשת בצד מראה איזה גובה הוא איזה. התו מופיע במקום אקראי משמאל או מימין לילד, והילד נוגע בו עם אחת הידיים — הידיים זוהרות, ולא צריך לדייק. התו מתנגן בפסנתר והתו הבא מופיע. אין הגבלת זמן ואין מה להפסיד: השיר מתקדם בקצב של הילד. בסוף השיר כל השיר מתנגן שוב, כמו שהילד ניגן אותו.",
+  g2:"★ תווים חוזרים: „ביחד” מראה תווים שחוזרים על עצמם כתו כפול או משולש — נגיעה אחת מנגנת אותם בקצב. „אחד אחד” נותן לכל תו הושטה משלו (יותר תנועה). טווח הושטה: „קרוב” שומר את התווים קרוב לגוף; „רחוק” דורש למתוח את הידיים עד הסוף. להראות את התו הבא: תו שקוף מראה איפה יופיע התו הבא, כדי שהילד יוכל לתכנן את התנועה.",
+  g3:"★ העמידו את הטלפון או הטאבלט לרוחב, בערך בגובה החזה של הילד. לפני המשחק צורה שקופה מראה איפה לשבת או לעמוד (מהחגורה ומעלה, שתי הידיים בתמונה): נכנסים לתוכה ומחזיקים בלי לזוז עד שהיא מתמלאת בירוק. אפשר לשחק בישיבה על כיסא.",
+  g4:"★ 2 שחקנים: לכל שחקן חצי מסך משלו. התווים מתחלפים — כל תו קופץ לשחקן השני, וכך הם מנגנים את השיר ביחד. אין מנצח: מסיימים את השיר כצוות.",
+  legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. כל השירים הם מנגינות עממיות ישנות בנחלת הכלל. © 2026 Bamboo Physio · צליל הפסנתר: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
+  ready:"מתכוננים…",go:"יוצאים!",turn:"סובבו את הטלפון לרוחב כדי לשחק",nocam:"אין כאן מצלמה. געו בתווים עם האצבע.",aria:"אזור המשחק",
+  find:"שבו מול המצלמה",wait:"התווים מחכים…",reachIt:"הושיטו יד לתו!",yourTurn:"התור שלך!",
+  yourSong:"השיר שלכם! 🎶",together:"השיר שלכם — ביחד! 🎶",skip:"דלגו ⏭",
+  done:"ניגנתם את השיר!",doneTwo:"ניגנתם את השיר ביחד!",fast:t=>"הכי מהר: "+t,newBest:"שיא חדש! ⭐",notes:n=>n+" תווים",
+  playagain:"עוד פעם",other:"שיר אחר",best:t=>"הכי מהר: "+t}
+};
+
+let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
+let mode=LS.get('nt-mode','solo'); if(!['solo','duo'].includes(mode))mode='solo';
+let songId=LS.get('nt-song','twinkle'); if(!SONGS.some(s=>s.id===songId))songId='twinkle';
+let reach=LS.get('nt-reach','near'); if(!['near','far'].includes(reach))reach='near';
+let group=LS.get('nt-group','1')==='1',showNext=LS.get('nt-next','1')==='1',chordsOn=LS.get('nt-chords','1')==='1';
+const QS=new URLSearchParams(location.search),FAKE=QS.has('fake')||QS.has('bot'),BOT=QS.has('bot'),SPEEDUP=+QS.get('speedup')||1;   // ?fake = finger is the hand; ?bot = plays by itself (testing)
+if(FAKE&&QS.get('mode'))mode=QS.get('mode');if(FAKE&&QS.get('song'))songId=QS.get('song');
+S.track='none';
+const syncSound=bindSound(()=>UI[lang]);
+let casting=false;
+const cast=setupCast({canvas:$('c'),button:$('cast'),lang:()=>lang,sound:()=>(audio(),S),onChange:v=>{casting=v;document.body.classList.toggle('casting',v);}});
+const song=()=>SONGS.find(s=>s.id===songId);
+const bestKey=()=>'nt-best-'+songId+'-'+(group?'g':'s')+'-'+mode;
+
+function buildSongs(){
+  const box=$('songs');box.innerHTML='';
+  for(const s of SONGS){const b=document.createElement('button');b.className='song';b.dataset.id=s.id;b.textContent=s.icon+' '+s[lang];
+    b.setAttribute('aria-pressed',s.id===songId);b.onclick=()=>{songId=s.id;LS.set('nt-song',songId);audio();preload();playPreview();buildSongs();segs();};box.appendChild(b);}
+}
+function segs(){
+  const u=UI[lang],set=(id,val,txt)=>document.querySelectorAll('#'+id+' button').forEach(b=>{if(txt)b.textContent=txt(b.dataset.v);b.setAttribute('aria-pressed',b.dataset.v===String(val));});
+  set('reach-seg',reach,v=>u[v]);set('group-seg',group?'1':'0',v=>v==='1'?u.together:u.apart);
+  set('next-seg',showNext?'1':'0',v=>v==='1'?u.on:u.off);set('chords-seg',chordsOn?'1':'0',v=>v==='1'?u.on:u.off);
+  document.querySelectorAll('#modes .lv').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===mode));
+  const bt=+LS.get(bestKey(),'0')||0;$('best').textContent=bt?u.best(fmtTime(bt)):'';
+}
+let lastRes=null;
+function setLang(l){
+  lang=l;LS.set('bamboo-lang',l);const u=UI[l];
+  document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
+  for(const k of ['title','sub','play','privacy','grown','reach','group','next','chords','sfx','g1','g2','g3','g4','legal','solo','duo'])
+    {const e=$('t-'+k);if(e)e.textContent=u[k];}
+  $('t-privacy2').textContent=u.privacy;$('menu').textContent=u.other;$('skip').textContent=u.skip;document.title=u.title+' · Bamboo Physio';
+  $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
+  $('c').setAttribute('aria-label',u.aria);
+  buildSongs();segs();syncSound();cast.paint&&cast.paint();if(lastRes&&!$('end').hidden)fillEnd();
+}
+$('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
+const segBind=(id,fn)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{fn(b.dataset.v);SFX.tink();segs();});
+segBind('reach-seg',v=>{reach=v;LS.set('nt-reach',v);});
+segBind('group-seg',v=>{group=v==='1';LS.set('nt-group',v);});
+segBind('next-seg',v=>{showNext=v==='1';LS.set('nt-next',v);});
+segBind('chords-seg',v=>{chordsOn=v==='1';LS.set('nt-chords',v);});
+document.querySelectorAll('#modes .lv').forEach(b=>b.onclick=()=>{mode=b.dataset.m;LS.set('nt-mode',mode);SFX.tink();segs();});
+
+/* ================= CANVAS ================= */
+const cv=$('c'),ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;}
+addEventListener('resize',resize);resize();
+function toast(t,ms=4000){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.tm);if(ms)toast.tm=setTimeout(()=>e.classList.remove('on'),ms);}
+
+/* ================= PIANO ================= */
+const INST='acoustic_grand_piano';
+let PB=null;
+function pbus(){
+  const a=S.AC;if(!a)return null;if(PB)return PB;
+  PB=a.createGain();PB.gain.value=.95;PB.connect(S.BUS.master);
+  const len=a.sampleRate*1.6,b=a.createBuffer(2,len,a.sampleRate);
+  for(let c=0;c<2;c++){const d=b.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3.2);}
+  const rv=a.createConvolver();rv.buffer=b;const wet=a.createGain();wet.gain.value=.22;PB.connect(wet);wet.connect(rv);rv.connect(S.BUS.master);
+  return PB;
+}
+function preload(){const a=S.AC;if(!a)return;const s=song(),ms=new Set(s.scale);for(const n of parse(s).ch)CH[n.name].forEach(m=>ms.add(m));return loadSamples(a,{[INST]:[...ms]});}
+/* one piano note; falls back to a soft synth tone if the sample isn't loaded yet */
+function piano(m,at,len,v=.9){
+  const a=audio();if(!a)return;const t=a.currentTime+Math.max(0,at),bus=pbus();
+  if(playSample(a,INST,m,t,v,bus,Math.max(.45,len)))return;
+  const f=440*Math.pow(2,(m-69)/12),o=a.createOscillator(),o2=a.createOscillator(),g=a.createGain();o.type='triangle';o2.type='sine';o.frequency.value=f;o2.frequency.value=f*2;
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.18*v,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+Math.max(.5,len)+.4);
+  o.connect(g);o2.connect(g);g.connect(bus);o.start(t);o2.start(t);o.stop(t+len+.5);o2.stop(t+len+.5);
+}
+function chord(name,at,len,v=.32){CH[name].forEach((m,i)=>piano(m,at+i*.012,len,v*(i?1:.8)));}
+/* play a stretch of the song: from beat b0, the notes of one target (and the chords that start inside it) */
+function playTarget(tg,at=0){
+  const s=song(),P=parse(s),spb=s.spb;
+  tg.notes.forEach(n=>piano(s.scale[tg.slot],at+(n.beat-tg.beat)*spb,n.dur*spb+.35));
+  if(chordsOn)for(const c of P.ch)if(c.beat>=tg.beat-1e-6&&c.beat<tg.beat+tg.dur-1e-6)chord(c.name,at+(c.beat-tg.beat)*spb,c.dur*spb+.2);
+}
+let previewT=0;
+function playPreview(){   // tapping a song plays its first few notes
+  const s=song(),P=parse(s);previewT++;const id=previewT;let b0=null;
+  for(const e of P.ev){if(e.beat>4.01)break;if(b0===null)b0=e.beat;piano(s.scale[e.slot],(e.beat-b0)*s.spb,e.dur*s.spb+.3,.7);}
+}
+const FX={
+  land(){if(S.sfxOn)tone({f0:1600,f1:2400,dur:.06,type:'sine',vol:.04});},
+  whoosh(){},
+  finish(){SFX.chime();},
+};
+
+/* ================= CAMERA + POSE TRACKING (on device) ================= */
+const video=$('v');
+let tracker=null,camOK=false,lastVT=-1,people=[];
+const vmap=()=>{const vw=video.videoWidth||640,vh=video.videoHeight||480,s=Math.max(W/vw,H/vh);return {vw,vh,s,ox:(W-vw*s)/2,oy:(H-vh*s)/2};};
+async function startCam(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('nocam');
+  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:false});
+  video.srcObject=stream;await video.play();
+  const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
+  const files=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+  const opts=(d,k)=>({baseOptions:{modelAssetPath:`https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_${k}/float16/1/pose_landmarker_${k}.task`,delegate:d},
+    runningMode:'VIDEO',numPoses:4,minPoseDetectionConfidence:.45,minPosePresenceConfidence:.45,minTrackingConfidence:.45});
+  let err=null;
+  for(const [d,k] of [['GPU','full'],['GPU','lite'],['CPU','lite']]){try{tracker=await timeoutP(vision.PoseLandmarker.createFromOptions(files,opts(d,k)),d==='GPU'?30000:120000);break;}catch(e){err=e;}}
+  if(!tracker)throw err||new Error('model');
+  tracker=lockOn(tracker,{kind:'pose',players:()=>mode==='duo'?2:1});   // follow only the player(s), never a grown-up behind
+  camOK=true;
+}
+function track(now){
+  if(!tracker||video.readyState<2||video.currentTime===lastVT)return false;lastVT=video.currentTime;
+  let res;try{res=tracker.detectForVideo(video,now);}catch(e){return false;}
+  const m=vmap(),L=res.landmarks||[];
+  people=L.map(lm=>{const p=lm.map(q=>({x:m.ox+(1-q.x)*m.vw*m.s,y:m.oy+q.y*m.vh*m.s,v:q.visibility??1}));
+    const sw=Math.hypot(p[11].x-p[12].x,p[11].y-p[12].y),cx=(p[11].x+p[12].x)/2,sy=(p[11].y+p[12].y)/2;
+    const nose=p[0].v>.4?p[0]:{x:cx,y:sy-sw*.75};
+    // a hand = just past the wrist, in line with the forearm (the middle of the palm / fingers)
+    const hands=[[15,13],[16,14]].map(([wi,ei])=>{const w=p[wi],e=p[ei];if(w.v<.35)return null;return {x:w.x+(w.x-e.x)*.38,y:w.y+(w.y-e.y)*.38};}).filter(Boolean);
+    return {nose,sw,cx,sy,hands,ok:p[11].v>=.4&&p[12].v>=.4&&sw>4};}).filter(p=>p.ok);
+  people.sort((a,b)=>a.cx-b.cx);
+  if(mode==='solo'&&people.length>1)people=[people.reduce((a,b)=>b.sw>a.sw?b:a)];
+  return true;
+}
+const GTXT={en:{find:'Sit in front of the camera'},he:{find:'שבו מול המצלמה'}};
+const guide=makeGuide('reach',{},GTXT);
+const guides=[makeGuide('reachLow',{},GTXT),makeGuide('reachLow',{},GTXT)];
+
+/* ================= LAYOUT ================= */
+function lanes(){return mode==='duo'?[{x:0,w:W/2},{x:W/2,w:W/2}]:[{x:0,w:W}];}
+const yTop=()=>Math.max(H*.1,74),yBot=()=>Math.min(H*.9,H-66);
+const rowY=i=>yBot()-(yBot()-yTop())*i/7;
+const ROWS=()=>[0,1,2,3,4,5,6,7].map(rowY);
+const ladderW=()=>Math.max(20,Math.min(46,W*.035));
+const gap=()=>(yBot()-yTop())/7;
+
+function personFor(k){
+  if(mode==='solo')return people[0]||null;
+  if(people.length>=2)return people[k];
+  const p=people[0];if(!p)return null;return (p.cx<W/2?0:1)===k?p:null;
+}
+let players=[];
+function makePlayer(k){return {k,get ln(){return lanes()[k];},ref:null,hands:[],prev:[],seenT:-9,fake:[],cal:[],hot:0};}
+const U=P=>P.ref?P.ref.sw:Math.min(W,H)*.2;
+const noteR=P=>Math.max(20,Math.min(U(P)*.34,gap()*.78,64));
+const handR=P=>Math.max(16,U(P)*.2);
+
+/* UI boxes the notes must not hide behind */
+function uiRects(){
+  const R=[...document.querySelectorAll('.brand,.tr,#stopx.on,#skip.on')].map(e=>e.getBoundingClientRect()).filter(r=>r.width>0&&r.height>0).map(r=>({l:r.left,r:r.right,t:r.top,b:r.bottom}));
+  R.push(hudRect());
+  const lw=ladderW();R.push({l:0,r:lw+18,t:0,b:H});if(mode==='duo')R.push({l:W-lw-18,r:W,t:0,b:H});
+  return R;
+}
+const hudRect=()=>({l:W-170,r:W,t:H-64,b:H});
+/* where a target goes: its height is fixed by its note; left or right of the child, within reach */
+function placeTarget(tg,k,from){
+  const P=players[k],ln=P.ln,p=camOK?personFor(k):null,sw=U(P),r=noteR(P),hw=clusterHalfW(tg.n,r);
+  const cx=p?p.cx:P.ref.cx,ny=p?p.nose.y:P.ref.ny,sy=p?p.sy:P.ref.sy,y=rowY(tg.slot);
+  const R=uiRects(),far=reach==='far'?2.35:1.7,x0=ln.x+hw+8,x1=ln.x+ln.w-hw-8;
+  // the face and chest stay free, so the child can see himself (notes above the head may be in the middle)
+  const overFace=y>ny-sw*.75-r&&y<sy+sw*.5+r;
+  let best=null,bs=-1e9;
+  for(let i=0;i<40;i++){
+    let dx=(Math.random()*2-1)*far*sw;
+    if(overFace&&Math.abs(dx)<sw*.62+hw)dx=Math.sign(dx||1)*(sw*.62+hw+Math.random()*sw*.3);
+    const x=Math.max(x0,Math.min(x1,cx+dx));
+    let sc=0;
+    if(R.some(q=>x+hw>q.l-6&&x-hw<q.r+6&&y+r>q.t-6&&y-r<q.b+6))sc-=1000;
+    if(overFace&&Math.abs(x-cx)<sw*.55+hw)sc-=500;
+    if(from&&from.k===k)sc-=Math.max(0,sw*1.1-Math.hypot(x-from.x,y-from.y))*3;   // not right where the last one was
+    sc+=Math.random()*sw*.3;
+    if(sc>bs){bs=sc;best=x;}
+  }
+  tg.k=k;tg.x=best;tg.y=y;tg.r=r;
+}
+
+/* ================= GAME ================= */
+let state='menu',tNow=0,countT=0,lastCount=9,elapsed=0,pops=[],floats=[],bounce=new Array(8).fill(0);
+let TG=[],ti=0,cur=null,nextAt=0,startT=0,finale=null,lastHit=null;
+async function play(){
+  audio();preload();SFX.go();
+  $('start').hidden=true;$('end').hidden=true;
+  if(!camOK&&!FAKE){toast(UI[lang].ready,0);state='loading';
+    try{await camLoad(startCam);$('toast').classList.remove('on');}
+    catch(e){console.warn(e);toast(UI[lang].nocam,6000);}}
+  players=lanes().map((_,k)=>makePlayer(k));elapsed=0;pops=[];floats=[];lastRes=null;finale=null;lastHit=null;
+  const P0=parse(song());TG=makeTargets(P0.ev,group).map(t=>({...t,n:t.notes.length}));ti=0;cur=null;
+  $('stopx').classList.add('on');
+  guide.reset();guides.forEach(g=>g.reset());
+  if(camOK)state='setup';
+  else{players.forEach(P=>{const sw=Math.min(H*.2,P.ln.w*.2);P.ref={sw,cx:P.ln.x+P.ln.w/2,ny:H*.38,sy:H*.38+sw*.75};});startCount();}
+}
+function hideGuides(){guide.hide();guides.forEach(g=>g.hide());}
+function startCount(){state='count';countT=tNow;lastCount=9;}
+$('play').onclick=play;$('again').onclick=()=>play();
+$('menu').onclick=()=>{$('end').hidden=true;$('start').hidden=false;state='menu';segs();};
+$('stopx').onclick=()=>endGame(true);
+$('skip').onclick=()=>{if(state==='finale')showEnd();};
+
+/* no camera: fingers / mouse are the hands */
+const touches=new Map();
+cv.addEventListener('pointerdown',e=>{touches.set(e.pointerId,{x:e.clientX,y:e.clientY});});
+cv.addEventListener('pointermove',e=>{if(touches.has(e.pointerId)||e.pointerType==='mouse')touches.set(e.pointerId,{x:e.clientX,y:e.clientY});});
+addEventListener('pointerup',e=>{if(e.pointerType!=='mouse')touches.delete(e.pointerId);});
+
+function readHands(P,dt){
+  P.prev=P.hands.map(h=>({...h}));
+  if(camOK){
+    const p=personFor(P.k);if(!p)return;P.seenT=tNow;
+    // smooth a little, keep the matching hand
+    const nh=p.hands.map(h=>{const o=P.hands.reduce((a,q)=>!a||Math.hypot(q.x-h.x,q.y-h.y)<Math.hypot(a.x-h.x,a.y-h.y)?q:a,null);
+      if(o&&Math.hypot(o.x-h.x,o.y-h.y)<U(P)*1.2){const k=Math.min(1,dt*26);return {x:o.x+(h.x-o.x)*k,y:o.y+(h.y-o.y)*k};}return {x:h.x,y:h.y};});
+    P.hands=nh;
+  } else if(BOT){botHand(P,dt);P.seenT=tNow;}
+  else{P.seenT=tNow;const ln=P.ln;P.hands=[...touches.values()].filter(q=>mode!=='duo'||(q.x>=ln.x&&q.x<ln.x+ln.w)).slice(0,2).map(q=>({...q}));}
+}
+/* ?bot: a hand that flies to each note (to check the flow) */
+function botHand(P,dt){
+  if(!P.bh)P.bh={x:P.ln.x+P.ln.w/2,y:H*.6};
+  const tgt=cur&&cur.st==='ready'&&cur.k===P.k?cur:null,g=tgt?{x:tgt.x,y:tgt.y}:{x:P.ln.x+P.ln.w/2,y:H*.62};
+  const k=Math.min(1,dt*4.5);P.bh.x+=(g.x-P.bh.x)*k;P.bh.y+=(g.y-P.bh.y)*k;P.hands=[{...P.bh}];
+}
+const segDist=(px,py,x0,y0,x1,y1)=>{const dx=x1-x0,dy=y1-y0,L=dx*dx+dy*dy,k=L?Math.max(0,Math.min(1,((px-x0)*dx+(py-y0)*dy)/L)):0;return Math.hypot(px-(x0+dx*k),py-(y0+dy*k));};
+/* does a hand (moving from its last place) touch the note? generous on purpose */
+function touching(P,tg){
+  const hr=handR(P),offs=clusterOffsets(tg.n,tg.r);
+  return P.hands.some((h,j)=>{const pv=P.prev[j]&&Math.hypot(P.prev[j].x-h.x,P.prev[j].y-h.y)<U(P)*1.5?P.prev[j]:h;
+    return offs.some(o=>segDist(tg.x+o.x,tg.y+o.y,pv.x,pv.y,h.x,h.y)<o.r*1.05+hr*.85);});
+}
+const sideOf=i=>mode==='duo'?i%2:0;
+function spawnTarget(){
+  if(ti>=TG.length)return;
+  const tg=TG[ti],k=sideOf(ti),from=lastHit;
+  if(!tg.x||tg.planned!==true)placeTarget(tg,k,from);
+  tg.st='fly';tg.t0=tNow;tg.from=from?{x:from.x,y:from.y}:{x:tg.x,y:-tg.r*2};tg.popped=0;tg.hitT=0;
+  cur=tg;
+  // plan the next one now, so it can be shown as a see-through note
+  const nx=TG[ti+1];if(nx){placeTarget(nx,sideOf(ti+1),{k,x:tg.x,y:tg.y});nx.planned=true;}
+}
+function hitTarget(tg){
+  const s=song();tg.st='hit';tg.hitT=tNow;playTarget(tg,0);
+  const P=players[tg.k];P.hot=1;
+  tg.notes.forEach((n,i)=>{const at=(n.beat-tg.beat)*s.spb;setTimeout(()=>{tg.popped=i+1;burst(tg,i);bounce[tg.slot]=1;},at*1000/SPEEDUP);});
+  lastHit={k:tg.k,x:tg.x,y:tg.y};
+  const durS=tg.dur*s.spb;nextAt=tNow+Math.max(.3,Math.min(1.1,durS*.85));
+  ti++;
+}
+function burst(tg,i){
+  const o=clusterOffsets(tg.n,tg.r)[i]||{x:0,y:0,r:tg.r},x=tg.x+o.x,y=tg.y+o.y,col=NOTE_COL[tg.slot];
+  for(let j=0;j<12;j++){const a=Math.random()*6.3,v=tg.r*(3+Math.random()*4);pops.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-tg.r*2,life:.7+Math.random()*.4,c:j%3?col:'#fff',s:tg.r*.22,tw:j%2});}
+  floats.push({x,y,t:tNow,col,r:tg.r});
+}
+function endGame(quit){
+  hideGuides();state='menu';$('stopx').classList.remove('on');$('skip').classList.remove('on');finale=null;
+  if(quit){$('start').hidden=false;$('end').hidden=true;segs();}
+}
+/* the song is done: play it all back, while a rainbow line of notes lights up across the screen */
+function startFinale(){
+  const s=song(),P0=parse(s);state='finale';FX.finish();
+  const a=audio(),lead=1.1;finale={t0:tNow+lead,dur:P0.beats*s.spb,ev:P0.ev,beats:P0.beats};
+  for(const e of P0.ev)piano(s.scale[e.slot],lead+e.beat*s.spb,e.dur*s.spb+.35);
+  if(chordsOn)for(const c of P0.ch)chord(c.name,lead+c.beat*s.spb,c.dur*s.spb+.2);
+  $('skip').classList.add('on');
+  // record
+  const secs=elapsed,b=+LS.get(bestKey(),'0')||0,nb=!b||secs<b;if(nb)LS.set(bestKey(),String(Math.round(secs)));
+  lastRes={secs,best:nb?secs:b,isNew:nb&&b>0,n:P0.ev.length,duo:mode==='duo',song:songId};
+  confetti();
+}
+let fadeStop=0;
+function showEnd(){
+  if(state!=='finale')return;
+  // stop the playback right away if skipped
+  if(PB&&S.AC){const old=PB;old.gain.setTargetAtTime(0,S.AC.currentTime,.05);setTimeout(()=>old.disconnect(),400);PB=null;}
+  state='over';$('skip').classList.remove('on');$('stopx').classList.remove('on');fillEnd();$('end').hidden=false;
+}
+function fillEnd(){
+  const u=UI[lang],R=lastRes,s=SONGS.find(x=>x.id===R.song);
+  $('t-over').textContent=R.duo?u.doneTwo:u.done;$('final').textContent=s.icon+' '+fmtTime(R.secs);
+  $('endsub').textContent=s[lang]+' · '+u.notes(R.n)+' · '+(R.isNew?u.newBest:u.fast(fmtTime(R.best)));
+  $('t-again').textContent=u.playagain;$('menu').textContent=u.other;$('t-privacy2').textContent=u.privacy;
+}
+function confetti(){for(let i=0;i<40;i++)pops.push({x:W*(.2+Math.random()*.6),y:H*.35,vx:(Math.random()-.5)*W*.9,vy:-H*(.4+Math.random()*.7),life:1.6+Math.random()*.6,c:NOTE_COL[i%8],s:12,star:1});}
+
+const portraitPlay=()=>H>W*1.05&&['setup','count','play'].includes(state);
+
+let last=performance.now();
+function frame(now){
+  const dt=Math.max(0,Math.min(.05,(now-last)/1000))*SPEEDUP;last=now;tNow+=dt;
+  if(camOK)track(now);
+  for(let i=0;i<8;i++)bounce[i]=Math.max(0,bounce[i]-dt*3);
+  players.forEach(P=>P.hot=Math.max(0,P.hot-dt*2.5));
+  if(portraitPlay()){render(dt);requestAnimationFrame(frame);return;}
+  if(state==='setup'){
+    const ob=p=>p?{x:p.nose.x,y:p.nose.y,size:p.sw,arms:p.hands.length>=2}:null;
+    players.forEach(P=>{const p=personFor(P.k);if(p){P.cal.push(p);if(P.cal.length>20)P.cal.shift();}});
+    const done=mode==='duo'?guides.map((g,k)=>g.update(dt,ob(personFor(k)),{...lanes()[k],y:0,h:H})==='done').every(Boolean):guide.update(dt,ob(personFor(0)),{x:0,y:0,w:W,h:H})==='done';
+    if(done){players.forEach(P=>{const c=P.cal.length?P.cal:null,av=f=>c.reduce((a,p)=>a+f(p),0)/c.length;
+        P.ref=c?{sw:av(p=>p.sw),cx:av(p=>p.cx),ny:av(p=>p.nose.y),sy:av(p=>p.sy)}:{sw:Math.min(W,H)*.2,cx:P.ln.x+P.ln.w/2,ny:H*.36,sy:H*.5};});
+      hideGuides();startCount();}
+  }
+  else if(state==='count'){
+    const n=3-Math.floor(tNow-countT);if(n!==lastCount){lastCount=n;if(n>0)SFX.tick();}
+    players.forEach(P=>readHands(P,dt));
+    if(tNow-countT>=3){state='play';elapsed=0;startT=tNow;nextAt=tNow+.2;}
+  }
+  else if(state==='play'){
+    players.forEach(P=>readHands(P,dt));
+    const lost=camOK&&players.some(P=>tNow-P.seenT>1);
+    if(!lost)elapsed+=dt;
+    if(!cur||cur.st==='hit'){if(tNow>=nextAt){if(ti<TG.length)spawnTarget();else if(!cur||tNow-cur.hitT>.3){startFinale();}}}
+    if(cur&&cur.st==='fly'&&tNow-cur.t0>=FLY){cur.st='ready';cur.readyT=tNow;FX.land();}
+    if(cur&&cur.st==='ready'){const P=players[cur.k];if(touching(P,cur))hitTarget(cur);}
+  }
+  else if(state==='finale'){
+    players.forEach(P=>readHands(P,dt));
+    if(finale&&tNow>finale.t0+finale.dur+1.4)showEnd();
+  }
+  render(dt);
+  requestAnimationFrame(frame);
+}
+const FLY=.42;   // seconds a note takes to jump to its place
+
+/* ================= DRAWING ================= */
+function drawMirrored(){const m=vmap();ctx.save();ctx.translate(W,0);ctx.scale(-1,1);ctx.drawImage(video,W-m.ox-m.vw*m.s,m.oy,m.vw*m.s,m.vh*m.s);ctx.restore();}
+function bubble(txt,x,y,fs,fill='#fff'){
+  ctx.save();ctx.font=`700 ${fs}px Fredoka,sans-serif`;ctx.direction=lang==='he'?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';
+  const w=ctx.measureText(txt).width+fs*1.4,h=fs*1.9;x=Math.max(w/2+6,Math.min(W-w/2-6,x));y=Math.max(h/2+4,Math.min(H-h/2-6,y));
+  ctx.fillStyle=INK;ctx.beginPath();ctx.roundRect(x-w/2,y-h/2+4,w,h,h/2);ctx.fill();
+  ctx.fillStyle=fill;ctx.strokeStyle=INK;ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,h/2);ctx.fill();ctx.stroke();
+  ctx.fillStyle=INK;ctx.fillText(txt,x,y+1);ctx.restore();
+}
+function bigText(txt,x,y,fs,col='#FFD84D',sc=1){
+  ctx.save();ctx.translate(x,y);ctx.scale(sc,sc);ctx.font=`900 ${fs}px Grandstander,Fredoka,sans-serif`;ctx.direction=lang==='he'?'rtl':'ltr';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.lineJoin='round';ctx.lineWidth=fs*.14;ctx.strokeStyle=INK;ctx.fillStyle=INK;ctx.fillText(txt,0,fs*.08);ctx.strokeText(txt,0,0);ctx.fillStyle=col;ctx.fillText(txt,0,0);ctx.restore();
+}
+function drawTurnPhone(){
+  ctx.fillStyle='rgba(255,248,236,.92)';ctx.fillRect(0,0,W,H);
+  const cx=W/2,cy=H*.42,s=Math.min(W,H)*.22,k=(tNow%2.4)/2.4,rot=-Math.PI/2*Math.min(1,Math.max(0,(k-.3)*3));
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(rot);const p=new Path2D();p.roundRect(-s*.32,-s*.58,s*.64,s*1.16,s*.12);sticker(ctx,p,'#fff',5);
+  ctx.fillStyle='#DDF3FF';ctx.fillRect(-s*.24,-s*.46,s*.48,s*.92);ctx.restore();
+  ctx.strokeStyle=INK;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.arc(cx,cy,s*.85,-Math.PI*.9,-Math.PI*.55);ctx.stroke();
+  bubble(UI[lang].turn,W/2,H*.72,Math.max(18,Math.min(26,W*.05)));
+}
+const HAND_COL=[['#FFD84D','#FFD84D'],['#5FB7F0','#5FB7F0'],['#FF9FC6','#FF9FC6']];
+function drawHands(){
+  players.forEach(P=>{const col=mode==='duo'?HAND_COL[P.k+1][0]:HAND_COL[0][0];
+    P.hands.forEach(h=>{drawHandGlow(ctx,h.x,h.y,handR(P),col,tNow+P.k,P.hot);
+      if(Math.random()<.35)pops.push({x:h.x+(Math.random()-.5)*handR(P),y:h.y+(Math.random()-.5)*handR(P),vx:(Math.random()-.5)*30,vy:-20-Math.random()*30,life:.45,c:'#fff',s:handR(P)*.28,tw:1});});});
+}
+function drawLadders(){
+  const ys=ROWS(),w=ladderW(),act=cur&&state==='play'?cur.slot:-1;
+  drawLadder(ctx,10,ys,w,act,bounce,tNow);
+  if(mode==='duo')drawLadder(ctx,W-10,ys,w,act,bounce,tNow,true);
+}
+function drawTargets(){
+  // the next note, see-through
+  const nx=TG[ti+(cur&&cur.st!=='hit'?1:0)];
+  if(showNext&&nx&&nx.planned&&state==='play'&&nx!==cur)drawNote(ctx,nx.x,nx.y,nx.r*.8,nx.slot,nx.n,tNow,{noTag:true,alpha:.3});
+  if(!cur)return;
+  const tg=cur,P=players[tg.k];
+  if(tg.st==='fly'){   // jumps in an arc from the last note
+    const k=ease(Math.min(1,(tNow-tg.t0)/FLY)),x=tg.from.x+(tg.x-tg.from.x)*k,y=tg.from.y+(tg.y-tg.from.y)*k-Math.sin(k*Math.PI)*Math.min(H*.22,Math.abs(tg.x-tg.from.x)*.35+tg.r);
+    drawNote(ctx,x,y,tg.r*(.7+.3*k),tg.slot,tg.n,tNow,{noTag:true});
+  } else if(tg.st==='ready'||tg.st==='hit'&&tg.popped<tg.n){
+    const wait=tg.st==='ready'?tNow-tg.readyT:0,big=wait>6?1+.12*Math.max(0,Math.sin((wait-6)*4)):1;   // after 6 s it gently calls
+    const halo=mode==='duo'?['#5FB7F0','#FF9FC6'][tg.k]:null;
+    drawNote(ctx,tg.x,tg.y,tg.r*big,tg.slot,tg.n,tNow,{glow:.8+.2*Math.sin(tNow*4),popped:tg.popped,halo});
+    if(tg.st==='ready'&&wait>9)bubble(UI[lang].reachIt,tg.x,tg.y+tg.r*2.1,Math.max(14,Math.min(20,W*.022)),'#FFF3C4');
+  }
+}
+function drawFloats(){
+  floats=floats.filter(f=>tNow-f.t<1.1);
+  for(const f of floats){const k=(tNow-f.t)/1.1;ctx.save();ctx.globalAlpha=1-k;drawMiniNote(ctx,f.x+Math.sin(k*8)*f.r*.4,f.y-k*f.r*3,f.r*.5,NOTE_COL.indexOf(f.col),1);ctx.restore();}
+}
+function render(dt){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  const u=UI[lang],live=camOK&&video.readyState>=2;
+  if(state==='menu'||state==='loading'){drawBackdrop(ctx,W,H,tNow);drawDemo();drawPops(dt);return;}
+  if(live){drawMirrored();ctx.fillStyle='rgba(255,248,236,.08)';ctx.fillRect(0,0,W,H);} else drawBackdrop(ctx,W,H,tNow);
+  if(portraitPlay()){drawTurnPhone();return;}
+  if(state==='setup'){if(mode==='duo')guides.forEach((g,k)=>g.draw(ctx,{...lanes()[k],y:0,h:H},lang));else guide.draw(ctx,{x:0,y:0,w:W,h:H},lang);return drawPops(dt);}
+  if(mode==='duo'&&state!=='finale'&&state!=='over'){ctx.save();ctx.setLineDash([2,14]);ctx.lineCap='round';ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(W/2,90);ctx.lineTo(W/2,H-20);ctx.stroke();ctx.restore();}
+  if(!camOK&&!BOT&&state!=='finale'&&state!=='over')players.forEach(P=>{const r=P.ref;if(!r)return;   // a cartoon child stands in for the camera picture
+    const h=P.hands[0]||{x:r.cx-r.sw*.9,y:r.sy+r.sw*.7};drawReachKid(ctx,r.cx,r.sy+r.sw*1.3,r.sw*.95,mode==='duo'?['#BFE3FF','#FFD1DC'][P.k]:'#BFE3FF',tNow,{x:r.cx-r.sw*.9,y:r.sy+r.sw*.9},h);});
+  if(state==='finale'||state==='over'){drawFinale();drawPops(dt);return;}
+  drawLadders();
+  if(state==='play')drawTargets();
+  drawFloats();
+  drawHands();
+  if(state==='count'){const n=3-Math.floor(tNow-countT),k=(tNow-countT)%1;
+    if(n>0)bigText(String(n),W/2,H*.42,Math.min(150,H*.22),'#fff',1+.25*Math.max(0,1-k*4));}
+  else if(state==='play'){
+    const pe=tNow-startT;if(pe<.9)bigText(u.go,W/2,H*.3,Math.min(110,H*.17),'#FFD84D',1+.3*Math.max(0,1-pe*4));
+    if(mode==='duo'&&cur&&cur.st==='ready'&&tNow-cur.readyT<.9&&ti<3){const ln=players[cur.k].ln;bubble(u.yourTurn,ln.x+ln.w/2,yTop()-10,Math.max(15,Math.min(22,W*.024)),cur.k?'#FFE3EE':'#DDF3FF');}
+    const lost=camOK&&players.filter(P=>tNow-P.seenT>1);
+    if(lost&&lost.length){const tfs=Math.max(15,Math.min(22,W*.026));lost.forEach(P=>{const ln=P.ln;bubble(u.find,ln.x+ln.w/2,H*.5,tfs,'#FFF3C4');bubble(u.wait,ln.x+ln.w/2,H*.5+tfs*2.6,tfs*.8,'#fff');});}
+    drawHud();
+  }
+  drawPops(dt);
+}
+/* bottom right: the song and how far along it is */
+function drawHud(){
+  const fs=Math.max(16,Math.min(22,W*.028)),done=Math.min(ti,TG.length);
+  ctx.save();ctx.font=`700 ${fs}px Fredoka,sans-serif`;const t=song().icon+' '+done+' / '+TG.length,w=ctx.measureText(t).width+fs*1.4;ctx.restore();
+  bubble(t,W-12-w/2,H-fs*.95-12,fs,'#FFF3C4');
+  // a thin rainbow progress line along the bottom edge
+  const k=done/TG.length;if(k>0){ctx.save();const g=ctx.createLinearGradient(0,0,W,0);NOTE_COL.forEach((c,i)=>g.addColorStop(i/7,c));ctx.fillStyle=g;ctx.beginPath();ctx.roundRect(0,H-7,W*k,7,3.5);ctx.fill();ctx.restore();}
+}
+/* the finale: the whole song as a rainbow line of notes, lighting up as it plays back */
+function drawFinale(){
+  ctx.fillStyle='rgba(255,248,236,.62)';ctx.fillRect(0,0,W,H);
+  if(!finale){return;}
+  const u=UI[lang],x0=W*.07,x1=W*.93,ys=ROWS(),tt=(tNow-finale.t0)/finale.dur,beat=(tNow-finale.t0)/song().spb;
+  bigText(mode==='duo'?u.together:u.yourSong,W/2,yTop()*.62+10,Math.min(54,H*.085,W*.06),'#FFD84D',1+.06*Math.sin(tNow*3));
+  const n=finale.ev.length,r=Math.max(5,Math.min(gap()*.36,(x1-x0)/n*.48));
+  // the melody line
+  ctx.save();ctx.strokeStyle='rgba(43,33,24,.25)';ctx.lineWidth=3;ctx.lineJoin='round';ctx.beginPath();
+  finale.ev.forEach((e,i)=>{const x=x0+(e.beat+e.dur*.5)/finale.beats*(x1-x0),y=ys[e.slot];i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();ctx.restore();
+  let px=x0,py=ys[0];
+  finale.ev.forEach(e=>{const x=x0+(e.beat+e.dur*.5)/finale.beats*(x1-x0),y=ys[e.slot],on=beat>=e.beat,now=on&&beat<e.beat+e.dur;
+    drawMiniNote(ctx,x,y-(now?r*.5:0),r*(now?1.45:1),e.slot,on?1:0);if(now){px=x;py=y;}});
+  if(tt>=0&&tt<=1){ctx.save();ctx.translate(px,py-r*2.6);ctx.rotate(tNow*2);sticker(ctx,starPath(r*1.3),'#FFD84D',3);ctx.restore();}
+}
+function drawPops(dt){
+  pops=pops.filter(p=>(p.life-=dt)>0);
+  for(const p of pops){p.vy+=H*(p.tw?.25:1.2)*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;ctx.save();ctx.globalAlpha=Math.min(1,p.life*2);
+    if(p.tw)twinkle(ctx,p.x,p.y,p.s||6,p.c);else{ctx.translate(p.x,p.y);ctx.rotate(p.life*5);sticker(ctx,starPath(p.s||12),p.c||'#FFD84D',2.5);}ctx.restore();}
+}
+/* menu: a child reaches up and down to notes that play a little tune */
+const DEMO=[[2,-1],[1,1],[0,-1],[1,1],[2,-1],[2,1],[2,-1],[5,1],[7,-1],[4,1]];
+function drawDemo(){
+  const s=Math.min(W*.07,H*.11),gy=H*.88,cx=W*.5,T=1.1,i=Math.floor(tNow/T)%DEMO.length,k=(tNow%T)/T,[slot,side]=DEMO[i];
+  const ny=gy-s*2.9,y=H*.86-(H*.86-H*.2)*slot/7*.95,x=cx+side*s*1.8,reachK=ease(Math.min(1,k/.45));
+  const rest={x:cx+side*s*.7,y:gy-s*.4},hand={x:rest.x+(x-rest.x)*reachK,y:rest.y+(y-rest.y)*reachK};
+  const other={x:cx-side*s*.7,y:gy-s*.35};
+  if(k<.45)drawNote(ctx,x,y,s*.42,slot,1,tNow,{glow:.8});
+  drawReachKid(ctx,cx,gy,s,'#BFE3FF',tNow,side<0?hand:other,side<0?other:hand);
+  drawHandGlow(ctx,hand.x,hand.y,s*.2,'#FFD84D',tNow);
+  if(k>=.45&&k<.95){const q=(k-.45)/.5;ctx.save();ctx.globalAlpha=1-q;drawMiniNote(ctx,x,y-q*s,s*.25,slot,1);ctx.restore();}
+}
+function icons(){
+  const [soloC,duoC]=[...document.querySelectorAll('#modes canvas')].map(c=>c.getContext('2d'));
+  soloC.clearRect(0,0,220,128);drawReachKid(soloC,110,126,34,'#BFE3FF',0,{x:58,y:60},{x:150,y:110});drawNote(soloC,48,48,15,6,1,0);drawHandGlow(soloC,58,60,8,'#FFD84D',0);
+  duoC.clearRect(0,0,220,128);drawReachKid(duoC,55,126,30,'#BFE3FF',0,{x:28,y:100},{x:96,y:56});drawReachKid(duoC,165,126,30,'#FFD1DC',0,{x:132,y:100},{x:200,y:100});
+  drawNote(duoC,110,40,14,3,1,0,{glow:.7});drawHandGlow(duoC,96,56,7,'#5FB7F0',0);
+}
+
+/* ================= HOW TO PLAY ================= */
+{
+  const SZ=(w,h)=>Math.min(w*.09,h*.17);
+  const kid=(c,w,h,t,x,hand,mood)=>{const s=SZ(w,h),gy=h*.95;const other={x:x+(hand.x<x?1:-1)*s*.7,y:gy-s*.35};
+    const L=hand.x<x?hand:other,R=hand.x<x?other:hand;drawReachKid(c,x,gy,s,'#BFE3FF',t,L,R,mood);drawHandGlow(c,hand.x,hand.y,s*.2,'#FFD84D',t);return s;};
+  const rowH=(h,i)=>h*.86-(h*.86-h*.24)*i/7;
+  const ladder=(c,h,act,b)=>drawLadder(c,8,[0,1,2,3,4,5,6,7].map(i=>rowH(h,i)),Math.max(14,h*.05),act,b||[],0);
+  setupHowTo({lang:()=>lang,play:()=>play(),steps:[
+    {dur:3.4,cap:{en:'Your hands glow ✨ Touch the note!',he:'הידיים זוהרות ✨ געו בתו!'},draw(c,w,h,t,k){const s=SZ(w,h),x=w*.5,nx=w*.75,ny=rowH(h,4);ladder(c,h,4);
+      const q=ease(Math.min(1,k/.5)),hand={x:x+s*.6+(nx-x-s*.6)*q,y:h*.85+(ny-h*.85)*q};if(k<.55)drawNote(c,nx,ny,s*.45,4,1,t,{glow:.8});
+      kid(c,w,h,t,x,hand,'happy');if(k>=.55){const z=(k-.55)/.45;c.globalAlpha=1-z;drawMiniNote(c,nx,ny-z*s,s*.3,4,1);c.globalAlpha=1;}}},
+    {dur:3.6,cap:{en:'High notes are up high, low notes down low 🌈',he:'תווים גבוהים למעלה, נמוכים למטה 🌈'},draw(c,w,h,t,k){const s=SZ(w,h),x=w*.5,up=k<.5,sl=up?7:0,nx=up?w*.68:w*.3,ny=rowH(h,sl);ladder(c,h,sl);
+      const kk=up?k/.5:(k-.5)/.5,q=ease(Math.min(1,kk/.6)),st={x:x,y:h*.8},hand={x:st.x+(nx-st.x)*q,y:st.y+(ny-st.y)*q};if(kk<.65)drawNote(c,nx,ny,s*.42,sl,1,t,{glow:.8});kid(c,w,h,t,x,hand,'happy');}},
+    {dur:3.6,cap:{en:'A double note: one touch, two sounds ♪♪',he:'תו כפול: נגיעה אחת, שני צלילים ♪♪'},draw(c,w,h,t,k){const s=SZ(w,h),x=w*.5,nx=w*.27,ny=rowH(h,2);ladder(c,h,2);
+      const q=ease(Math.min(1,k/.45)),hand={x:x-s*.6+(nx+s*.3-x+s*.6)*q,y:h*.85+(ny-h*.85)*q},pop=k<.5?0:k<.68?1:2;
+      if(pop<2)drawNote(c,nx,ny,s*.45,2,2,t,{glow:.8,popped:pop});kid(c,w,h,t,x,hand,'happy');}},
+    {dur:3.8,cap:{en:'2 players: the note jumps to your friend 🤝',he:'2 שחקנים: התו קופץ לחבר 🤝'},draw(c,w,h,t,k){const s=SZ(w,h)*.85,gy=h*.95;
+      c.save();c.setLineDash([2,10]);c.strokeStyle='rgba(43,33,24,.3)';c.lineWidth=4;c.lineCap='round';c.beginPath();c.moveTo(w/2,h*.15);c.lineTo(w/2,h*.95);c.stroke();c.restore();
+      const a={x:w*.25,y:rowH(h,5)},b={x:w*.75,y:rowH(h,3)},q=ease(Math.min(1,Math.max(0,(k-.3)/.35)));
+      const left=k<.3?{x:w*.25-s*.1,y:gy-s*1.5+(a.y-gy+s*1.5)*ease(k/.3)}:{x:w*.25-s*.6,y:gy-s*.4};
+      const right=k>.65?{x:w*.75+s*.6-(s*.6)*ease((k-.65)/.2),y:gy-s*.4+(b.y-gy+s*.4)*ease(Math.min(1,(k-.65)/.2))}:{x:w*.75+s*.6,y:gy-s*.4};
+      drawReachKid(c,w*.25,gy,s,'#BFE3FF',t,left,{x:w*.25+s*.6,y:gy-s*.4});drawReachKid(c,w*.75,gy,s,'#FFD1DC',t,{x:w*.75-s*.6,y:gy-s*.4},right);
+      drawHandGlow(c,left.x,left.y,s*.2,'#5FB7F0',t);drawHandGlow(c,right.x,right.y,s*.2,'#FF9FC6',t);
+      if(k<.3)drawNote(c,a.x,a.y,s*.42,5,1,t,{glow:.8,halo:'#5FB7F0'});
+      else if(k<.85){const x=a.x+(b.x-a.x)*q,y=a.y+(b.y-a.y)*q-Math.sin(q*Math.PI)*h*.2;drawNote(c,x,y,s*.42,3,1,t,{glow:q>=1?.8:0,halo:'#FF9FC6'});}}},
+    {dur:3.4,cap:{en:'The end: hear your whole song! 🎶',he:'בסוף: שומעים את כל השיר! 🎶'},draw(c,w,h,t,k){const ev=parse(SONGS[0]).ev.slice(0,14),x0=w*.08,x1=w*.92,r=Math.min(w*.022,h*.04),b=k*14;
+      c.save();c.strokeStyle='rgba(43,33,24,.25)';c.lineWidth=2.5;c.beginPath();ev.forEach((e,i)=>{const x=x0+(i+.5)/14*(x1-x0),y=rowH(h,e.slot)+h*.06;i?c.lineTo(x,y):c.moveTo(x,y);});c.stroke();c.restore();
+      ev.forEach((e,i)=>{const x=x0+(i+.5)/14*(x1-x0),y=rowH(h,e.slot)+h*.06,on=i<=b,now=on&&i>b-1;drawMiniNote(c,x,y-(now?r*.5:0),r*(now?1.4:1),e.slot,on?1:0);});}}
+  ]});
+}
+
+window.__P=()=>players;window.__T=()=>({TG,ti,cur,state});
+window.__setup=()=>{camOK=true;players=lanes().map((_,k)=>makePlayer(k));guide.reset();guides.forEach(g=>g.reset());state='setup';$('start').hidden=true;};window.__sim=a=>{people=a;};
+setLang(lang);icons();
+document.fonts&&document.fonts.ready.then(icons);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
