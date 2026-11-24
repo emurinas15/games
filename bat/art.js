@@ -14,12 +14,19 @@ export const BOWS = ['#5FB7F0', '#FF7FA0'];
    border: width of the white sticker border (0 = none). trail: {x,y} flight direction -> three white speed lines behind. */
 export function drawBat(c, x, y, s, t, { mood = 'happy', look = 0, lookY = 0, dive = 0, carry = null, tilt = 0, flap = 9, bow = null, border = 0, trail = null } = {}) {
   const lw = Math.max(2.5, s * .1), f = Math.sin(t * flap);
-  if (trail) {   // speed lines (white with a dark edge), behind the bat
-    const a = Math.atan2(trail.y, trail.x);
-    c.save(); c.translate(x, y); c.rotate(a); c.lineCap = 'round';
-    for (const [dy, l, o] of [[-s * .45, s * 1.6, s * 1.75], [0, s * 2.3, s * 1.55], [s * .45, s * 1.6, s * 1.75]]) {
-      for (const [col, w] of [[INK, lw * 1.9], ['#fff', lw * 1.05]]) { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(-o, dy); c.lineTo(-o - l, dy); c.stroke(); }
+  if (trail) {   // 24 Nov (Edgar): soft wind wisps instead of hard speed lines — two thin curved strokes that taper at both ends,
+                 // plus three little fading dots, all behind the bat so they show where it is going. No dark edges.
+    const a = Math.atan2(trail.y, trail.x), back = s * (1.25 + .85 * Math.abs(Math.cos(a)));
+    c.save(); c.translate(x, y); c.rotate(a);
+    c.shadowColor = 'rgba(43,33,24,.35)'; c.shadowBlur = 4;
+    for (const [dy, len, bend, ph] of [[-s * .45, s * 1.5, -s * .28, 0], [s * .4, s * 1.2, s * .24, 1.7]]) {
+      const x0 = -back - Math.sin(t * 7 + ph) * s * .05, x1 = x0 - len, th = Math.max(2.5, s * .14);
+      const p = new Path2D(); p.moveTo(x0, dy);
+      p.quadraticCurveTo((x0 + x1) / 2, dy + bend - th, x1, dy + bend * .4);
+      p.quadraticCurveTo((x0 + x1) / 2, dy + bend + th, x0, dy); p.closePath();
+      c.fillStyle = 'rgba(255,255,255,.95)'; c.fill(p);
     }
+    for (let k = 0; k < 3; k++) { c.fillStyle = `rgba(255,255,255,${.95 - k * .25})`; c.beginPath(); c.arc(-back - s * (.45 + k * .5), Math.sin(t * 6 + k) * s * .05, s * (.15 - k * .035), 0, 7); c.fill(); }
     c.restore();
   }
   c.save(); c.translate(x, y); c.rotate(tilt);
