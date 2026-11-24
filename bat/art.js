@@ -2,62 +2,70 @@
    with soft curves only (no grids, rings of lines or icon sets). */
 import { INK, ell, sticker } from '../shared/kit.js';
 
-export const BAT_COL = { fur: '#C98A5E', mane: '#F2C27B', wing: '#7B5A93', wingIn: '#9C7BB3', ear: '#FFB3C1' };
+/* 24 Nov (Edgar): the "night bat" — dark body and wings with a golden face, so it stands out in any room.
+   Plus a thick white sticker border (and a thin dark edge outside it), so it pops on light walls AND dark furniture. */
+export const BAT_COL = { fur: '#3B3550', mane: '#FFD45C', wing: '#1F1B2E', wingIn: '#3E3660', ear: '#FF8FB1' };
 export const BOWS = ['#5FB7F0', '#FF7FA0'];
 
 /* ---------- the fruit bat ----------
    front view, (x,y) = middle of the body, s = body radius.
-   mood: 'happy' | 'hungry' (mouth open, eyes on the fruit) | 'yum' (eyes closed, munching) | 'aww' (pout)
-   look: -1..1 eyes left/right, lookY: -1..1 up/down. dive: 0..1 wings swept up (diving from the top).
-   carry: a fruit kind to hold in the feet (after a grab) */
-export function drawBat(c, x, y, s, t, { mood = 'happy', look = 0, lookY = 0, dive = 0, carry = null, tilt = 0, flap = 9, bow = null } = {}) {
-  c.save(); c.translate(x, y); c.rotate(tilt);
+   mood: 'happy' | 'hungry' (mouth open) | 'yum' (eyes closed, munching) | 'aww' (pout)
+   look: -1..1 eyes left/right, lookY: -1..1 up/down. dive: 0..1 wings swept up. carry: a fruit kind held in the feet.
+   border: width of the white sticker border (0 = none). trail: {x,y} flight direction -> three white speed lines behind. */
+export function drawBat(c, x, y, s, t, { mood = 'happy', look = 0, lookY = 0, dive = 0, carry = null, tilt = 0, flap = 9, bow = null, border = 0, trail = null } = {}) {
   const lw = Math.max(2.5, s * .1), f = Math.sin(t * flap);
+  if (trail) {   // speed lines (white with a dark edge), behind the bat
+    const a = Math.atan2(trail.y, trail.x);
+    c.save(); c.translate(x, y); c.rotate(a); c.lineCap = 'round';
+    for (const [dy, l, o] of [[-s * .45, s * 1.6, s * 1.75], [0, s * 2.3, s * 1.55], [s * .45, s * 1.6, s * 1.75]]) {
+      for (const [col, w] of [[INK, lw * 1.9], ['#fff', lw * 1.05]]) { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(-o, dy); c.lineTo(-o - l, dy); c.stroke(); }
+    }
+    c.restore();
+  }
+  c.save(); c.translate(x, y); c.rotate(tilt);
+  // the outline shapes, so the border pass can draw the silhouette
+  const wingP = () => { const W = s * 1.75, p = new Path2D();
+    p.moveTo(0, -s * .12); p.quadraticCurveTo(W * .45, -s * .78, W, -s * .5); p.quadraticCurveTo(W * 1.04, -s * .1, W * .98, s * .22);
+    p.quadraticCurveTo(W * .84, s * .05, W * .7, s * .42); p.quadraticCurveTo(W * .55, s * .2, W * .4, s * .5); p.quadraticCurveTo(W * .22, s * .3, 0, s * .45); p.closePath(); return p; };
+  const wingT = side => { c.scale(side, 1); c.translate(s * .62, -s * .18); c.rotate(-.25 - dive * .9 + f * (.55 - dive * .25)); c.scale(1, .78 + .22 * Math.cos(t * flap)); };
+  const earP = () => { const e = new Path2D(); e.moveTo(-s * .2, s * .12); e.quadraticCurveTo(-s * .16, -s * .5, s * .02, -s * .6); e.quadraticCurveTo(s * .2, -s * .42, s * .22, s * .12); e.closePath(); return e; };
+  const earT = side => { c.scale(side, 1); c.translate(s * .42, -s * .78); c.rotate(.28 + Math.sin(t * 3 + side) * .05); };
+  if (border) {   // silhouette, fat: dark edge first, then white
+    for (const [col, extra] of [[INK, border * 2 + lw + 3], ['#fff', border * 2 + lw]]) {
+      c.fillStyle = c.strokeStyle = col; c.lineWidth = extra; c.lineJoin = 'round';
+      for (const side of [-1, 1]) { c.save(); wingT(side); const p = wingP(); c.fill(p); c.stroke(p); c.restore(); }
+      for (const side of [-1, 1]) { c.save(); earT(side); const p = earP(); c.fill(p); c.stroke(p); c.restore(); }
+      const b = ell(0, 0, s, s * .95); c.fill(b); c.stroke(b);
+      for (const side of [-1, 1]) { const p = ell(side * s * .3, s * .88, s * .14, s * .1); c.fill(p); c.stroke(p); }
+    }
+  }
   // wings (behind the body)
   for (const side of [-1, 1]) {
-    c.save(); c.scale(side, 1); c.translate(s * .62, -s * .18);
-    const up = -.25 - dive * .9 + f * (.55 - dive * .25);   // flap angle
-    c.rotate(up); c.scale(1, .78 + .22 * Math.cos(t * flap));
-    const W = s * 1.75, p = new Path2D();
-    p.moveTo(0, -s * .12);
-    p.quadraticCurveTo(W * .45, -s * .78, W, -s * .5);                         // arm bone up to the wrist
-    p.quadraticCurveTo(W * 1.04, -s * .1, W * .98, s * .22);                   // first finger tip
-    p.quadraticCurveTo(W * .84, s * .05, W * .7, s * .42);                     // scallops along the back edge
-    p.quadraticCurveTo(W * .55, s * .2, W * .4, s * .5);
-    p.quadraticCurveTo(W * .22, s * .3, 0, s * .45);
-    p.closePath();
+    c.save(); wingT(side);
+    const W = s * 1.75, p = wingP();
     sticker(c, p, BAT_COL.wing, lw);
     c.save(); c.clip(p); c.fillStyle = BAT_COL.wingIn; c.globalAlpha = .55; c.fill(ell(W * .5, s * .05, W * .32, s * .3, -.2)); c.restore();
-    c.strokeStyle = 'rgba(43,33,24,.55)'; c.lineWidth = lw * .55; c.lineCap = 'round';
+    c.strokeStyle = 'rgba(255,255,255,.28)'; c.lineWidth = lw * .55; c.lineCap = 'round';
     c.beginPath(); c.moveTo(W * .94, -s * .46); c.quadraticCurveTo(W * .8, s * .0, W * .7, s * .36);
     c.moveTo(W * .9, -s * .44); c.quadraticCurveTo(W * .58, s * .05, W * .42, s * .44); c.stroke();
-    sticker(c, ell(W * .98, -s * .52, s * .09, s * .09), BAT_COL.fur, lw * .5);   // little thumb claw
+    sticker(c, ell(W * .98, -s * .52, s * .09, s * .09), BAT_COL.mane, lw * .5);
     c.restore();
   }
   // ears
-  for (const side of [-1, 1]) {
-    c.save(); c.scale(side, 1); c.translate(s * .42, -s * .78); c.rotate(.28 + Math.sin(t * 3 + side) * .05);
-    const e = new Path2D(); e.moveTo(-s * .2, s * .12); e.quadraticCurveTo(-s * .16, -s * .5, s * .02, -s * .6); e.quadraticCurveTo(s * .2, -s * .42, s * .22, s * .12); e.closePath();
-    sticker(c, e, BAT_COL.fur, lw);
-    c.fillStyle = BAT_COL.ear; c.fill(ell(0, -s * .12, s * .09, s * .26)); c.restore();
-  }
-  // feet (hold the fruit when carrying)
+  for (const side of [-1, 1]) { c.save(); earT(side); sticker(c, earP(), BAT_COL.fur, lw); c.fillStyle = BAT_COL.ear; c.fill(ell(0, -s * .12, s * .09, s * .26)); c.restore(); }
   if (carry) drawFruit(c, 0, s * 1.15, s * .62, carry, t, { mood: 'oh' });
   for (const side of [-1, 1]) sticker(c, ell(side * s * .3, s * .88, s * .14, s * .1), BAT_COL.fur, lw * .7);
-  // body + fluffy golden mane
+  // body + golden face/tummy
   const body = ell(0, 0, s, s * .95);
   sticker(c, body, BAT_COL.fur, lw);
-  const mane = new Path2D(); mane.moveTo(-s * .78, -s * .1);
-  for (let i = 0; i <= 6; i++) { const a = Math.PI * (1.05 - i / 6 * 1.1), r = s * (.86 + (i % 2) * .08); mane.lineTo(Math.cos(a) * r * .95, -Math.sin(a) * r * .78 + s * .12); }
-  mane.quadraticCurveTo(0, s * .7, -s * .78, -s * .1); mane.closePath();
-  c.save(); c.clip(body); c.fillStyle = BAT_COL.mane; c.fill(ell(0, s * .5, s * .62, s * .55)); c.fillStyle = 'rgba(255,255,255,.3)'; c.fill(ell(-s * .35, -s * .55, s * .3, s * .14, -.4)); c.restore();
+  c.save(); c.clip(body); c.fillStyle = BAT_COL.mane; c.fill(ell(0, s * .5, s * .62, s * .55)); c.fillStyle = 'rgba(255,255,255,.18)'; c.fill(ell(-s * .35, -s * .55, s * .3, s * .14, -.4)); c.restore();
   c.lineWidth = lw; c.strokeStyle = INK; c.stroke(body);
   if (bow) { c.save(); c.translate(s * .55, -s * .72); c.rotate(.3); for (const d of [-1, 1]) { const b = new Path2D(); b.moveTo(0, 0); b.quadraticCurveTo(d * s * .32, -s * .26, d * s * .34, 0); b.quadraticCurveTo(d * s * .32, s * .26, 0, 0); sticker(c, b, bow, lw * .6); } sticker(c, ell(0, 0, s * .08, s * .08), bow, lw * .6); c.restore(); }
-  // face: little fox snout
+  // face: golden mask behind the eyes + little fox snout
   const fx = look * s * .08, fy = -s * .12 + lookY * s * .06;
+  c.fillStyle = BAT_COL.mane; c.fill(ell(fx, fy - s * .06, s * .62, s * .34));
   sticker(c, ell(fx, fy + s * .3, s * .3, s * .2), BAT_COL.mane, lw * .7);
   c.fillStyle = INK; c.fill(ell(fx, fy + s * .2, s * .09, s * .06));
-  // eyes
   const ex = s * .32, ey = fy - s * .08;
   if (mood === 'yum') {
     c.strokeStyle = INK; c.lineWidth = lw * .9; c.lineCap = 'round';
@@ -70,8 +78,7 @@ export function drawBat(c, x, y, s, t, { mood = 'happy', look = 0, lookY = 0, di
       if (mood === 'aww') { c.strokeStyle = INK; c.lineWidth = lw * .7; c.beginPath(); c.moveTo(fx + d * ex - d * r * .9, ey - r * 1.6); c.lineTo(fx + d * ex + d * r * .5, ey - r * 1.25); c.stroke(); }
     }
   }
-  c.fillStyle = 'rgba(255,120,150,.6)'; c.fill(ell(fx - s * .56, fy + s * .22, s * .13, s * .08)); c.fill(ell(fx + s * .56, fy + s * .22, s * .13, s * .08));
-  // mouth
+  c.fillStyle = 'rgba(255,120,150,.7)'; c.fill(ell(fx - s * .5, fy + s * .14, s * .12, s * .08)); c.fill(ell(fx + s * .5, fy + s * .14, s * .12, s * .08));
   c.strokeStyle = INK; c.lineWidth = lw * .7; c.lineCap = 'round';
   const my = fy + s * .42;
   if (mood === 'hungry') {
@@ -85,6 +92,45 @@ export function drawBat(c, x, y, s, t, { mood = 'happy', look = 0, lookY = 0, di
     c.beginPath(); c.arc(fx, my + s * .12, s * .1, Math.PI * 1.15, Math.PI * 1.85); c.stroke();
   } else {
     c.beginPath(); c.moveTo(fx - s * .12, my); c.quadraticCurveTo(fx - s * .06, my + s * .08, fx, my); c.quadraticCurveTo(fx + s * .06, my + s * .08, fx + s * .12, my); c.stroke();
+  }
+  c.restore();
+}
+
+/* ---------- the branch at the top, with one fruit to pick (head touches it -> it hops on) ----------
+   x = where the fruit hangs, yFruit = its middle, fr = fruit radius. grow 0..1 = a new fruit growing. glow = soft halo */
+export function drawBranch(c, x, yFruit, fr, kind, t, { grow = 1, glow = 1, empty = false } = {}) {
+  const sway = Math.sin(t * 1.5) * .05, s = fr;
+  const tw = new Path2D(); tw.moveTo(x - s * 1.6, -5); tw.bezierCurveTo(x - s * .6, yFruit * .3, x + s * .9, yFruit * .55, x, yFruit - s * 1.15);
+  c.save(); c.lineCap = 'round'; c.strokeStyle = INK; c.lineWidth = s * .38; c.stroke(tw); c.strokeStyle = '#9A6B4A'; c.lineWidth = s * .22; c.stroke(tw);
+  for (const [k, a, dx] of [[.18, .5, -1.2], [.38, 2.6, -.3], [.58, .4, .4], [.75, 2.7, .3]]) {
+    const yy = yFruit * k, xx = x + dx * s; c.save(); c.translate(xx, yy); c.rotate(a + Math.sin(t * 1.4 + k * 9) * .06);
+    const l = new Path2D(); l.moveTo(0, 0); l.quadraticCurveTo(s * .6, -s * .5, s * 1.4, 0); l.quadraticCurveTo(s * .6, s * .5, 0, 0); sticker(c, l, k * 10 % 2 > 1 ? '#7DCB6B' : '#5DB760', 3); c.restore();
+  }
+  c.restore();
+  if (empty) return;
+  if (glow > 0) { const g = c.createRadialGradient(x, yFruit, s * .6, x, yFruit, s * 2.2); g.addColorStop(0, `rgba(255,240,150,${.8 * glow})`); g.addColorStop(1, 'rgba(255,240,150,0)'); c.fillStyle = g; c.fill(ell(x, yFruit, s * 2.2, s * 2.2)); }
+  if (grow > .02) drawFruit(c, x, yFruit - s * (1 - grow) * .9, s * grow, kind, t, { wob: sway });
+}
+
+/* ---------- the basket at the bottom: the fruits caught this level, and the fruit's name on a little tag ---------- */
+export function drawBasket(c, x, y, s, kind, n, t, name = '', rtl = false, bounce = 0) {
+  c.save(); c.translate(x, y - Math.abs(Math.sin(bounce * Math.PI)) * s * .3); x = 0; y = 0;
+  c.lineCap = 'round'; c.strokeStyle = INK; c.lineWidth = s * .2; c.beginPath(); c.moveTo(x - s * 1.05, y - s * .25); c.bezierCurveTo(x - s * 1.1, y - s * 1.6, x + s * 1.1, y - s * 1.6, x + s * 1.05, y - s * .25); c.stroke();
+  c.strokeStyle = '#B97A3E'; c.lineWidth = s * .11; c.stroke();
+  for (let i = 0; i < n; i++) { const fx = x + (i - (n - 1) / 2) * s * .7; drawFruit(c, fx, y - s * .45 - (i % 2) * s * .1, s * .38, kind, t, { mood: 'yay' }); }
+  const p = new Path2D(); p.moveTo(x - s * 1.25, y - s * .25); p.bezierCurveTo(x - s * 1.2, y + s * .55, x - s * .9, y + s * .9, x, y + s * .92); p.bezierCurveTo(x + s * .9, y + s * .9, x + s * 1.2, y + s * .55, x + s * 1.25, y - s * .25); p.closePath();
+  sticker(c, p, '#E2A85F', Math.max(3, s * .08));
+  c.save(); c.clip(p); c.strokeStyle = 'rgba(150,90,40,.5)'; c.lineWidth = s * .07;
+  for (let i = 1; i < 4; i++) { c.beginPath(); const yy = y - s * .25 + i * s * .28; c.moveTo(x - s * 1.3, yy); c.quadraticCurveTo(x, yy + s * .2, x + s * 1.3, yy); c.stroke(); }
+  for (let i = -3; i <= 3; i++) { c.beginPath(); c.moveTo(x + i * s * .36, y - s * .25); c.quadraticCurveTo(x + i * s * .3, y + s * .4, x + i * s * .24, y + s * .95); c.stroke(); }
+  c.restore();
+  c.strokeStyle = INK; c.lineWidth = Math.max(3, s * .08); c.beginPath(); c.ellipse(x, y - s * .25, s * 1.28, s * .18, 0, 0, Math.PI); c.stroke();
+  if (name) {   // name tag on the front of the basket
+    const fs = Math.max(13, s * .42); c.font = `700 ${fs}px Fredoka,sans-serif`; c.direction = rtl ? 'rtl' : 'ltr'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    const w = c.measureText(name).width + fs * 1.1, h = fs * 1.5, ty = y + s * .42;
+    c.fillStyle = INK; c.beginPath(); c.roundRect(x - w / 2, ty - h / 2 + 2, w, h, h / 2); c.fill();
+    c.fillStyle = '#FFF8E6'; c.strokeStyle = INK; c.lineWidth = 2.5; c.beginPath(); c.roundRect(x - w / 2, ty - h / 2, w, h, h / 2); c.fill(); c.stroke();
+    c.fillStyle = INK; c.fillText(name, x, ty + 1);
   }
   c.restore();
 }

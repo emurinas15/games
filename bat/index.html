@@ -23,6 +23,7 @@
 .crazy-info{background:#F3EAFB;border:3px solid var(--ink);border-radius:16px;padding:8px 12px;margin:4px 0 8px;font:600 14px Fredoka,sans-serif}
 .crazy-info.shake{animation:shk .45s}
 @keyframes shk{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.tvask{z-index:12;max-width:420px}.tvask p{font:600 18px Fredoka,sans-serif;margin:0 0 12px}
 .unlock{font:700 16px Fredoka,sans-serif;background:#F3EAFB;border:3px solid var(--ink);border-radius:16px;padding:6px 12px;margin:0 auto 10px;max-width:340px}
 body.casting .toast{visibility:hidden}
 @media (max-height:520px){
@@ -68,6 +69,8 @@ body.casting .toast{visibility:hidden}
       <div class="g-row"><span id="t-speed">Speed</span>
         <div class="seg" id="speed-seg"><button data-v="normal"></button><button data-v="fast"></button><button data-v="crazy"></button></div></div>
       <div class="crazy-info" id="crazy-info"></div>
+      <div class="g-row"><span id="t-tv">TV delay</span>
+        <div class="seg" id="tv-seg"><button data-v="0"></button><button data-v="0.5">½ s</button><button data-v="1">1 s</button><button data-v="1.5">1½ s</button></div></div>
       <div class="g-row"><span id="t-music">Music</span>
         <div class="seg" id="music-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
       <div class="g-row"><span id="t-amb">Evening sounds</span>
@@ -77,11 +80,13 @@ body.casting .toast{visibility:hidden}
       <p id="t-g1"></p>
       <p id="t-g2"></p>
       <p id="t-g3"></p>
+      <p id="t-g4"></p>
       <p class="mini" id="t-legal"></p>
     </div>
   </details>
 </div>
 
+<div class="card tvask" id="tvask" hidden><p id="tvq"></p><button class="btn" id="tv-yes"></button><button class="btn2" id="tv-no"></button></div>
 <div class="card" id="end" hidden>
   <h1 id="t-over"></h1>
   <div class="big-score" dir="ltr"><span id="final">0</span></div>
@@ -111,14 +116,14 @@ import {setupCast} from '../shared/cast.js';
 import {setupHowTo,bigStar,ease} from '../shared/howto.js';
 import {makeGuide} from '../shared/guide.js';
 import {drawKid} from '../bee/art.js';
-import {drawBat,drawFruit,drawWarn,drawLane,drawOrchard,drawDusk,drawPhew,FRUITS,FRUIT_NAMES,BOWS} from './art.js';
+import {drawBat,drawFruit,drawWarn,drawLane,drawDusk,drawPhew,drawBranch,drawBasket,FRUITS,FRUIT_NAMES,BOWS} from './art.js';
 
 const ROUND=60,LEVELS=10,PER=3,BAND=[.4,.6];
 const IV=[4.0,3.8,3.5,3.3,3.0,2.8,2.6,2.4,2.2,2.0];   // seconds between bats, by level (normal)
 const SPEED={
-  normal:{warn:2.5,iv:1,  side:1.9, dive:1.45,gap:1.1, pair:0},
-  fast:  {warn:1.5,iv:.8, side:1.4, dive:1.1, gap:.8,  pair:0},
-  crazy: {warn:1.2,iv:.62,side:1.15,dive:.9,  gap:.55, pair:.35}   // unlocked by finishing all 10 levels
+  normal:{warn:2.5,iv:1,  side:1.7, dive:1.3,gap:1.1, pair:0},
+  fast:  {warn:1.5,iv:.8, side:1.25,dive:1.0, gap:.8,  pair:0},
+  crazy: {warn:1.2,iv:.62,side:1.05,dive:.82, gap:.55, pair:.35}   // unlocked by finishing all 10 levels
 };
 const UI={
  en:{title:"Fruit Bat",sub:"Keep the fruit on your head — don't let the bat get it!",subT:"Dodge as many bats as you can in 1 minute!",play:"Play",solo:"1 player",duo:"2 players",
@@ -128,14 +133,16 @@ const UI={
   crazyOpen:"🦇 Crazy bats is open! Bats come faster, sometimes two at once. Turn it on here: Speed → “🦇 Crazy bats”.",
   unlocked:"🦇 New! Crazy bats is open. Turn it on in Settings ⚙️ → Speed.",
   music:"Music",amb:"Evening sounds",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
-  g1:"A fruit sits on the child's head and follows it. Before each bat, a round bat sign appears where it will come from and its edge fills up (2.5 s normal, 1.5 s fast). A bat from the side at fruit height: duck under it. A low bat from the side: stand up tall (so the child can't just stay down). A bat from the top: step to the side. 3 dodges = the next level and a new fruit; 10 levels. If the bat gets the fruit, a new one drops onto the head — no points are taken off. 2 players: each has their own bats on their half; in “All 10 levels” the first to finish wins.",
+  g1:"A fruit hangs on a branch at the top. The child stands up and touches it with the head, and it hops on and follows the head. Then the bats come for it. Before each bat, a round bat sign appears where it will come from and its edge fills up (2.5 s normal, 1.5 s fast). A bat from the side at fruit height: duck under it. A low bat from the side: stand up tall (so the child can't just stay down). A bat from the top: step to the side. Diagonal bats from a top corner come at levels 8–10. When all the bats for a fruit are dodged, it hops into the basket; 3 fruits in the basket = the next level and a new fruit; 10 levels. From level 5 a fruit sometimes has 2 bats coming for it, from level 8 always 2. If a bat gets the fruit, a new one grows on the branch — no points are taken off. 2 players: each has their own bats on their half; in “All 10 levels” the first to finish wins.",
   g2:"★ Stand the phone or tablet up sideways, at about chest height of the child. Before the game a see-through outline shows where to stand (from the belt up, head in the middle): step into it and hold still until it fills green. If the child walks much closer or farther, the bats wait until they're back in place.",
   g3:"★ The bat sign doesn't blink — it fills up, grows a little and wiggles, so it is safe for children with epilepsy.",
   legal:"A home practice game by Bamboo Physio. Not a medical device. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
   ready:"Getting ready…",go:"Go!",turn:"Turn the phone sideways to play",nocam:"No camera here. Drag your finger to move the head.",aria:"Game area",
   band:"Put your head in the sunny stripe",two:"Two players: both heads in the sunny stripe",high_back:"Head too high — step back a little",high_tilt:"Head too high — tilt the phone down a little",low_closer:"Head too low — come a little closer",low_tilt:"Head too low — tilt the phone up a little",like:"Stand like this",
   closer:"Come a little closer",back:"Step back a little",find:"Stand in front of the camera",wait:"The bats are waiting…",
-  yum:"Yum!",phew:"Phew!",level:n=>"Level "+n,allDone:"All 10 levels!",
+  yum:"Yum!",phew:"Phew!",pick:"Touch the fruit with your head",
+  tv:"TV delay",tvOff:"Off",tvq:"Playing on the TV? The picture on a TV comes a little late. Turn on the TV delay so the bats are fair?",tvYes:"Yes, 1 second",tvNo:"No",
+  g4:"★ TV delay: when the phone is mirrored to a TV, the TV picture comes about ½–1½ seconds late, so the child sees the bat late. With the TV delay on, the game judges each dodge against where the bat was that long ago — fair, and nothing looks different. A web page can't tell by itself that the screen is being mirrored, so it's set here (the game also asks after you open 📺).",level:n=>"Level "+n,allDone:"All 10 levels!",
   blue:"Blue",pink:"Pink",winL:"Blue wins!",winR:"Pink wins!",tie:"A tie!",best:n=>"Best: "+n+" 🦇",bestT:t=>"Fastest: "+t,newBest:"New record!",great:"Great job!",
   dodged:n=>n+" bats dodged",reached:n=>"Level "+n,playagain:"Play again",menu:"Menu"},
  he:{title:"עטלף הפירות",sub:"שמרו על הפרי שעל הראש — אל תתנו לעטלף לקחת אותו!",subT:"התחמקו מכמה שיותר עטלפים בדקה אחת!",play:"שחקו",solo:"שחקן אחד",duo:"2 שחקנים",
@@ -145,14 +152,16 @@ const UI={
   crazyOpen:"🦇 עטלפים משוגעים פתוח! העטלפים מהירים יותר, ולפעמים שניים בבת אחת. מפעילים כאן: מהירות ← „🦇 עטלפים משוגעים”.",
   unlocked:"🦇 חדש! עטלפים משוגעים נפתח. מפעילים בהגדרות ⚙️ ← מהירות.",
   music:"מוזיקה",amb:"צלילי ערב",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
-  g1:"פרי יושב על הראש של הילד ונע איתו. לפני כל עטלף מופיע סימן עגול של עטלף במקום שממנו הוא יגיע, והשוליים שלו מתמלאים (2.5 שניות ברגיל, 1.5 במהיר). עטלף מהצד בגובה הפרי: מתכופפים מתחתיו. עטלף נמוך מהצד: נעמדים זקוף (כדי שלא אפשר פשוט להישאר למטה). עטלף מלמעלה: זזים הצידה. 3 התחמקויות = השלב הבא ופרי חדש; 10 שלבים. אם העטלף לוקח את הפרי, פרי חדש נוחת על הראש — לא מורידים נקודות. 2 שחקנים: לכל אחד העטלפים שלו בחצי שלו; ב„כל 10 השלבים” מי שמסיים ראשון מנצח.",
+  g1:"פרי תלוי על ענף למעלה. הילד נעמד ונוגע בו עם הראש, הפרי קופץ על הראש ונע איתו. ואז העטלפים באים לקחת אותו. לפני כל עטלף מופיע סימן עגול של עטלף במקום שממנו הוא יגיע, והשוליים שלו מתמלאים (2.5 שניות ברגיל, 1.5 במהיר). עטלף מהצד בגובה הפרי: מתכופפים מתחתיו. עטלף נמוך מהצד: נעמדים זקוף (כדי שלא אפשר פשוט להישאר למטה). עטלף מלמעלה: זזים הצידה. עטלפים באלכסון מפינה עליונה מגיעים בשלבים 8–10. כשמתחמקים מכל העטלפים של פרי, הוא קופץ לסל; 3 פירות בסל = השלב הבא ופרי חדש; 10 שלבים. משלב 5 לפעמים באים 2 עטלפים על פרי אחד, משלב 8 תמיד 2. אם עטלף לוקח את הפרי, פרי חדש צומח על הענף — לא מורידים נקודות. 2 שחקנים: לכל אחד העטלפים שלו בחצי שלו; ב„כל 10 השלבים” מי שמסיים ראשון מנצח.",
   g2:"★ העמידו את הטלפון או הטאבלט לרוחב, בערך בגובה החזה של הילד. לפני המשחק צורה שקופה מראה איפה לעמוד (מהחגורה ומעלה, הראש באמצע): נכנסים לתוכה ומחזיקים בלי לזוז עד שהיא מתמלאת בירוק. אם הילד מתקרב או מתרחק הרבה, העטלפים מחכים עד שהוא חוזר למקום.",
   g3:"★ סימן העטלף לא מהבהב — הוא מתמלא, גדל קצת ומתנדנד, כך שהוא בטוח לילדים עם אפילפסיה.",
   legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. © 2026 Bamboo Physio · צלילי כלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
   ready:"מתכוננים…",go:"יוצאים!",turn:"סובבו את הטלפון לרוחב כדי לשחק",nocam:"אין כאן מצלמה. גררו את האצבע כדי להזיז את הראש.",aria:"אזור המשחק",
   band:"שימו את הראש בפס השמש",two:"2 שחקנים: שני הראשים בפס השמש",high_back:"הראש גבוה מדי — התרחקו קצת",high_tilt:"הראש גבוה מדי — הטו קצת את הטלפון למטה",low_closer:"הראש נמוך מדי — התקרבו קצת",low_tilt:"הראש נמוך מדי — הטו קצת את הטלפון למעלה",like:"עמדו ככה",
   closer:"התקרבו קצת",back:"התרחקו קצת",find:"עמדו מול המצלמה",wait:"העטלפים מחכים…",
-  yum:"יאמי!",phew:"פיו!",level:n=>"שלב "+n,allDone:"כל 10 השלבים!",
+  yum:"יאמי!",phew:"פיו!",pick:"געו בפרי עם הראש",
+  tv:"השהיית טלוויזיה",tvOff:"כבוי",tvq:"משחקים מול הטלוויזיה? התמונה בטלוויזיה מגיעה קצת באיחור. להפעיל השהיית טלוויזיה כדי שהעטלפים יהיו הוגנים?",tvYes:"כן, שנייה אחת",tvNo:"לא",
+  g4:"★ השהיית טלוויזיה: כשהטלפון משוכפל לטלוויזיה, התמונה בטלוויזיה מגיעה בערך חצי שנייה עד שנייה וחצי באיחור, ולכן הילד רואה את העטלף מאוחר. כשההשהיה פועלת, המשחק בודק כל התחמקות לפי המקום שבו העטלף היה לפני הזמן הזה — הוגן, ושום דבר לא נראה אחרת. דף אינטרנט לא יכול לדעת לבד שהמסך משוכפל, לכן מגדירים את זה כאן (המשחק גם שואל אחרי שפותחים את 📺).",level:n=>"שלב "+n,allDone:"כל 10 השלבים!",
   blue:"כחול",pink:"ורוד",winL:"הכחול ניצח!",winR:"הוורוד ניצח!",tie:"תיקו!",best:n=>"שיא: "+n+" 🦇",bestT:t=>"הכי מהר: "+t,newBest:"שיא חדש!",great:"כל הכבוד!",
   dodged:n=>n+" עטלפים עקפתם",reached:n=>"שלב "+n,playagain:"עוד פעם",menu:"תפריט"}
 };
@@ -171,10 +180,21 @@ let casting=false;
 const cast=setupCast({canvas:$('c'),button:$('cast'),lang:()=>lang,sound:()=>(audio(),S),onChange:v=>{casting=v;document.body.classList.toggle('casting',v);}});
 
 const bestKey=()=>'bat-best-'+speed;
+/* after the 📺 "Show it on your TV" guide closes, offer the TV delay (only if it is off) */
+let askTv=false;
+$('cast').addEventListener('click',()=>{askTv=true;});
+new MutationObserver(()=>{const sh=document.querySelector('.cast-sheet');if(sh&&sh.hidden&&askTv){askTv=false;if(!tvLag)showTvAsk();}}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['hidden']});
+function showTvAsk(){const u=UI[lang];$('tvq').textContent=u.tvq;$('tv-yes').textContent=u.tvYes;$('tv-no').textContent=u.tvNo;$('tvask').hidden=false;tvHid=!$('start').hidden;$('start').hidden=true;}
+let tvHid=false;const tvClose=()=>{$('tvask').hidden=true;if(tvHid)$('start').hidden=false;tvHid=false;};
+$('tv-yes').onclick=()=>{tvLag=1;LS.set('bat-tvlag','1');tvClose();SFX.tink();segs();};
+$('tv-no').onclick=tvClose;
+let tvLag=+LS.get('bat-tvlag','0')||0;   // seconds the TV picture runs behind (phone mirroring); dodges are judged against where the bat was that long ago
+if(FAKE&&QS.get('lag'))tvLag=+QS.get('lag');
 function segs(){
   const u=UI[lang];
   document.querySelectorAll('#until-seg button').forEach(b=>{b.textContent=u[b.dataset.v];b.setAttribute('aria-pressed',b.dataset.v===until);});
   document.querySelectorAll('#speed-seg button').forEach(b=>{const v=b.dataset.v,lock=v==='crazy'&&!crazyOpen;b.textContent=lock?u.crazyL:u[v];b.classList.toggle('locked',lock);b.setAttribute('aria-pressed',v===speed);});
+  document.querySelectorAll('#tv-seg button').forEach(b=>{if(b.dataset.v==='0')b.textContent=u.tvOff;b.setAttribute('aria-pressed',+b.dataset.v===tvLag);});
   $('crazy-info').textContent=crazyOpen?u.crazyOpen:u.crazyLocked;
   document.querySelectorAll('#modes .lv').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===mode));
   let bt='';
@@ -186,7 +206,7 @@ let lastRes=null;
 function setLang(l){
   lang=l;LS.set('bamboo-lang',l);const u=UI[l];
   document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
-  for(const k of ['title','play','privacy','grown','until','speed','music','amb','sfx','g1','g2','g3','legal','solo','duo'])
+  for(const k of ['title','play','privacy','grown','until','speed','tv','music','amb','sfx','g1','g2','g3','g4','legal','solo','duo'])
     {const e=$('t-'+k);if(e)e.textContent=u[k];}
   $('t-privacy2').textContent=u.privacy;$('menu').textContent=u.menu;document.title=u.title+' · Bamboo Physio';
   $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
@@ -198,6 +218,7 @@ document.querySelectorAll('#until-seg button').forEach(b=>b.onclick=()=>{until=b
 document.querySelectorAll('#speed-seg button').forEach(b=>b.onclick=()=>{
   if(b.dataset.v==='crazy'&&!crazyOpen){audio();tone({f0:300,f1:200,dur:.18,type:'triangle',vol:.15});const e=$('crazy-info');e.classList.remove('shake');void e.offsetWidth;e.classList.add('shake');return;}
   speed=b.dataset.v;LS.set('bat-speed',speed);SFX.tink();segs();});
+document.querySelectorAll('#tv-seg button').forEach(b=>b.onclick=()=>{tvLag=+b.dataset.v;LS.set('bat-tvlag',String(tvLag));SFX.tink();segs();});
 document.querySelectorAll('#modes .lv').forEach(b=>b.onclick=()=>{mode=b.dataset.m;LS.set('bat-mode',mode);SFX.tink();segs();});
 
 /* ================= CANVAS ================= */
@@ -264,8 +285,8 @@ const guides=[makeGuide('reachLow',{},GTXT),makeGuide('reachLow',{},GTXT)];
 function lanes(){return mode==='duo'?[{x:0,w:W/2,dir:1},{x:W/2,w:W/2,dir:-1}]:[{x:0,w:W,dir:1}];}
 let players=[];
 function makePlayer(k){
-  return {k,get ln(){return lanes()[k];},t:0,level:1,lvEv:0,ev:0,hits:0,done:false,doneT:0,bats:[],nextT:2,last:[],lastSide:1,ref:null,head:null,seenT:-9,badT:0,distBad:'',paused:false,
-    fruit:{has:true,kind:FRUITS[0],drop:1,yay:-9,back:0},msgs:[],lvT:-9,fake:{x:0,y:0}};
+  return {k,get ln(){return lanes()[k];},t:0,level:1,lvEv:0,ev:0,hits:0,done:false,doneT:0,bats:[],last:[],lastSide:1,ref:null,head:null,seenT:-9,badT:0,distBad:'',paused:false,
+    fruit:{st:'branch',kind:FRUITS[0],grow:1,yay:-9,back:0,onT:-9,fid:0,ready:false},wave:{left:0,nextT:0},hops:[],bounceT:-9,msgs:[],lvT:-9,fake:{x:0,y:0}};
 }
 function personFor(k){
   if(mode==='solo')return people[0]||null;
@@ -281,46 +302,51 @@ const batR=P=>U(P)*.3;
 const fruitPos=P=>({x:P.head?P.head.x:P.ln.x+P.ln.w/2,y:(P.head?P.head.y:P.ref.top)-FR(P)*.85});
 const topY=()=>Math.max(78,H*.13);             // where the top warning sits (under the top bar)
 
-/* which bat comes next (Edgar: high bats -> duck; low bats so the child can't stay ducked; top bats -> step aside) */
+/* 24 Nov (Edgar): a fruit is picked from the branch with the head; only then do the bats come for it.
+   After all its bats are dodged it hops into the basket, and a new fruit grows on the branch. 3 in the basket = next level.
+   Bat mix by level (weights high / low / top / diagonal): low bats common at levels 3–5, rare later;
+   diagonal bats (from a top corner, aimed at the fruit) only at levels 8–10 — and from level 4 in Crazy bats. */
+const branchPos=P=>({x:P.ln.x+P.ln.w/2,y:Math.max(topY()+FR(P)*1.6,standY(P)-FR(P)*.15)});
 function pickType(P){
-  const L=P.level,r=Math.random(),last=P.last[P.last.length-1],twice=P.last.length>=2&&P.last[P.last.length-2]===last;
-  let t;
-  if(L===1)t='high';
-  else if(L===2)t=last==='top'?'high':(r<.5?'top':'high');
-  else if(L===3)t=last==='high'&&r<.65?'low':(r<.25?'top':'high');
-  else t=last==='high'&&r<.5?'low':(r<.4?'top':r<.8?'high':'low');
-  if(twice&&t===last&&L>=2)t=t==='top'?'high':t==='high'?(L>=3?'low':'top'):'top';
-  return t;
+  const L=P.level,cr=speed==='crazy',T=['high','low','top','diag'];
+  let w=L===1?[1,0,0,0]:L===2?[.5,0,.5,0]:L===3?[.45,.35,.2,0]:L<=5?[.4,.3,.3,0]:L<=7?[.5,.12,.38,0]:[.37,.07,.3,.26];
+  if(cr&&L>=4&&L<=7)w=[.35,.15,.25,.25];
+  const n=P.last.length,last=P.last[n-1];
+  if(n>=2&&P.last[n-2]===last){const i=T.indexOf(last);if(w.some((v,j)=>j!==i&&v>0))w=w.map((v,j)=>j===i?0:v);}   // never 3 the same in a row
+  let r=Math.random()*w.reduce((a,b)=>a+b,0);for(let i=0;i<4;i++){r-=w[i];if(r<=0&&w[i]>0)return T[i];}
+  return 'high';
 }
+/* how many bats come for one fruit (keeps the top levels busy and the whole game ~2 minutes) */
+/* the bats for the next fruit start getting ready right away — even while that fruit is still growing on the branch */
+function newWave(P){const f=P.fruit;f.ready=true;f.fid++;P.wave={left:waveSize(P),nextT:P.t+.1};}
+function waveSize(P){const L=P.level;let n=L<=4?1:L<=7?(Math.random()<.5?2:1):2;if(speed==='crazy'&&L>=3)n=L>=8&&Math.random()<.4?3:2;return n;}
 function makeBat(P,type,cfg,side){
-  const ln=P.ln,u=U(P),f=fruitPos(P),R=Math.max(22,Math.min(46,u*.38));
-  const lvk=1+.025*(P.level-1),b={type,st:'warn',t:0,warn:cfg.warn,R,judged:false,mood:'hungry'};
+  const ln=P.ln,u=U(P),f=P.fruit.st==='head'?fruitPos(P):branchPos(P),R=Math.max(22,Math.min(46,u*.38));
+  const lvk=1+.025*(P.level-1),b={type,st:'warn',t:0,ft:0,warn:cfg.warn,R,judged:false,mood:'hungry',fid:P.fruit.fid};
   if(type==='top'){
     b.x=Math.max(ln.x+u*.7,Math.min(ln.x+ln.w-u*.7,f.x));b.y=-u;b.vx=0;b.vy=H/cfg.dive*lvk;b.wx=b.x;b.wy=topY()+R*.2;b.dirv={x:0,y:1};
+  } else if(type==='diag'){
+    const dir=mode==='duo'?ln.dir:side,cx=dir>0?ln.x:ln.x+ln.w;   // from the top corner on that side
+    const sx=cx-dir*u*.4,sy=-u*.4,dx=f.x-sx,dy=f.y-sy,L=Math.hypot(dx,dy),sp=W/cfg.side*lvk*.95;
+    b.dir=dir;b.x=sx;b.y=sy;b.vx=dx/L*sp;b.vy=dy/L*sp;b.dirv={x:dx/L,y:dy/L};b.wx=cx+dir*R*1.3;b.wy=topY()+R*.2;
   } else {
     const dir=mode==='duo'?ln.dir:side;   // 2 players: always from your own outer edge
     b.dir=dir;b.y=laneY(P,type);b.x=dir>0?ln.x-u:ln.x+ln.w+u;b.vx=dir*W/cfg.side*lvk;b.vy=0;
     b.wx=dir>0?ln.x+R*1.25:ln.x+ln.w-R*1.25;b.wy=b.y;b.dirv={x:dir,y:0};
   }
-  b.arr=P.t+b.warn+(type==='top'?(f.y-b.y)/b.vy:Math.abs(f.x-b.x)/Math.abs(b.vx));
+  b.x0=b.x;b.y0=b.y;
+  const sp=Math.hypot(b.vx,b.vy);
+  b.arr=P.t+b.warn+Math.max(0,((f.x-b.x)*b.vx+(f.y-b.y)*b.vy)/sp/sp);
   return b;
 }
-function spawn(P){
-  const cfg=SPEED[speed];
-  const type=pickType(P),side=P.level<=2?-P.lastSide:(Math.random()<.5?1:-1);
+function spawnOne(P){
+  const cfg=SPEED[speed],type=pickType(P),side=P.level<=2?-P.lastSide:(Math.random()<.5?1:-1);
   const b=makeBat(P,type,cfg,side);
-  // never two bats at the fruit at almost the same moment (always possible to dodge); crazy pairs are the exception
-  const clash=P.bats.filter(o=>o.st!=='gone'&&!o.judged).some(o=>Math.abs(o.arr-b.arr)<cfg.gap);
-  if(clash){P.nextT=P.t+.25;return;}
-  P.bats.push(b);P.last.push(type);if(P.last.length>4)P.last.shift();if(type!=='top')P.lastSide=b.dir;
-  FX.squeak();
-  if(cfg.pair&&P.level>=3&&Math.random()<cfg.pair){   // crazy bats: a second one, one you can dodge together with the first
-    const t2=type==='top'?'low':type==='low'?'top':'high',b2=makeBat(P,t2,cfg,-b.dir||1);
-    if(t2==='high'&&type==='high'){b2.dir=-b.dir;} b2.warn+=.25;b2.arr+=.25;
-    if(!(mode==='duo'&&t2!=='top'&&type!=='top'))P.bats.push(b2);
-  }
-  const iv=IV[Math.min(LEVELS,P.level)-1]*cfg.iv*(.88+Math.random()*.24);
-  P.nextT=P.t+iv;
+  // never two bats at the fruit at almost the same moment, so it is always possible to dodge
+  if(P.bats.some(o=>!o.judged&&Math.abs(o.arr-b.arr)<cfg.gap)){P.wave.nextT=P.t+.2;return;}
+  P.bats.push(b);P.last.push(type);if(P.last.length>4)P.last.shift();if(b.dir)P.lastSide=b.dir;
+  FX.squeak();P.wave.left--;
+  P.wave.nextT=P.t+IV[Math.min(LEVELS,P.level)-1]*cfg.iv*.5*(.85+Math.random()*.3);
 }
 function levelUp(P){
   P.lvEv=0;
@@ -328,7 +354,7 @@ function levelUp(P){
     if(until==='levels'&&!P.done){P.done=true;P.doneT=elapsed;return;}
     return;   // 1 minute: stay on level 10
   }
-  P.level++;P.lvT=P.t;P.fruit.kind=FRUITS[P.level-1];P.fruit.yay=P.t;FX.level();
+  P.level++;P.lvT=P.t;P.fruit.kind=FRUITS[P.level-1];FX.level();
 }
 
 /* ================= GAME ================= */
@@ -396,9 +422,13 @@ const portraitPlay=()=>H>W*1.05&&['setup','count','play'].includes(state);
 /* ?bot: plays by itself, perfectly (to check timings) */
 function botHead(P){
   const u=U(P),cx=P.ln.x+P.ln.w/2,stand=P.ref.top+u*.45;let tx=P.bx??cx,ty=stand;
-  const next=P.bats.filter(b=>!b.judged&&b.st!=='gone'&&b.st!=='grab').sort((a,b)=>a.arr-b.arr)[0];
-  if(next&&next.arr-P.t<1.2){if(next.type==='high')ty=stand+u*.85;if(next.type==='top'){if(P.bdir==null||P.bfor!==next){P.bfor=next;P.bdir=next.x<cx?1:-1;}tx=next.x+P.bdir*u*1.1;}}
-  else if(!next||next.arr-P.t>1.6){tx=cx;}
+  if(P.fruit.st!=='head'){tx=branchPos(P).x;}
+  else{const next=P.bats.filter(b=>!b.judged&&b.st!=='grab').sort((a,b)=>a.arr-b.arr)[0];
+    if(next&&next.st==='fly'||next&&next.arr+tvLag-P.t<1.2&&!next.held){
+      if(next.type==='high')ty=stand+u*.85;
+      if(next.type==='top'){if(P.bfor!==next){P.bfor=next;P.bdir=next.x<cx?1:-1;}tx=next.x+P.bdir*u*1.1;}
+      if(next.type==='diag'){tx=cx-next.dir*u*1.3;ty=stand+u*.8;}
+    } else if(!next)tx=cx;}
   P.bx=tx;const F=P.fake;F.x+=(tx-F.x)*.15;F.y+=(ty-F.y)*.15;
 }
 function readHead(P,dt){
@@ -416,35 +446,59 @@ function stepPlayer(P,dt){
   readHead(P,dt);
   const lost=tNow-P.seenT>.5;
   if(lost||P.distBad){P.badT+=dt;if(P.badT>.4)P.paused=true;}else{P.badT=0;P.paused=false;}
+  const f=P.fruit;
+  // the child left the picture with the fruit -> it goes back to the branch (and the bats coming for it give up)
+  if(f.st==='head'&&tNow-P.seenT>1.5){f.st='branch';f.grow=1;f.ready=false;P.wave.left=0;P.bats.forEach(b=>{if(b.fid===f.fid)b.judged=true;});}
   if(P.paused||P.done)return;
   P.t+=dt;
-  const f=P.fruit,fp=fruitPos(P),hit=HIT(P),u=U(P);
-  if(!f.has&&P.t>=f.back){f.has=true;f.drop=0;FX.plop();}
-  if(f.drop<1)f.drop=Math.min(1,f.drop+dt*2.6);
-  if(P.t>=P.nextT)spawn(P);
+  const fp=fruitPos(P),hit=HIT(P),u=U(P),bp=branchPos(P);
+  // branch: grow a new fruit, pick it with the head
+  if(f.st==='gone'&&P.t>=f.back){f.st='branch';f.grow=0;}
+  if(f.st==='branch'){f.grow=Math.min(1,f.grow+dt*3.3);
+    // as soon as the new fruit is ready, the first bat starts getting ready too (the child picks the fruit while the sign fills)
+    if(f.grow>=1&&!f.ready)newWave(P);
+    if(f.grow>=1&&P.head&&Math.hypot(fp.x-bp.x,fp.y-bp.y)<FR(P)*1.8){f.st='head';f.onT=P.t;FX.plop();}}
+  // the next bat of a wave comes once the ones before it are flying
+  if(f.ready&&P.wave.left>0&&P.t>=P.wave.nextT&&!P.bats.some(o=>o.fid===f.fid&&o.st==='warn'&&!o.judged&&o!==P.bats[P.bats.length-1]))spawnOne(P);
+  // bats. With a TV delay the child sees everything late, so the dodge is judged against where the bat was tvLag seconds ago.
   for(const b of P.bats){
     b.t+=dt;
-    if(b.st==='warn'){if(b.t>=b.warn){b.st='fly';b.t=0;FX.whoosh();}continue;}
+    if(b.st==='warn'){
+      // a bat only flies once its fruit has been on the head for half a second; until then its sign stays full and wiggles
+      if(b.t>=b.warn){if(b.fid===f.fid&&(f.st!=='head'||P.t-f.onT<.5)){b.t=b.warn;b.held=true;}else if(b.fid!==f.fid||f.st!=='head'){b.st='gone';}else{b.st='fly';b.t=0;FX.whoosh();}}
+      continue;}
     if(b.st==='fly'){
-      const x0=b.x,y0=b.y;b.x+=b.vx*dt;b.y+=b.vy*dt;
+      b.x+=b.vx*dt;b.y+=b.vy*dt;b.ft+=dt;
       if(!b.judged){
-        if(f.has&&f.drop>.7&&segDist(fp.x,fp.y,x0,y0,b.x,b.y)<hit){   // got it!
-          b.judged=true;b.st='grab';b.carry=f.kind;b.mood='yum';b.t=0;b.vx*=.6;b.vy=b.type==='top'?H*.25:0;
-          f.has=false;f.back=P.t+1;P.hits++;FX.nom();P.msgs.push({txt:UI[lang].yum,x:fp.x,y:fp.y,t:P.t,col:'#FF9FB0'});
+        const k0=Math.max(0,b.ft-dt-tvLag),k1=Math.max(0,b.ft-tvLag);
+        const jx0=b.x0+b.vx*k0,jy0=b.y0+b.vy*k0,jx=b.x0+b.vx*k1,jy=b.y0+b.vy*k1;
+        if(f.st==='head'&&b.fid===f.fid&&P.t-f.onT>.15&&segDist(fp.x,fp.y,jx0,jy0,jx,jy)<hit){   // got it!
+          b.judged=true;b.st='grab';b.carry=f.kind;b.mood='yum';b.t=0;b.vx*=.6;b.vy=b.type==='top'?H*.25:Math.min(0,b.vy*.3);
+          f.st='gone';newWave(P);f.back=P.t+.6;P.hits++;FX.nom();P.msgs.push({txt:UI[lang].yum,x:fp.x,y:fp.y,t:P.t,col:'#FF9FB0'});
+          P.wave.left=0;P.bats.forEach(o=>{if(o!==b&&o.fid===b.fid){o.judged=true;o.mood='happy';}});
         } else {
-          const past=b.type==='top'?b.y-fp.y>hit:(b.x-fp.x)*b.dir>hit;
+          const sp=Math.hypot(b.vx,b.vy),past=((jx-fp.x)*b.vx+(jy-fp.y)*b.vy)/sp>hit;
           if(past){b.judged=true;b.mood='aww';
-            if(f.has){P.ev++;P.lvEv++;f.yay=P.t;FX.phew();FX.aww();P.msgs.push({txt:UI[lang].phew,x:fp.x,y:fp.y,t:P.t,col:'#B8F0A0',stars:1});
-              if(P.lvEv>=PER)levelUp(P);}
+            if(f.st==='head'&&b.fid===f.fid){P.ev++;f.yay=P.t;FX.phew();FX.aww();P.msgs.push({txt:UI[lang].phew,x:fp.x,y:fp.y,t:P.t,col:'#B8F0A0',stars:1});
+              // all the bats for this fruit dodged -> it hops into the basket
+              if(P.wave.left===0&&!P.bats.some(o=>!o.judged&&o.fid===f.fid)){P.hops.push({kind:f.kind,x:fp.x,y:fp.y,t:P.t});f.st='gone';newWave(P);f.back=P.t+.4;}}
           }
         }
       }
     } else if(b.st==='grab'){b.x+=b.vx*dt;b.vy-=H*1.1*dt;b.y+=b.vy*dt;}
-    const ln=P.ln;if(b.x<ln.x-u*2.5||b.x>ln.x+ln.w+u*2.5||b.y>H+u*2||b.y<-u*3)b.st='gone';
+    const jx=b.judged?b.x:b.x0+b.vx*Math.max(0,b.ft-tvLag),jy=b.judged?b.y:b.y0+b.vy*Math.max(0,b.ft-tvLag),ln=P.ln;
+    if(Math.min(b.x,jx)>ln.x+ln.w+u*2.5||Math.max(b.x,jx)<ln.x-u*2.5||Math.min(b.y,jy)>H+u*2||b.y<-u*3&&b.st==='grab')b.st='gone';
   }
   P.bats=P.bats.filter(b=>b.st!=='gone');
+  // fruits hopping into the basket
+  for(const hp of P.hops)if(!hp.done&&P.t-hp.t>=HOP){hp.done=true;P.lvEv++;P.bounceT=P.t;FX.plop();
+    if(P.lvEv>=PER){const bk=basketPos(P);for(let i=0;i<14;i++)pops.push({x:bk.x,y:bk.y-bk.s*.4,vx:(Math.random()-.5)*W*.4,vy:-H*(.3+Math.random()*.5),life:1.1+Math.random()*.4,c:['#FFD84D','#FF9FB0','#7DCB6B','#B79CF2'][i%4]});
+      P.lvShow=P.lvEv;levelUp(P);}}
+  P.hops=P.hops.filter(hp=>!hp.done);
   P.msgs=P.msgs.filter(m=>P.t-m.t<1.2);
 }
+const HOP=.55;
+const basketPos=P=>{const s=Math.max(28,Math.min(50,U(P)*.42,H*.085));return {x:mode==='duo'?P.ln.x+P.ln.w*(P.k?.36:.64):P.ln.x+P.ln.w/2,y:H-s*.95-12,s};};
 
 let last=performance.now();
 function frame(now){
@@ -497,28 +551,43 @@ function drawTurnPhone(){
   bubble(UI[lang].turn,W/2,H*.72,Math.max(18,Math.min(26,W*.05)));
 }
 function drawPlayer(P){
-  const u=UI[lang],f=P.fruit,fp=fruitPos(P),r=FR(P),ln=P.ln;
+  const u=UI[lang],f=P.fruit,fp=fruitPos(P),r=FR(P),ln=P.ln,bp=branchPos(P),bk=basketPos(P);
   if(mode==='duo'){ctx.save();ctx.beginPath();ctx.rect(ln.x,0,ln.w,H);ctx.clip();}
-  // warnings + lanes first (under everything)
-  for(const b of P.bats)if(b.st==='warn'){const k=b.t/b.warn;
-    if(b.type==='top')drawLane(ctx,'v',b.x,b.wy,b.x,H,HIT(P)*.9,k);else drawLane(ctx,'h',ln.x,b.y,ln.x+ln.w,b.y,HIT(P)*.9,k);}
-  // the fruit
+  // the soft path stripes of bats getting ready (under everything)
+  for(const b of P.bats)if(b.st==='warn'){const k=b.t/b.warn,w=HIT(P)*.9;
+    if(b.type==='top')drawLane(ctx,'v',b.x,b.wy,b.x,H,w,k);
+    else if(b.type==='diag')drawDiagLane(b.x0,b.y0,b.dirv,w,k);
+    else drawLane(ctx,'h',ln.x,b.y,ln.x+ln.w,b.y,w,k);}
+  // branch + basket
+  drawBranch(ctx,bp.x,bp.y,r,f.kind,tNow,{grow:f.st==='branch'?ease(f.grow):0,glow:f.st==='branch'&&f.grow>=1?.7+.3*Math.sin(tNow*3):0,empty:f.st!=='branch'});
+  const bounce=P.t-P.bounceT<.35?(P.t-P.bounceT)/.35:0,nIn=P.t-P.lvT<.4&&P.lvShow?P.lvShow:P.lvEv,kindIn=P.t-P.lvT<.4&&P.level>1?FRUITS[P.level-2]:f.kind;
+  const tag=FRUIT_NAMES[lang][FRUITS.indexOf(kindIn)]+(mode==='duo'?' · '+u.level(P.level):'');
+  drawBasket(ctx,bk.x,bk.y,bk.s,kindIn,nIn,tNow,tag,lang==='he',bounce);
+  // fruits hopping into the basket
+  for(const hp of P.hops){const k=Math.min(1,(P.t-hp.t)/HOP),x=hp.x+(bk.x-hp.x)*k,y=hp.y+(bk.y-bk.s*.5-hp.y)*k-Math.sin(k*Math.PI)*H*.22;drawFruit(ctx,x,y,r*(1-.35*k),hp.kind,tNow,{mood:'yay',wob:k*6});}
+  // the fruit on the head
   const danger=P.bats.some(b=>!b.judged&&(b.st==='fly'||(b.st==='warn'&&b.t/b.warn>.45)));
-  if(f.has){const dy=(1-ease(f.drop))*-H*.35,mood=P.t-f.yay<.8?'yay':danger?'oh':'happy',sc=P.t-P.lvT<.5?1+.4*(1-(P.t-P.lvT)*2):1;
-    drawFruit(ctx,fp.x,fp.y+dy,r*sc,f.kind,tNow,{mood,wob:Math.sin(tNow*3+P.k)*.06});}
-  // bats
+  if(f.st==='head'){const k=Math.min(1,(P.t-f.onT)/.25),x=bp.x+(fp.x-bp.x)*ease(k),y=bp.y+(fp.y-bp.y)*ease(k)-Math.sin(k*Math.PI)*r;
+    drawFruit(ctx,x,y,r,f.kind,tNow,{mood:P.t-f.yay<.8?'yay':danger?'oh':'happy',wob:Math.sin(tNow*3+P.k)*.06});}
+  // bats: dark night bats with a white sticker border and speed lines, so they stand out in any room
   for(const b of P.bats){
     if(b.st==='warn')continue;
-    const look=Math.max(-1,Math.min(1,(fp.x-b.x)/(U(P)*2))),lookY=Math.max(-1,Math.min(1,(fp.y-b.y)/(U(P)*2)));
-    drawBat(ctx,b.x,b.y+Math.sin(tNow*9+b.arr)*U(P)*.03,batR(P),tNow+b.arr,{mood:b.mood,look,lookY,dive:b.type==='top'&&b.st==='fly'?.8:0,carry:b.st==='grab'?b.carry:null,
-      tilt:b.type==='top'?0:b.dir*.12,flap:b.st==='grab'?7:11,bow:mode==='duo'?BOWS[P.k]:null});
+    const look=Math.max(-1,Math.min(1,(fp.x-b.x)/(U(P)*2))),lookY=Math.max(-1,Math.min(1,(fp.y-b.y)/(U(P)*2))),R=batR(P);
+    drawBat(ctx,b.x,b.y+Math.sin(tNow*9+b.arr)*U(P)*.03,R,tNow+b.arr,{mood:b.mood,look,lookY,dive:b.type==='top'&&b.st==='fly'?.8:b.type==='diag'?.4:0,carry:b.st==='grab'?b.carry:null,
+      tilt:b.type==='top'?0:b.type==='diag'?b.dir*.3:b.dir*.12,flap:b.st==='grab'?7:11,bow:mode==='duo'?BOWS[P.k]:null,border:Math.max(3,R*.16),trail:b.st==='fly'?{x:b.vx,y:b.vy}:null});
   }
-  // warning badges on top so they are always seen
-  if(P.t-P.lvT<1.6&&P.level>1)bigText(u.level(P.level),ln.x+ln.w/2,H*.3,Math.min(90,H*.13,ln.w*.16),'#FFD84D',1+.3*Math.max(0,1-(P.t-P.lvT)*4));
+  if(P.t-P.lvT<1.6&&P.level>1)bigText(u.level(P.level),ln.x+ln.w/2,H*.42,Math.min(90,H*.13,ln.w*.16),'#FFD84D',1+.3*Math.max(0,1-(P.t-P.lvT)*4));
   for(const m of P.msgs){const k=(P.t-m.t)/1.2;if(m.stars)drawPhew(ctx,m.x,m.y,r*1.2,k);if(k<.8)bigText(m.txt,m.x,m.y-r*2.4-k*r,Math.max(22,r*1.1),m.col,1+.2*Math.max(0,1-k*5));}
+  // warning signs on top so they are always seen
   for(const b of P.bats)if(b.st==='warn')drawWarn(ctx,b.wx,b.wy,b.R,b.t/b.warn,b.dirv,tNow);
   if(mode==='duo')ctx.restore();
   if(P.paused&&state==='play'){const tfs=Math.max(15,Math.min(22,W*.026));bubble(P.distBad?u[P.distBad]:u.find,ln.x+ln.w/2,H*.5,tfs,'#FFF3C4');bubble(u.wait,ln.x+ln.w/2,H*.5+tfs*2.6,tfs*.8,'#fff');}
+  else if(f.st==='branch'&&f.grow>=1&&state==='play'&&P.ev===0&&P.t>2.5)bubble(u.pick,ln.x+ln.w/2,H*.52,Math.max(15,Math.min(21,W*.024)),'#FFF3C4');
+}
+function drawDiagLane(x0,y0,d,w,k){
+  ctx.save();ctx.translate(x0,y0);ctx.rotate(Math.atan2(d.y,d.x));const L=Math.hypot(W,H)*1.2;
+  const g=ctx.createLinearGradient(0,-w,0,w);g.addColorStop(0,'rgba(123,90,147,0)');g.addColorStop(.5,`rgba(123,90,147,${.08+.2*k})`);g.addColorStop(1,'rgba(123,90,147,0)');
+  ctx.fillStyle=g;ctx.fillRect(0,-w,L,w*2);ctx.restore();
 }
 function render(dt){
   ctx.setTransform(DPR,0,0,DPR,0,0);
@@ -526,7 +595,6 @@ function render(dt){
   if(state==='menu'||state==='loading'){drawDusk(ctx,W,H,tNow);drawDemo();drawPops(dt);return;}
   if(live){drawMirrored();ctx.fillStyle='rgba(255,248,236,.1)';ctx.fillRect(0,0,W,H);} else drawDusk(ctx,W,H,tNow);
   if(portraitPlay()){drawTurnPhone();return;}
-  drawOrchard(ctx,W,H,tNow);
   const fs=Math.max(18,Math.min(26,W*.035));
   if(state==='setup'){if(mode==='duo')guides.forEach((g,k)=>g.draw(ctx,{...lanes()[k],y:0,h:H},lang));else guide.draw(ctx,{x:0,y:0,w:W,h:H},lang);return drawPops(dt);}
   if(mode==='duo'){ctx.save();ctx.setLineDash([2,14]);ctx.lineCap='round';ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(W/2,90);ctx.lineTo(W/2,H-20);ctx.stroke();ctx.restore();}
@@ -540,21 +608,18 @@ function render(dt){
   }
   drawPops(dt);
 }
-/* bottom row: dodges + level (with 3 little fruits that fill up), and a picture timer in the middle (1 minute mode) */
+/* bottom: dodges + level in the corner, the basket in the middle (it shows the level progress), a picture timer in 1 minute mode */
 function drawHud(fs){
   const u=UI[lang],y0=H-fs*.95-12;
   const pw=(t,f=fs)=>{ctx.save();ctx.font=`700 ${f}px Fredoka,sans-serif`;const w=ctx.measureText(t).width+f*1.4;ctx.restore();return w;};
   const row=(P,fromRight)=>{
     let x=fromRight?W-12:66;const put=(t,f,fill)=>{const w=pw(t,f),cx=fromRight?x-w/2:x+w/2;bubble(t,cx,y0,f,fill);x+=fromRight?-(w+8):(w+8);};
     put('🦇 '+P.ev,fs,mode==='duo'?['#DDF3FF','#FFE3E8'][P.k]:'#FFF3C4');
-    put(u.level(P.level),fs*.8,'#fff');
-    // level progress: 3 small fruits
-    const r=fs*.42;for(let i=0;i<PER;i++){const cx=fromRight?x-r*1.2:x+r*1.2;ctx.save();if(i>=P.lvEv)ctx.globalAlpha=.35;drawFruit(ctx,cx,y0,r,P.fruit.kind,tNow,{mood:i<P.lvEv?'yay':'happy'});ctx.restore();x+=fromRight?-r*2.5:r*2.5;}
+    if(mode==='solo')put(u.level(P.level),fs*.8,'#fff');
   };
   if(mode==='duo'){row(players[0],false);row(players[1],true);}else row(players[0],true);
-  if(state==='play'){const r=Math.max(24,Math.min(44,H*.075)),cy=H-r-14;
-    if(until==='time'){const left=Math.max(0,ROUND-elapsed);drawPie(W/2,cy,r,left/ROUND,left<=10,'');}
-    else{const lv=Math.max(...players.map(P=>P.level-1+P.lvEv/PER));drawPie(W/2,cy,r,lv/LEVELS,false,'🏁');}}
+  if(state==='play'&&until==='time'){const r=Math.max(22,Math.min(38,H*.065)),left=Math.max(0,ROUND-elapsed);
+    drawPie(mode==='duo'?W/2:W/2-basketPos(players[0]).s*2.2-r-10,H-r-14,r,left/ROUND,left<=10,'');}
 }
 function drawPie(x,y,r,f,warn,label){
   const mixc=(a,b,k)=>{const h=s=>[1,3,5].map(i=>parseInt(s.slice(i,i+2),16)),A=h(a),B=h(b);return 'rgb('+A.map((v,i)=>Math.round(v+(B[i]-v)*k)).join(',')+')';};
@@ -580,13 +645,13 @@ function drawDemo(){
   const fr=s*.55,fy=r.headY-fr*.85;drawFruit(ctx,cx,fy,fr,FRUITS[Math.floor(tNow/T)%FRUITS.length],tNow,{mood:k>.25&&k<.6?'oh':k>.6&&k<.85?'yay':'happy'});
   const standF=gy-s*2.75;   // fruit height when standing
   if(k<.35){drawWarn(ctx,W*.06+s*.7,standF,s*.7,k/.35,{x:1,y:0},tNow);}
-  else{const q=(k-.35)/.5,bx=-s*2+(W+s*4)*q;drawBat(ctx,bx,standF,s*.75,tNow,{mood:bx>cx?'aww':'hungry',look:bx<cx?1:-1,tilt:.12});}
+  else{const q=(k-.35)/.5,bx=-s*2+(W+s*4)*q;drawBat(ctx,bx,standF,s*.75,tNow,{mood:bx>cx?'aww':'hungry',look:bx<cx?1:-1,tilt:.12,border:4,trail:{x:1,y:0}});}
 }
 function icons(){
   const [soloC,duoC]=[...document.querySelectorAll('#modes canvas')].map(c=>c.getContext('2d'));
-  soloC.clearRect(0,0,220,128);drawKid(soloC,110,122,30,'mid','#BFE3FF',0);drawFruit(soloC,110,58,13,'fig',0,{mood:'oh'});drawBat(soloC,48,34,17,.2,{mood:'hungry',look:1,tilt:.12});
+  soloC.clearRect(0,0,220,128);drawKid(soloC,110,122,30,'mid','#BFE3FF',0);drawFruit(soloC,110,58,13,'fig',0,{mood:'oh'});drawBat(soloC,48,34,17,.2,{mood:'hungry',look:1,tilt:.12,border:3});
   duoC.clearRect(0,0,220,128);drawKid(duoC,52,122,30,'stand','#BFE3FF',0);drawKid(duoC,168,122,30,'stand','#FFD1DC',0);
-  drawFruit(duoC,52,34,12,'banana',0);drawFruit(duoC,168,34,12,'mango',.4);drawBat(duoC,110,26,15,.3,{mood:'hungry',dive:.8});
+  drawFruit(duoC,52,34,12,'banana',0);drawFruit(duoC,168,34,12,'mango',.4);drawBat(duoC,110,26,15,.3,{mood:'hungry',dive:.8,border:3});
 }
 
 /* ================= HOW TO PLAY ================= */
@@ -594,17 +659,21 @@ function icons(){
   const SZ=(w,h)=>Math.min(w*.09,h*.17);
   function scene(c,w,h,t,{x,pose='stand',fruit='fig',mood='happy'}){
     const s=SZ(w,h),gy=h*.92;c.fillStyle='rgba(141,208,110,.7)';c.beginPath();c.ellipse(w/2,h*.92,w*.46,h*.06,0,0,7);c.fill();
-    const r=drawKid(c,x,gy,s,pose,'#BFE3FF',t),fr=s*.5;drawFruit(c,x,r.headY-fr*.85,fr,fruit,t,{mood});
+    const r=drawKid(c,x,gy,s,pose,'#BFE3FF',t),fr=s*.5;if(fruit)drawFruit(c,x,r.headY-fr*.85,fr,fruit,t,{mood});
     return {s,gy,fy:gy-s*2.75};
   }
+  const B=(c,x,y,s,t,o)=>drawBat(c,x,y,s,t,{border:Math.max(2,s*.15),...o});
   setupHowTo({lang:()=>lang,play:()=>play(),steps:[
-    {dur:3.2,cap:{en:'Keep the fruit on your head 🍑',he:'שומרים על הפרי שעל הראש 🍑'},draw(c,w,h,t,k){const S2=scene(c,w,h,t,{x:w*.5,mood:k>.5?'oh':'happy'});drawWarn(c,w*.1,S2.fy,S2.s*.6,Math.min(1,k*1.4),{x:1,y:0},t);}},
-    {dur:3.6,cap:{en:'A bat from the side? Duck! 🦇',he:'עטלף מהצד? מתכופפים! 🦇'},draw(c,w,h,t,k){const d=k>.15&&k<.8;const S2=scene(c,w,h,t,{x:w*.5,pose:d?'mid':'stand',mood:d?'oh':'yay'});const bx=-S2.s+(w+S2.s*2)*ease(Math.min(1,k/.85));drawBat(c,bx,S2.fy,S2.s*.6,t,{mood:bx>w*.5?'aww':'hungry',look:1,tilt:.12});}},
-    {dur:3.6,cap:{en:'A low bat? Stand up tall! 🧍',he:'עטלף נמוך? נעמדים זקוף! 🧍'},draw(c,w,h,t,k){const d=k<.25;const S2=scene(c,w,h,t,{x:w*.5,pose:d?'mid':'stand',mood:k>.85?'yay':'happy'});const bx=w+S2.s-(w+S2.s*2)*ease(Math.min(1,k/.85));drawBat(c,bx,S2.fy+S2.s*1.15,S2.s*.6,t,{mood:bx<w*.5?'aww':'hungry',look:-1,tilt:-.12});}},
+    {dur:3.4,cap:{en:'Touch the fruit with your head 🥭',he:'נוגעים בפרי עם הראש 🥭'},draw(c,w,h,t,k){const s=SZ(w,h),fr=s*.5,fy=h*.92-s*2.75,x=w*.32+w*.18*ease(Math.min(1,k/.45));
+      const on=k>.5;drawBranch(c,w*.5,fy-fr*.3,fr,'mango',t,{empty:on,glow:on?0:1});scene(c,w,h,t,{x,fruit:on?'mango':null,mood:'yay'});}},
+    {dur:3.6,cap:{en:'A bat from the side? Duck! 🦇',he:'עטלף מהצד? מתכופפים! 🦇'},draw(c,w,h,t,k){const d=k>.15&&k<.8;const S2=scene(c,w,h,t,{x:w*.5,pose:d?'mid':'stand',mood:d?'oh':'yay'});const bx=-S2.s+(w+S2.s*2)*ease(Math.min(1,k/.85));B(c,bx,S2.fy,S2.s*.6,t,{mood:bx>w*.5?'aww':'hungry',look:1,tilt:.12,trail:{x:1,y:0}});}},
+    {dur:3.6,cap:{en:'A low bat? Stand up tall! 🧍',he:'עטלף נמוך? נעמדים זקוף! 🧍'},draw(c,w,h,t,k){const d=k<.25;const S2=scene(c,w,h,t,{x:w*.5,pose:d?'mid':'stand',mood:k>.85?'yay':'happy'});const bx=w+S2.s-(w+S2.s*2)*ease(Math.min(1,k/.85));B(c,bx,S2.fy+S2.s*1.15,S2.s*.6,t,{mood:bx<w*.5?'aww':'hungry',look:-1,tilt:-.12,trail:{x:-1,y:0}});}},
     {dur:3.6,cap:{en:'A bat from the top? Step aside! ↔️',he:'עטלף מלמעלה? זזים הצידה! ↔️'},draw(c,w,h,t,k){const x=w*.5+w*.2*ease(Math.min(1,Math.max(0,(k-.2)/.25)));const S2=scene(c,w,h,t,{x,mood:k>.85?'yay':'oh'});
-      if(k<.45)drawWarn(c,w*.5,h*.16,S2.s*.6,k/.45,{x:0,y:1},t);else drawBat(c,w*.5,h*.1+(h*.9)*ease((k-.45)/.55),S2.s*.6,t,{mood:'hungry',dive:.8,lookY:1});}},
-    {dur:3,cap:{en:'3 dodges = next level and a new fruit! ⭐',he:'3 התחמקויות = שלב חדש ופרי חדש! ⭐'},draw(c,w,h,t,k){const S2=scene(c,w,h,t,{x:w*.5,fruit:k<.4?'fig':'banana',mood:'yay'});
-      for(let i=0;i<6;i++){const a=i/6*6.3+k*2,rr=h*(.1+k*.15);bigStar(c,w*.5+Math.cos(a)*rr,S2.fy+Math.sin(a)*rr,12*(1.2-k*.6),a);}}}
+      if(k<.45)drawWarn(c,w*.5,h*.16,S2.s*.6,k/.45,{x:0,y:1},t);else B(c,w*.5,h*.1+(h*.9)*ease((k-.45)/.55),S2.s*.6,t,{mood:'hungry',dive:.8,lookY:1,trail:{x:0,y:1}});}},
+    {dur:3.4,cap:{en:'Dodged? The fruit hops into the basket! 3 = next level ⭐',he:'התחמקתם? הפרי קופץ לסל! 3 = שלב חדש ⭐'},draw(c,w,h,t,k){const S2=scene(c,w,h,t,{x:w*.3,fruit:null});
+      const bx=w*.66,by=h*.86,q=Math.min(1,k/.5);if(q<1){
+        drawFruit(c,w*.3+(bx-w*.3)*q,S2.fy+(by-S2.s*.5-S2.fy)*q-Math.sin(q*Math.PI)*h*.3,S2.s*.45,'mango',t,{mood:'yay'});}
+      drawBasket(c,bx,by,S2.s*.5,'mango',q<1?1:2,t,FRUIT_NAMES[lang][2],lang==='he',q>=1&&k<.7?(k-.5)/.2:0);}}
   ]});
 }
 
