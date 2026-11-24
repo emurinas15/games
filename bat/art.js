@@ -301,3 +301,61 @@ export function drawPhew(c, x, y, r, k) {
     const p = new Path2D(); for (let j = 0; j < 10; j++) { const b = -Math.PI / 2 + j * Math.PI / 5, rr = j % 2 ? r * .13 : r * .28; p[j ? 'lineTo' : 'moveTo'](Math.cos(b) * rr, Math.sin(b) * rr); } p.closePath(); sticker(c, p, '#FFD84D', 2); c.restore(); }
   c.restore();
 }
+
+/* ---------- 🏆 the bat trophy (Crazy bats unlocked) — a golden cup with bat-wing handles, bat ears and a bat face ---------- */
+export function drawTrophy(c, x, y, s, t) {
+  const G = '#FFC93D', G2 = '#F2A51F', lw = Math.max(3, s * .07);
+  c.save(); c.translate(x, y + Math.sin(t * 2) * s * .03);
+  // soft shine behind
+  const g = c.createRadialGradient(0, -s * .2, s * .2, 0, -s * .2, s * 1.4); g.addColorStop(0, 'rgba(255,236,150,.85)'); g.addColorStop(1, 'rgba(255,236,150,0)');
+  c.fillStyle = g; c.fill(ell(0, -s * .2, s * 1.4, s * 1.4));
+  // wing handles (scalloped, like the bat's wings)
+  for (const d of [-1, 1]) {
+    c.save(); c.scale(d, 1); c.rotate(Math.sin(t * 3) * .05);
+    const p = new Path2D(); p.moveTo(s * .5, -s * .55);
+    p.quadraticCurveTo(s * 1.05, -s * 1.0, s * 1.3, -s * .6);
+    p.quadraticCurveTo(s * 1.2, -s * .35, s * 1.12, -s * .2); p.quadraticCurveTo(s * 1.0, -s * .3, s * .92, -s * .05);
+    p.quadraticCurveTo(s * .8, -s * .18, s * .68, s * .05); p.quadraticCurveTo(s * .6, -s * .1, s * .45, -s * .05); p.closePath();
+    sticker(c, p, G2, lw); c.restore();
+  }
+  // base + stem
+  const base = new Path2D(); base.roundRect(-s * .55, s * .62, s * 1.1, s * .3, s * .1); sticker(c, base, '#7B5A93', lw);
+  const stem = new Path2D(); stem.moveTo(-s * .14, s * .2); stem.lineTo(s * .14, s * .2); stem.quadraticCurveTo(s * .12, s * .45, s * .32, s * .64); stem.lineTo(-s * .32, s * .64); stem.quadraticCurveTo(-s * .12, s * .45, -s * .14, s * .2); stem.closePath();
+  sticker(c, stem, G2, lw);
+  // ears on the rim
+  for (const d of [-1, 1]) { const e = new Path2D(); e.moveTo(d * s * .2, -s * .72); e.quadraticCurveTo(d * s * .3, -s * 1.12, d * s * .46, -s * 1.16); e.quadraticCurveTo(d * s * .55, -s * .95, d * s * .5, -s * .7); e.closePath(); sticker(c, e, G, lw); c.fillStyle = '#FFB3C1'; c.fill(ell(d * s * .4, -s * .9, s * .05, s * .1, d * .3)); }
+  // the cup
+  const cup = new Path2D(); cup.moveTo(-s * .62, -s * .75); cup.lineTo(s * .62, -s * .75); cup.bezierCurveTo(s * .62, -s * .1, s * .4, s * .22, 0, s * .24); cup.bezierCurveTo(-s * .4, s * .22, -s * .62, -s * .1, -s * .62, -s * .75); cup.closePath();
+  sticker(c, cup, G, lw);
+  c.save(); c.clip(cup); c.fillStyle = 'rgba(255,255,255,.45)'; c.fill(ell(-s * .35, -s * .4, s * .1, s * .32, .15)); c.restore();
+  sticker(c, ell(0, -s * .75, s * .62, s * .1), '#FFE08A', lw);
+  // bat face
+  const fy = -s * .32;
+  for (const d of [-1, 1]) { c.fillStyle = INK; c.fill(ell(d * s * .18, fy, s * .07, s * .08)); c.fillStyle = '#fff'; c.fill(ell(d * s * .18 + s * .025, fy - s * .03, s * .025, s * .025)); }
+  c.fillStyle = 'rgba(255,120,150,.6)'; c.fill(ell(-s * .32, fy + s * .1, s * .07, s * .045)); c.fill(ell(s * .32, fy + s * .1, s * .07, s * .045));
+  c.strokeStyle = INK; c.lineWidth = lw * .8; c.lineCap = 'round'; c.beginPath(); c.arc(0, fy + s * .06, s * .1, .15 * Math.PI, .85 * Math.PI); c.stroke();
+  c.fillStyle = '#fff'; for (const d of [-1, 1]) { c.beginPath(); c.moveTo(d * s * .07, fy + s * .14); c.lineTo(d * s * .04, fy + s * .2); c.lineTo(d * s * .01, fy + s * .14); c.fill(); }
+  // sparkles
+  for (let i = 0; i < 4; i++) { const a = t * .8 + i * 1.6, r = s * (1.1 + .1 * Math.sin(t * 3 + i)); c.save(); c.translate(Math.cos(a) * r, -s * .2 + Math.sin(a) * r * .8); c.rotate(t + i);
+    const p = new Path2D(); for (let j = 0; j < 8; j++) { const b = j * Math.PI / 4, rr = j % 2 ? s * .04 : s * .12; p[j ? 'lineTo' : 'moveTo'](Math.cos(b) * rr, Math.sin(b) * rr); } p.closePath(); sticker(c, p, '#FFF6C9', 2); c.restore(); }
+  c.restore();
+}
+
+/* ---------- "Show flight path" help: white lines grow from the hovering bat along the way it will fly ----------
+   (x,y) bat, d = unit direction, len = full length, k = 0..1 how far the lines have grown */
+export function drawFlightPath(c, x, y, d, len, k, w, t) {
+  const L = len * Math.max(0, Math.min(1, k)); if (L < 4) return;
+  c.save(); c.translate(x, y); c.rotate(Math.atan2(d.y, d.x)); c.lineCap = 'round';
+  const dash = Math.max(10, w * .35);
+  for (const off of [-w * .3, w * .3]) {
+    for (const [col, lw] of [['rgba(43,33,24,.55)', 7], ['#fff', 4]]) {
+      c.strokeStyle = col; c.lineWidth = lw; c.setLineDash([dash, dash * .8]); c.lineDashOffset = -t * 60;
+      c.beginPath(); c.moveTo(w * .9, off); c.lineTo(L, off); c.stroke();
+    }
+  }
+  c.setLineDash([]);
+  // a soft rounded arrow tip at the front of the growing lines
+  if (L > w * 1.4) { const p = new Path2D(); p.moveTo(L - w * .2, -w * .55); p.quadraticCurveTo(L + w * .5, 0, L - w * .2, w * .55); p.quadraticCurveTo(L + w * .05, 0, L - w * .2, -w * .55);
+    c.strokeStyle = 'rgba(43,33,24,.55)'; c.lineWidth = 7; c.lineJoin = 'round'; c.stroke(p); c.fillStyle = '#fff'; c.fill(p); c.strokeStyle = '#fff'; c.lineWidth = 3; c.stroke(p); }
+  c.restore();
+}

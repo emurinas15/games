@@ -24,6 +24,16 @@
 .crazy-info.shake{animation:shk .45s}
 @keyframes shk{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
 .tvask{z-index:12;max-width:420px}.tvask p{font:600 18px Fredoka,sans-serif;margin:0 0 12px}
+.win{z-index:13;max-width:460px;padding-top:6px;max-height:none;overflow:visible}
+.win .btn{font-size:24px}
+.win h1{font-size:28px;margin:0 0 6px;color:#7B5A93}
+#win-trophy{display:block;margin:-4px auto -6px;width:190px;height:148px}
+#win-prev{display:block;margin:0 auto;width:100%;max-width:330px;border:3px solid var(--ink);border-radius:16px;aspect-ratio:720/330;height:auto}
+#win-p{font:600 15px Fredoka,sans-serif;margin:8px 4px}
+@media (max-height:560px) and (orientation:landscape){
+  .win{max-width:min(780px,94vw);display:grid;grid-template-columns:1fr 1.15fr;grid-template-rows:auto auto auto auto;column-gap:16px;align-items:center;padding:8px 14px 10px}
+  #win-trophy{grid-column:1;grid-row:1;width:150px;height:117px}.win h1{grid-column:1;grid-row:2;font-size:22px}#win-p{grid-column:1;grid-row:3/5;font-size:14px;margin:2px}
+  #win-prev{grid-column:2;grid-row:1/3;max-width:none}#win-go{grid-column:2;grid-row:3;margin-top:8px}#win-later{grid-column:2;grid-row:4}}
 .unlock{font:700 16px Fredoka,sans-serif;background:#F3EAFB;border:3px solid var(--ink);border-radius:16px;padding:6px 12px;margin:0 auto 10px;max-width:340px}
 body.casting .toast{visibility:hidden}
 @media (max-height:520px){
@@ -69,6 +79,8 @@ body.casting .toast{visibility:hidden}
       <div class="g-row"><span id="t-speed">Speed</span>
         <div class="seg" id="speed-seg"><button data-v="normal"></button><button data-v="fast"></button><button data-v="crazy"></button></div></div>
       <div class="crazy-info" id="crazy-info"></div>
+      <div class="g-row"><span id="t-path">Show flight path</span>
+        <div class="seg" id="path-seg"><button data-v="1"></button><button data-v="0"></button></div></div>
       <div class="g-row"><span id="t-tv">TV delay</span>
         <div class="seg" id="tv-seg"><button data-v="0"></button><button data-v="0.5">½ s</button><button data-v="1">1 s</button><button data-v="1.5">1½ s</button></div></div>
       <div class="g-row"><span id="t-music">Music</span>
@@ -81,12 +93,21 @@ body.casting .toast{visibility:hidden}
       <p id="t-g2"></p>
       <p id="t-g3"></p>
       <p id="t-g4"></p>
+      <p id="t-g5"></p>
       <p class="mini" id="t-legal"></p>
     </div>
   </details>
 </div>
 
 <div class="card tvask" id="tvask" hidden><p id="tvq"></p><button class="btn" id="tv-yes"></button><button class="btn2" id="tv-no"></button></div>
+<div class="card win" id="win" hidden>
+  <canvas id="win-trophy" width="360" height="280"></canvas>
+  <h1 id="win-t"></h1>
+  <canvas id="win-prev" width="720" height="330"></canvas>
+  <p class="note" id="win-p"></p>
+  <button class="btn" id="win-go"></button>
+  <button class="btn2" id="win-later"></button>
+</div>
 <div class="card" id="end" hidden>
   <h1 id="t-over"></h1>
   <div class="big-score" dir="ltr"><span id="final">0</span></div>
@@ -116,7 +137,7 @@ import {setupCast} from '../shared/cast.js';
 import {setupHowTo,bigStar,ease} from '../shared/howto.js';
 import {makeGuide} from '../shared/guide.js';
 import {drawKid} from '../bee/art.js';
-import {drawBat,drawFruit,drawWarn,drawLane,drawDusk,drawPhew,drawBranch,drawBasket,FRUITS,FRUIT_NAMES,BOWS} from './art.js';
+import {drawBat,drawFruit,drawWarn,drawLane,drawDusk,drawPhew,drawBranch,drawBasket,drawTrophy,drawFlightPath,FRUITS,FRUIT_NAMES,BOWS} from './art.js';
 
 const ROUND=60,LEVELS=10,PER=3,BAND=[.4,.6];
 const IV=[4.0,3.8,3.5,3.3,3.0,2.8,2.6,2.4,2.2,2.0];   // seconds between bats, by level (normal)
@@ -140,6 +161,9 @@ const UI={
   ready:"Getting ready…",go:"Go!",turn:"Turn the phone sideways to play",nocam:"No camera here. Drag your finger to move the head.",aria:"Game area",
   band:"Put your head in the sunny stripe",two:"Two players: both heads in the sunny stripe",high_back:"Head too high — step back a little",high_tilt:"Head too high — tilt the phone down a little",low_closer:"Head too low — come a little closer",low_tilt:"Head too low — tilt the phone up a little",like:"Stand like this",
   closer:"Come a little closer",back:"Step back a little",find:"Stand in front of the camera",wait:"The bats are waiting…",
+  path:"Show flight path",
+  g5:"★ Show flight path (help, off by default): instead of the round sign, the bat waits at the edge of the screen looking where it will go, and white lines grow along its path. When the lines reach the other side, it flies exactly that way. Good for younger children or when it is hard to see where the bat will fly.",
+  winT:"You unlocked CRAZY BATS!",winP:"Faster bats — and sometimes 2 or 3 at once! Turn it on any time: Settings ⚙️ → Speed → 🦇 Crazy bats.",winGo:"🦇 Play it now!",winLater:"Later",
   yum:"Yum!",phew:"Phew!",pick:"Touch the fruit with your head",
   tv:"TV delay",tvOff:"Off",tvq:"Playing on the TV? The picture on a TV comes a little late. Turn on the TV delay so the bats are fair?",tvYes:"Yes, 1 second",tvNo:"No",
   g4:"★ TV delay: when the phone is mirrored to a TV, the TV picture comes about ½–1½ seconds late, so the child sees the bat late. With the TV delay on, the game judges each dodge against where the bat was that long ago — fair, and nothing looks different. A web page can't tell by itself that the screen is being mirrored, so it's set here (the game also asks after you open 📺).",level:n=>"Level "+n,allDone:"All 10 levels!",
@@ -159,6 +183,9 @@ const UI={
   ready:"מתכוננים…",go:"יוצאים!",turn:"סובבו את הטלפון לרוחב כדי לשחק",nocam:"אין כאן מצלמה. גררו את האצבע כדי להזיז את הראש.",aria:"אזור המשחק",
   band:"שימו את הראש בפס השמש",two:"2 שחקנים: שני הראשים בפס השמש",high_back:"הראש גבוה מדי — התרחקו קצת",high_tilt:"הראש גבוה מדי — הטו קצת את הטלפון למטה",low_closer:"הראש נמוך מדי — התקרבו קצת",low_tilt:"הראש נמוך מדי — הטו קצת את הטלפון למעלה",like:"עמדו ככה",
   closer:"התקרבו קצת",back:"התרחקו קצת",find:"עמדו מול המצלמה",wait:"העטלפים מחכים…",
+  path:"הצגת מסלול העוף",
+  g5:"★ הצגת מסלול העוף (עזרה, כבוי כברירת מחדל): במקום הסימן העגול, העטלף מחכה בקצה המסך ומסתכל לאן הוא יעוף, וקווים לבנים גדלים לאורך המסלול שלו. כשהקווים מגיעים לצד השני, הוא עף בדיוק בדרך הזאת. טוב לילדים צעירים או כשקשה לראות לאן העטלף יעוף.",
+  winT:"פתחתם את העטלפים המשוגעים!",winP:"עטלפים מהירים יותר — ולפעמים 2 או 3 בבת אחת! מפעילים מתי שרוצים: הגדרות ⚙️ ← מהירות ← 🦇 עטלפים משוגעים.",winGo:"🦇 לשחק עכשיו!",winLater:"אחר כך",
   yum:"יאמי!",phew:"פיו!",pick:"געו בפרי עם הראש",
   tv:"השהיית טלוויזיה",tvOff:"כבוי",tvq:"משחקים מול הטלוויזיה? התמונה בטלוויזיה מגיעה קצת באיחור. להפעיל השהיית טלוויזיה כדי שהעטלפים יהיו הוגנים?",tvYes:"כן, שנייה אחת",tvNo:"לא",
   g4:"★ השהיית טלוויזיה: כשהטלפון משוכפל לטלוויזיה, התמונה בטלוויזיה מגיעה בערך חצי שנייה עד שנייה וחצי באיחור, ולכן הילד רואה את העטלף מאוחר. כשההשהיה פועלת, המשחק בודק כל התחמקות לפי המקום שבו העטלף היה לפני הזמן הזה — הוגן, ושום דבר לא נראה אחרת. דף אינטרנט לא יכול לדעת לבד שהמסך משוכפל, לכן מגדירים את זה כאן (המשחק גם שואל אחרי שפותחים את 📺).",level:n=>"שלב "+n,allDone:"כל 10 השלבים!",
@@ -188,12 +215,15 @@ function showTvAsk(){const u=UI[lang];$('tvq').textContent=u.tvq;$('tv-yes').tex
 let tvHid=false;const tvClose=()=>{$('tvask').hidden=true;if(tvHid)$('start').hidden=false;tvHid=false;};
 $('tv-yes').onclick=()=>{tvLag=1;LS.set('bat-tvlag','1');tvClose();SFX.tink();segs();};
 $('tv-no').onclick=tvClose;
+let showPath=LS.get('bat-path','0')==='1';   // help: bat hovers + white path lines instead of the round sign
 let tvLag=+LS.get('bat-tvlag','0')||0;   // seconds the TV picture runs behind (phone mirroring); dodges are judged against where the bat was that long ago
 if(FAKE&&QS.get('lag'))tvLag=+QS.get('lag');
+if(FAKE&&QS.has('path'))showPath=true;
 function segs(){
   const u=UI[lang];
   document.querySelectorAll('#until-seg button').forEach(b=>{b.textContent=u[b.dataset.v];b.setAttribute('aria-pressed',b.dataset.v===until);});
   document.querySelectorAll('#speed-seg button').forEach(b=>{const v=b.dataset.v,lock=v==='crazy'&&!crazyOpen;b.textContent=lock?u.crazyL:u[v];b.classList.toggle('locked',lock);b.setAttribute('aria-pressed',v===speed);});
+  document.querySelectorAll('#path-seg button').forEach(b=>{b.textContent=b.dataset.v==='1'?u.on:u.off;b.setAttribute('aria-pressed',(b.dataset.v==='1')===showPath);});
   document.querySelectorAll('#tv-seg button').forEach(b=>{if(b.dataset.v==='0')b.textContent=u.tvOff;b.setAttribute('aria-pressed',+b.dataset.v===tvLag);});
   $('crazy-info').textContent=crazyOpen?u.crazyOpen:u.crazyLocked;
   document.querySelectorAll('#modes .lv').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===mode));
@@ -206,7 +236,7 @@ let lastRes=null;
 function setLang(l){
   lang=l;LS.set('bamboo-lang',l);const u=UI[l];
   document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
-  for(const k of ['title','play','privacy','grown','until','speed','tv','music','amb','sfx','g1','g2','g3','g4','legal','solo','duo'])
+  for(const k of ['title','play','privacy','grown','until','speed','path','tv','music','amb','sfx','g1','g2','g3','g4','g5','legal','solo','duo'])
     {const e=$('t-'+k);if(e)e.textContent=u[k];}
   $('t-privacy2').textContent=u.privacy;$('menu').textContent=u.menu;document.title=u.title+' · Bamboo Physio';
   $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
@@ -218,6 +248,7 @@ document.querySelectorAll('#until-seg button').forEach(b=>b.onclick=()=>{until=b
 document.querySelectorAll('#speed-seg button').forEach(b=>b.onclick=()=>{
   if(b.dataset.v==='crazy'&&!crazyOpen){audio();tone({f0:300,f1:200,dur:.18,type:'triangle',vol:.15});const e=$('crazy-info');e.classList.remove('shake');void e.offsetWidth;e.classList.add('shake');return;}
   speed=b.dataset.v;LS.set('bat-speed',speed);SFX.tink();segs();});
+document.querySelectorAll('#path-seg button').forEach(b=>b.onclick=()=>{showPath=b.dataset.v==='1';LS.set('bat-path',showPath?'1':'0');SFX.tink();segs();});
 document.querySelectorAll('#tv-seg button').forEach(b=>b.onclick=()=>{tvLag=+b.dataset.v;LS.set('bat-tvlag',String(tvLag));SFX.tink();segs();});
 document.querySelectorAll('#modes .lv').forEach(b=>b.onclick=()=>{mode=b.dataset.m;LS.set('bat-mode',mode);SFX.tink();segs();});
 
@@ -334,6 +365,13 @@ function makeBat(P,type,cfg,side){
     b.dir=dir;b.y=laneY(P,type);b.x=dir>0?ln.x-u:ln.x+ln.w+u;b.vx=dir*W/cfg.side*lvk;b.vy=0;
     b.wx=dir>0?ln.x+R*1.25:ln.x+ln.w-R*1.25;b.wy=b.y;b.dirv={x:dir,y:0};
   }
+  if(showPath){   // the bat waits inside the screen, where the sign would be, and flies from there
+    const br=batR(P),hx=type==='top'?b.x:b.dir>0?ln.x+br*3:ln.x+ln.w-br*3,hy=type==='top'||type==='diag'?topY()+br*.6:b.y;
+    if(type==='diag'){const dx=f.x-hx,dy=f.y-hy,L=Math.hypot(dx,dy),sp=Math.hypot(b.vx,b.vy);b.vx=dx/L*sp;b.vy=dy/L*sp;b.dirv={x:dx/L,y:dy/L};}
+    b.x=hx;b.y=hy;b.hover=true;
+    // how far the path lines reach: to the far edge of this player's side
+    const ex=b.vx>0?(ln.x+ln.w-hx)/b.vx:b.vx<0?(ln.x-hx)/b.vx:1e9,ey=b.vy>0?(H-hy)/b.vy:1e9,sp=Math.hypot(b.vx,b.vy);b.plen=Math.min(ex,ey)*sp;
+  }
   b.x0=b.x;b.y0=b.y;
   const sp=Math.hypot(b.vx,b.vy);
   b.arr=P.t+b.warn+Math.max(0,((f.x-b.x)*b.vx+(f.y-b.y)*b.vy)/sp/sp);
@@ -395,7 +433,9 @@ function endGame(quit){
   }
   if(until==='time'&&mode==='solo'){const b=+LS.get(bestKey(),'0')||0;if(A.ev>b){lastRes.newBest=b>0;LS.set(bestKey(),String(A.ev));}}
   setTimeout(FX.win,500);confetti();
-  fillEnd();$('end').hidden=false;
+  fillEnd();
+  if(lastRes.unlocked&&LS.get('bat-crazy-seen','0')!=='1'){LS.set('bat-crazy-seen','1');setTimeout(showWin,900);}
+  else $('end').hidden=false;
 }
 function fillEnd(){
   const u=UI[lang],R=lastRes;
@@ -415,6 +455,29 @@ function fillEnd(){
   $('unlock').hidden=!R.unlocked;$('unlock').textContent=u.unlocked;
   $('t-again').textContent=u.playagain;$('t-privacy2').textContent=u.privacy;
 }
+/* 🏆 one-time celebration when Crazy bats opens: a bat trophy, a picture of Crazy bats mode, how to turn it on */
+let winOn=false;
+function showWin(){
+  const u=UI[lang];$('win-t').textContent='🏆 '+u.winT;$('win-p').textContent=u.winP;$('win-go').textContent=u.winGo;$('win-later').textContent=u.winLater;
+  $('win').hidden=false;winOn=true;drawWinPreview();fitWin();
+  [523,659,784,1047,784,1047,1319].forEach((f,i)=>tone({f0:f,dur:i>4?.5:.18,type:'triangle',vol:.26,at:i*.13}));setTimeout(()=>SFX.chime(),950);
+  for(let k=0;k<3;k++)setTimeout(confetti,k*450);
+  const tc=$('win-trophy').getContext('2d');(function loop(){if(!winOn)return;tc.setTransform(1,0,0,1,0,0);tc.clearRect(0,0,360,280);drawTrophy(tc,180,165,100,tNow);requestAnimationFrame(loop);})();
+}
+function fitWin(){const c=$('win');if(c.hidden)return;c.style.zoom=1;const need=c.scrollHeight+8,avail=innerHeight-70;c.style.zoom=need>avail?Math.max(.55,avail/need):1;}
+addEventListener('resize',fitWin);
+function drawWinPreview(){   // not a screenshot — a drawn "Crazy bats" scene
+  const c=$('win-prev').getContext('2d'),w=720,hh=330,t=1.3;c.setTransform(1,0,0,1,0,0);drawDusk(c,w,hh,t);
+  const ks=64,kx=w*.5,r=drawKid(c,kx,hh*.93,ks,'mid','#BFE3FF',t);drawFruit(c,kx,r.headY-ks*.45,ks*.45,'peach',t,{mood:'oh'});
+  drawBat(c,w*.2,hh*.42,52,t,{mood:'hungry',look:1,tilt:.12,trail:{x:1,y:0}});
+  drawBat(c,w*.8,hh*.3,52,t+.5,{mood:'hungry',look:-1,lookY:1,tilt:-.3,dive:.4,trail:{x:-.8,y:.6}});
+  drawBat(c,w*.6,hh*.16,42,t+.9,{mood:'hungry',lookY:1,dive:.8,trail:{x:0,y:1}});
+  drawWarn(c,w*.07,hh*.78,36,.7,{x:1,y:0},t);
+  c.save();c.direction='ltr';c.font='900 64px Grandstander,Fredoka,sans-serif';c.textAlign='center';c.lineJoin='round';c.lineWidth=7;c.strokeStyle=INK;c.strokeText('🦇 ×3',w*.84,hh*.84);c.fillStyle='#FFD84D';c.fillText('🦇 ×3',w*.84,hh*.84);c.restore();
+}
+$('win-go').onclick=()=>{winOn=false;$('win').hidden=true;speed='crazy';LS.set('bat-speed','crazy');segs();play();};
+$('win-later').onclick=()=>{winOn=false;$('win').hidden=true;$('end').hidden=false;};
+if(QS.has('win'))setTimeout(()=>{lastRes={mode:'solo',until:'levels',a:30,b:0,la:10,lb:0,da:true,db:false,secs:126,newBest:false,gb:null,unlocked:true};fillEnd();$('start').hidden=true;showWin();},800);
 function confetti(){for(let i=0;i<40;i++)pops.push({x:W*(.2+Math.random()*.6),y:H*.35,vx:(Math.random()-.5)*W*.9,vy:-H*(.4+Math.random()*.7),life:1.6+Math.random()*.6,c:['#FFD84D','#FF9FB0','#7DCB6B','#B79CF2'][i%4]});}
 
 const portraitPlay=()=>H>W*1.05&&['setup','count','play'].includes(state);
@@ -574,12 +637,15 @@ function drawPlayer(P){
     if(b.st==='warn')continue;
     const look=Math.max(-1,Math.min(1,(fp.x-b.x)/(U(P)*2))),lookY=Math.max(-1,Math.min(1,(fp.y-b.y)/(U(P)*2))),R=batR(P);
     drawBat(ctx,b.x,b.y+Math.sin(tNow*9+b.arr)*U(P)*.03,R,tNow+b.arr,{mood:b.mood,look,lookY,dive:b.type==='top'&&b.st==='fly'?.8:b.type==='diag'?.4:0,carry:b.st==='grab'?b.carry:null,
-      tilt:b.type==='top'?0:b.type==='diag'?b.dir*.3:b.dir*.12,flap:b.st==='grab'?7:11,bow:mode==='duo'?BOWS[P.k]:null,border:Math.max(3,R*.16),trail:b.st==='fly'?{x:b.vx,y:b.vy}:null});
+      tilt:b.type==='top'?0:b.type==='diag'?b.dir*.3:b.dir*.12,flap:b.st==='grab'?7:11,bow:mode==='duo'?BOWS[P.k]:null,border:0,trail:b.st==='fly'?{x:b.vx,y:b.vy}:null});
   }
   if(P.t-P.lvT<1.6&&P.level>1)bigText(u.level(P.level),ln.x+ln.w/2,H*.42,Math.min(90,H*.13,ln.w*.16),'#FFD84D',1+.3*Math.max(0,1-(P.t-P.lvT)*4));
   for(const m of P.msgs){const k=(P.t-m.t)/1.2;if(m.stars)drawPhew(ctx,m.x,m.y,r*1.2,k);if(k<.8)bigText(m.txt,m.x,m.y-r*2.4-k*r,Math.max(22,r*1.1),m.col,1+.2*Math.max(0,1-k*5));}
   // warning signs on top so they are always seen
-  for(const b of P.bats)if(b.st==='warn')drawWarn(ctx,b.wx,b.wy,b.R,b.t/b.warn,b.dirv,tNow);
+  for(const b of P.bats)if(b.st==='warn'){
+    if(b.hover){const R=batR(P);drawFlightPath(ctx,b.x,b.y,b.dirv,b.plen,b.t/b.warn,R*1.1,tNow);
+      drawBat(ctx,b.x,b.y+Math.sin(tNow*3+b.arr)*R*.12,R,tNow+b.arr,{mood:'hungry',look:b.dirv.x,lookY:b.dirv.y,flap:6,tilt:b.type==='top'?0:b.dir*.08,bow:mode==='duo'?BOWS[P.k]:null});}
+    else drawWarn(ctx,b.wx,b.wy,b.R,b.t/b.warn,b.dirv,tNow);}
   if(mode==='duo')ctx.restore();
   if(P.paused&&state==='play'){const tfs=Math.max(15,Math.min(22,W*.026));bubble(P.distBad?u[P.distBad]:u.find,ln.x+ln.w/2,H*.5,tfs,'#FFF3C4');bubble(u.wait,ln.x+ln.w/2,H*.5+tfs*2.6,tfs*.8,'#fff');}
   else if(f.st==='branch'&&f.grow>=1&&state==='play'&&P.ev===0&&P.t>2.5)bubble(u.pick,ln.x+ln.w/2,H*.52,Math.max(15,Math.min(21,W*.024)),'#FFF3C4');
@@ -645,13 +711,13 @@ function drawDemo(){
   const fr=s*.55,fy=r.headY-fr*.85;drawFruit(ctx,cx,fy,fr,FRUITS[Math.floor(tNow/T)%FRUITS.length],tNow,{mood:k>.25&&k<.6?'oh':k>.6&&k<.85?'yay':'happy'});
   const standF=gy-s*2.75;   // fruit height when standing
   if(k<.35){drawWarn(ctx,W*.06+s*.7,standF,s*.7,k/.35,{x:1,y:0},tNow);}
-  else{const q=(k-.35)/.5,bx=-s*2+(W+s*4)*q;drawBat(ctx,bx,standF,s*.75,tNow,{mood:bx>cx?'aww':'hungry',look:bx<cx?1:-1,tilt:.12,border:4,trail:{x:1,y:0}});}
+  else{const q=(k-.35)/.5,bx=-s*2+(W+s*4)*q;drawBat(ctx,bx,standF,s*.75,tNow,{mood:bx>cx?'aww':'hungry',look:bx<cx?1:-1,tilt:.12,trail:{x:1,y:0}});}
 }
 function icons(){
   const [soloC,duoC]=[...document.querySelectorAll('#modes canvas')].map(c=>c.getContext('2d'));
-  soloC.clearRect(0,0,220,128);drawKid(soloC,110,122,30,'mid','#BFE3FF',0);drawFruit(soloC,110,58,13,'fig',0,{mood:'oh'});drawBat(soloC,48,34,17,.2,{mood:'hungry',look:1,tilt:.12,border:3});
+  soloC.clearRect(0,0,220,128);drawKid(soloC,110,122,30,'mid','#BFE3FF',0);drawFruit(soloC,110,58,13,'fig',0,{mood:'oh'});drawBat(soloC,48,34,17,.2,{mood:'hungry',look:1,tilt:.12});
   duoC.clearRect(0,0,220,128);drawKid(duoC,52,122,30,'stand','#BFE3FF',0);drawKid(duoC,168,122,30,'stand','#FFD1DC',0);
-  drawFruit(duoC,52,34,12,'banana',0);drawFruit(duoC,168,34,12,'mango',.4);drawBat(duoC,110,26,15,.3,{mood:'hungry',dive:.8,border:3});
+  drawFruit(duoC,52,34,12,'banana',0);drawFruit(duoC,168,34,12,'mango',.4);drawBat(duoC,110,26,15,.3,{mood:'hungry',dive:.8});
 }
 
 /* ================= HOW TO PLAY ================= */
@@ -662,7 +728,7 @@ function icons(){
     const r=drawKid(c,x,gy,s,pose,'#BFE3FF',t),fr=s*.5;if(fruit)drawFruit(c,x,r.headY-fr*.85,fr,fruit,t,{mood});
     return {s,gy,fy:gy-s*2.75};
   }
-  const B=(c,x,y,s,t,o)=>drawBat(c,x,y,s,t,{border:Math.max(2,s*.15),...o});
+  const B=(c,x,y,s,t,o)=>drawBat(c,x,y,s,t,{...o});
   setupHowTo({lang:()=>lang,play:()=>play(),steps:[
     {dur:3.4,cap:{en:'Touch the fruit with your head 🥭',he:'נוגעים בפרי עם הראש 🥭'},draw(c,w,h,t,k){const s=SZ(w,h),fr=s*.5,fy=h*.92-s*2.75,x=w*.32+w*.18*ease(Math.min(1,k/.45));
       const on=k>.5;drawBranch(c,w*.5,fy-fr*.3,fr,'mango',t,{empty:on,glow:on?0:1});scene(c,w,h,t,{x,fruit:on?'mango':null,mood:'yay'});}},
