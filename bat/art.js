@@ -341,21 +341,17 @@ export function drawTrophy(c, x, y, s, t) {
   c.restore();
 }
 
-/* ---------- "Show flight path" help: white lines grow from the hovering bat along the way it will fly ----------
-   (x,y) bat, d = unit direction, len = full length, k = 0..1 how far the lines have grown */
-export function drawFlightPath(c, x, y, d, len, k, w, t) {
-  const L = len * Math.max(0, Math.min(1, k)); if (L < 4) return;
-  c.save(); c.translate(x, y); c.rotate(Math.atan2(d.y, d.x)); c.lineCap = 'round';
-  const dash = Math.max(10, w * .35);
-  for (const off of [-w * .3, w * .3]) {
-    for (const [col, lw] of [['rgba(43,33,24,.55)', 7], ['#fff', 4]]) {
-      c.strokeStyle = col; c.lineWidth = lw; c.setLineDash([dash, dash * .8]); c.lineDashOffset = -t * 60;
-      c.beginPath(); c.moveTo(w * .9, off); c.lineTo(L, off); c.stroke();
-    }
+/* ---------- "Show flight path" help (Edgar 24 Nov): ONE dotted line from the hovering bat to the far side.
+   k0..k1 = the part of the path that is showing (0 = at the bat, 1 = far side): it grows from the bat (k1 0→1),
+   then disappears from the start to the finish (k0 0→1) — before the bat flies, so it never flies over a line. */
+export function drawFlightPath(c, x, y, d, len, k0, k1, w) {
+  k0 = Math.max(0, Math.min(1, k0)); k1 = Math.max(0, Math.min(1, k1)); if (k1 <= k0) return;
+  const gap = Math.max(16, w * .55), r = Math.max(3.5, w * .11), start = w * 1.1, L = len - start;
+  if (L <= 0) return;
+  for (let s = 0; s <= L; s += gap) {
+    const f = s / L; if (f < k0 || f > k1) continue;
+    const px = x + d.x * (start + s), py = y + d.y * (start + s);
+    c.fillStyle = 'rgba(43,33,24,.6)'; c.beginPath(); c.arc(px, py, r + 2, 0, 7); c.fill();
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(px, py, r, 0, 7); c.fill();
   }
-  c.setLineDash([]);
-  // a soft rounded arrow tip at the front of the growing lines
-  if (L > w * 1.4) { const p = new Path2D(); p.moveTo(L - w * .2, -w * .55); p.quadraticCurveTo(L + w * .5, 0, L - w * .2, w * .55); p.quadraticCurveTo(L + w * .05, 0, L - w * .2, -w * .55);
-    c.strokeStyle = 'rgba(43,33,24,.55)'; c.lineWidth = 7; c.lineJoin = 'round'; c.stroke(p); c.fillStyle = '#fff'; c.fill(p); c.strokeStyle = '#fff'; c.lineWidth = 3; c.stroke(p); }
-  c.restore();
 }
