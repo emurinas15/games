@@ -66,6 +66,8 @@ body.casting .toast{visibility:hidden}
   <details id="grown">
     <summary id="t-grown">For grown-ups</summary>
     <div class="g-body">
+      <div class="g-row"><span id="t-inst">Instrument</span>
+        <div class="seg" id="inst-seg"><button data-v="xylo"></button><button data-v="piano"></button></div></div>
       <div class="g-row"><span id="t-reach">Reach</span>
         <div class="seg" id="reach-seg"><button data-v="near"></button><button data-v="far"></button></div></div>
       <div class="g-row"><span id="t-group">Repeated notes</span>
@@ -113,7 +115,8 @@ import {NOTE_COL,drawNote,drawMiniNote,drawHandGlow,twinkle,drawLadder,drawReach
    All melodies are old and in the public domain (no copyright): Twinkle Twinkle (French tune, 1761), Mary Had a Little Lamb
    (1830), Happy Birthday (the Hill sisters' 1893 tune; public domain), Row Row Row Your Boat (1852), Old MacDonald (traditional).
    scale = the 8 piano notes (MIDI) for the 8 heights, low → high.  notes = "height:beats ...".  chords = "chord:beats ..." ('-' = none). */
-const CH={C:[36,48,52,55],F:[41,53,57,60],G:[43,55,59,62],D:[38,50,54,57],Bb:[46,53,58,62]};
+const CH={C:[36,48,52,55],F:[41,53,57,60],G:[43,55,59,62],D:[38,50,54,57],Bb:[46,53,58,62]};       // piano left hand
+const CHM={C:[48,55,64],F:[53,60,69],G:[55,62,71],D:[50,57,66],Bb:[46,53,62]};                     // soft marimba under the xylophone
 const SONGS=[
  {id:'twinkle',icon:'⭐',en:'Twinkle Twinkle',he:'נצנץ נצנץ כוכב קטן',spb:.55,scale:[60,62,64,65,67,69,71,72],
   notes:'0:1 0:1 4:1 4:1 5:1 5:1 4:2 3:1 3:1 2:1 2:1 1:1 1:1 0:2 4:1 4:1 3:1 3:1 2:1 2:1 1:2 4:1 4:1 3:1 3:1 2:1 2:1 1:2 0:1 0:1 4:1 4:1 5:1 5:1 4:2 3:1 3:1 2:1 2:1 1:1 1:1 0:2',
@@ -148,12 +151,12 @@ function makeTargets(ev,group){
 const UI={
  en:{title:"Rainbow Notes",sub:"Touch the notes with your hands and play a song!",play:"Play",solo:"1 player",duo:"2 players",
   privacy:"The camera is used only to play. Nothing is recorded or sent.",grown:"For grown-ups",
-  reach:"Reach",near:"Near",far:"Far",group:"Repeated notes",together:"Together (×2, ×3)",apart:"One by one",next:"Show the next note",chords:"Piano chords",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
-  g1:"A song is played one note at a time. Each note appears at its own height on the screen — 8 heights for the 8 notes of the scale, low notes low and high notes high, in rainbow colours (red is the lowest, pink the highest). The rainbow ladder on the side shows which height is which. The note sits at a random place to the left or right of the child, and the child brushes it with either hand — the hands glow, and it doesn't need to be exact. Then the note plays on the piano and the next one appears. There is no time limit and nothing to lose: the song goes at the child's pace. When the song is finished, the whole song plays back as the child played it.",
+  inst:"Instrument",xylo:"🪵 Wooden xylophone",piano:"🎹 Piano",reach:"Reach",near:"Near",far:"Far",group:"Repeated notes",together:"Together (×2, ×3)",apart:"One by one",next:"Show the next note",chords:"Chords",sfx:"Sound effects",on:"On",off:"Off",mute:"Sound on or off",
+  g1:"A song is played one note at a time. Each note appears at its own height on the screen — 8 heights for the 8 notes of the scale, low notes low and high notes high, in rainbow colours (red is the lowest, pink the highest). The rainbow ladder on the side shows which height is which. The note sits at a random place to the left or right of the child, and the child brushes it with either hand — the hands glow, and it doesn't need to be exact. Then the note plays (wooden xylophone or piano) and the next one appears. There is no time limit and nothing to lose: the song goes at the child's pace. When the song is finished, the whole song plays back as the child played it.",
   g2:"★ Repeated notes: “Together” shows notes that repeat (like the “Twin-kle twin-kle”) as one double or triple note — one touch plays them in rhythm. “One by one” gives every note its own reach (more movement). Reach: Near keeps the notes close to the body; Far makes the child stretch the arms all the way out. Show the next note: a see-through note shows where the next one will be, so the child can plan the movement.",
   g3:"★ Set the phone or tablet sideways, about chest height of the child. Before the game a see-through outline shows where to sit or stand (from the belt up, both hands in view): fit into it and hold still until it fills green. Works sitting in a chair.",
   g4:"★ 2 players: each player has their own half of the screen. The notes take turns — every note jumps over to the other player, so they play the song together. Nobody wins: they finish it as a team.",
-  legal:"A home practice game by Bamboo Physio. Not a medical device. All songs are traditional melodies in the public domain. © 2026 Bamboo Physio · Piano sound: FluidR3_GM by Frank Wen, CC BY 3.0",
+  legal:"A home practice game by Bamboo Physio. Not a medical device. All songs are traditional melodies in the public domain. © 2026 Bamboo Physio · Instrument sounds: FluidR3_GM by Frank Wen, CC BY 3.0",
   ready:"Getting ready…",go:"Go!",turn:"Turn the phone sideways to play",nocam:"No camera here. Touch the notes with your finger.",aria:"Game area",
   find:"Sit in front of the camera",wait:"The notes are waiting…",reachIt:"Reach for the note!",yourTurn:"Your turn!",
   yourSong:"Your song! 🎶",together:"Your song — together! 🎶",skip:"Skip ⏭",
@@ -161,12 +164,12 @@ const UI={
   playagain:"Play again",other:"Another song",best:t=>"Fastest: "+t},
  he:{title:"תווי הקשת",sub:"געו בתווים עם הידיים ונגנו שיר!",play:"שחקו",solo:"שחקן אחד",duo:"2 שחקנים",
   privacy:"המצלמה משמשת רק למשחק. שום דבר לא מוקלט ולא נשלח.",grown:"למבוגרים",
-  reach:"טווח הושטה",near:"קרוב",far:"רחוק",group:"תווים חוזרים",together:"ביחד (×2, ×3)",apart:"אחד אחד",next:"להראות את התו הבא",chords:"אקורדים בפסנתר",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
-  g1:"השיר מתנגן תו אחרי תו. כל תו מופיע בגובה משלו על המסך — 8 גבהים ל־8 התווים של הסולם, תווים נמוכים למטה ותווים גבוהים למעלה, בצבעי הקשת (אדום הכי נמוך, ורוד הכי גבוה). סולם הקשת בצד מראה איזה גובה הוא איזה. התו מופיע במקום אקראי משמאל או מימין לילד, והילד נוגע בו עם אחת הידיים — הידיים זוהרות, ולא צריך לדייק. התו מתנגן בפסנתר והתו הבא מופיע. אין הגבלת זמן ואין מה להפסיד: השיר מתקדם בקצב של הילד. בסוף השיר כל השיר מתנגן שוב, כמו שהילד ניגן אותו.",
+  inst:"כלי נגינה",xylo:"🪵 קסילופון מעץ",piano:"🎹 פסנתר",reach:"טווח הושטה",near:"קרוב",far:"רחוק",group:"תווים חוזרים",together:"ביחד (×2, ×3)",apart:"אחד אחד",next:"להראות את התו הבא",chords:"אקורדים",sfx:"צלילים במשחק",on:"פועל",off:"כבוי",mute:"הפעלת או השתקת קול",
+  g1:"השיר מתנגן תו אחרי תו. כל תו מופיע בגובה משלו על המסך — 8 גבהים ל־8 התווים של הסולם, תווים נמוכים למטה ותווים גבוהים למעלה, בצבעי הקשת (אדום הכי נמוך, ורוד הכי גבוה). סולם הקשת בצד מראה איזה גובה הוא איזה. התו מופיע במקום אקראי משמאל או מימין לילד, והילד נוגע בו עם אחת הידיים — הידיים זוהרות, ולא צריך לדייק. התו מתנגן (קסילופון מעץ או פסנתר) והתו הבא מופיע. אין הגבלת זמן ואין מה להפסיד: השיר מתקדם בקצב של הילד. בסוף השיר כל השיר מתנגן שוב, כמו שהילד ניגן אותו.",
   g2:"★ תווים חוזרים: „ביחד” מראה תווים שחוזרים על עצמם כתו כפול או משולש — נגיעה אחת מנגנת אותם בקצב. „אחד אחד” נותן לכל תו הושטה משלו (יותר תנועה). טווח הושטה: „קרוב” שומר את התווים קרוב לגוף; „רחוק” דורש למתוח את הידיים עד הסוף. להראות את התו הבא: תו שקוף מראה איפה יופיע התו הבא, כדי שהילד יוכל לתכנן את התנועה.",
   g3:"★ העמידו את הטלפון או הטאבלט לרוחב, בערך בגובה החזה של הילד. לפני המשחק צורה שקופה מראה איפה לשבת או לעמוד (מהחגורה ומעלה, שתי הידיים בתמונה): נכנסים לתוכה ומחזיקים בלי לזוז עד שהיא מתמלאת בירוק. אפשר לשחק בישיבה על כיסא.",
   g4:"★ 2 שחקנים: לכל שחקן חצי מסך משלו. התווים מתחלפים — כל תו קופץ לשחקן השני, וכך הם מנגנים את השיר ביחד. אין מנצח: מסיימים את השיר כצוות.",
-  legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. כל השירים הם מנגינות עממיות ישנות בנחלת הכלל. © 2026 Bamboo Physio · צליל הפסנתר: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
+  legal:"משחק תרגול ביתי של Bamboo Physio. לא מכשיר רפואי. כל השירים הם מנגינות עממיות ישנות בנחלת הכלל. © 2026 Bamboo Physio · צלילי הכלים: FluidR3_GM מאת Frank Wen, ‏CC BY 3.0",
   ready:"מתכוננים…",go:"יוצאים!",turn:"סובבו את הטלפון לרוחב כדי לשחק",nocam:"אין כאן מצלמה. געו בתווים עם האצבע.",aria:"אזור המשחק",
   find:"שבו מול המצלמה",wait:"התווים מחכים…",reachIt:"הושיטו יד לתו!",yourTurn:"התור שלך!",
   yourSong:"השיר שלכם! 🎶",together:"השיר שלכם — ביחד! 🎶",skip:"דלגו ⏭",
@@ -178,6 +181,7 @@ let lang=LS.get('bamboo-lang','en'); if(!UI[lang])lang='en';
 let mode=LS.get('nt-mode','solo'); if(!['solo','duo'].includes(mode))mode='solo';
 let songId=LS.get('nt-song','twinkle'); if(!SONGS.some(s=>s.id===songId))songId='twinkle';
 let reach=LS.get('nt-reach','near'); if(!['near','far'].includes(reach))reach='near';
+let inst=LS.get('nt-inst','xylo');if(!['xylo','piano'].includes(inst))inst='xylo';
 let group=LS.get('nt-group','1')==='1',showNext=LS.get('nt-next','1')==='1',chordsOn=LS.get('nt-chords','1')==='1';
 const QS=new URLSearchParams(location.search),FAKE=QS.has('fake')||QS.has('bot'),BOT=QS.has('bot'),SPEEDUP=+QS.get('speedup')||1;   // ?fake = finger is the hand; ?bot = plays by itself (testing)
 if(FAKE&&QS.get('mode'))mode=QS.get('mode');if(FAKE&&QS.get('song'))songId=QS.get('song');
@@ -195,7 +199,7 @@ function buildSongs(){
 }
 function segs(){
   const u=UI[lang],set=(id,val,txt)=>document.querySelectorAll('#'+id+' button').forEach(b=>{if(txt)b.textContent=txt(b.dataset.v);b.setAttribute('aria-pressed',b.dataset.v===String(val));});
-  set('reach-seg',reach,v=>u[v]);set('group-seg',group?'1':'0',v=>v==='1'?u.together:u.apart);
+  set('reach-seg',reach,v=>u[v]);set('inst-seg',inst,v=>u[v]);set('group-seg',group?'1':'0',v=>v==='1'?u.together:u.apart);
   set('next-seg',showNext?'1':'0',v=>v==='1'?u.on:u.off);set('chords-seg',chordsOn?'1':'0',v=>v==='1'?u.on:u.off);
   document.querySelectorAll('#modes .lv').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===mode));
   const bt=+LS.get(bestKey(),'0')||0;$('best').textContent=bt?u.best(fmtTime(bt)):'';
@@ -204,7 +208,7 @@ let lastRes=null;
 function setLang(l){
   lang=l;LS.set('bamboo-lang',l);const u=UI[l];
   document.documentElement.lang=l;document.documentElement.dir=l==='he'?'rtl':'ltr';document.querySelector('.top').dir='ltr';
-  for(const k of ['title','sub','play','privacy','grown','reach','group','next','chords','sfx','g1','g2','g3','g4','legal','solo','duo'])
+  for(const k of ['title','sub','play','privacy','grown','inst','reach','group','next','chords','sfx','g1','g2','g3','g4','legal','solo','duo'])
     {const e=$('t-'+k);if(e)e.textContent=u[k];}
   $('t-privacy2').textContent=u.privacy;$('menu').textContent=u.other;$('skip').textContent=u.skip;document.title=u.title+' · Bamboo Physio';
   $('lang-en').setAttribute('aria-pressed',l==='en');$('lang-he').setAttribute('aria-pressed',l==='he');
@@ -214,6 +218,7 @@ function setLang(l){
 $('lang-en').onclick=()=>setLang('en');$('lang-he').onclick=()=>setLang('he');
 const segBind=(id,fn)=>document.querySelectorAll('#'+id+' button').forEach(b=>b.onclick=()=>{fn(b.dataset.v);SFX.tink();segs();});
 segBind('reach-seg',v=>{reach=v;LS.set('nt-reach',v);});
+segBind('inst-seg',v=>{inst=v;LS.set('nt-inst',v);audio();preload();playPreview();});
 segBind('group-seg',v=>{group=v==='1';LS.set('nt-group',v);});
 segBind('next-seg',v=>{showNext=v==='1';LS.set('nt-next',v);});
 segBind('chords-seg',v=>{chordsOn=v==='1';LS.set('nt-chords',v);});
@@ -237,7 +242,18 @@ function pbus(){
   const rv=a.createConvolver();rv.buffer=b;const wet=a.createGain();wet.gain.value=.22;PB.connect(wet);wet.connect(rv);rv.connect(S.BUS.master);
   return PB;
 }
-function preload(){const a=S.AC;if(!a)return;const s=song(),ms=new Set(s.scale);for(const n of parse(s).ch)CH[n.name].forEach(m=>ms.add(m));return loadSamples(a,{[INST]:[...ms]});}
+function preload(){const a=S.AC;if(!a)return;const s=song(),ch=parse(s).ch;
+  if(inst==='xylo'){const mel=s.scale.map(m=>m+12),cm=new Set();for(const n of ch)CHM[n.name].forEach(m=>cm.add(m));return loadSamples(a,{xylophone:mel,marimba:[...cm]});}
+  const ms=new Set(s.scale);for(const n of ch)CH[n.name].forEach(m=>ms.add(m));return loadSamples(a,{[INST]:[...ms]});}
+/* the melody note: a wooden xylophone (played an octave up, where a real kids' xylophone sounds) or the piano */
+function melody(m,at,len,v=.9){
+  if(inst!=='xylo')return piano(m,at,len,v);
+  const a=audio();if(!a)return;const t=a.currentTime+Math.max(0,at),bus=pbus();
+  if(playSample(a,'xylophone',m+12,t,v*.95,bus,Math.max(.9,len)))return;
+  // fallback: a woody "tok" (warm sine + a quick bright partial)
+  const f=440*Math.pow(2,(m+12-69)/12);[[1,.22,.9],[3.9,.07,.12]].forEach(([k,g0,d])=>{const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.value=f*k;
+    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(g0*v,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(bus);o.start(t);o.stop(t+d+.05);});
+}
 /* one piano note; falls back to a soft synth tone if the sample isn't loaded yet */
 function piano(m,at,len,v=.9){
   const a=audio();if(!a)return;const t=a.currentTime+Math.max(0,at),bus=pbus();
@@ -246,17 +262,20 @@ function piano(m,at,len,v=.9){
   g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.18*v,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+Math.max(.5,len)+.4);
   o.connect(g);o2.connect(g);g.connect(bus);o.start(t);o2.start(t);o.stop(t+len+.5);o2.stop(t+len+.5);
 }
-function chord(name,at,len,v=.32){CH[name].forEach((m,i)=>piano(m,at+i*.012,len,v*(i?1:.8)));}
+function chord(name,at,len,v=.32){
+  if(inst==='xylo'){const a=audio();if(!a)return;const bus=pbus();   // a soft rolled marimba chord
+    CHM[name].forEach((m,i)=>{const t=a.currentTime+Math.max(0,at)+i*.03;if(!playSample(a,'marimba',m,t,v*(i?.75:.9),bus,Math.max(.6,len)))piano(m,at+i*.03,len,v*.6);});return;}
+  CH[name].forEach((m,i)=>piano(m,at+i*.012,len,v*(i?1:.8)));}
 /* play a stretch of the song: from beat b0, the notes of one target (and the chords that start inside it) */
 function playTarget(tg,at=0){
   const s=song(),P=parse(s),spb=s.spb;
-  tg.notes.forEach(n=>piano(s.scale[tg.slot],at+(n.beat-tg.beat)*spb,n.dur*spb+.35));
+  tg.notes.forEach(n=>melody(s.scale[tg.slot],at+(n.beat-tg.beat)*spb,n.dur*spb+.35));
   if(chordsOn)for(const c of P.ch)if(c.beat>=tg.beat-1e-6&&c.beat<tg.beat+tg.dur-1e-6)chord(c.name,at+(c.beat-tg.beat)*spb,c.dur*spb+.2);
 }
 let previewT=0;
 function playPreview(){   // tapping a song plays its first few notes
   const s=song(),P=parse(s);previewT++;const id=previewT;let b0=null;
-  for(const e of P.ev){if(e.beat>4.01)break;if(b0===null)b0=e.beat;piano(s.scale[e.slot],(e.beat-b0)*s.spb,e.dur*s.spb+.3,.7);}
+  for(const e of P.ev){if(e.beat>4.01)break;if(b0===null)b0=e.beat;melody(s.scale[e.slot],(e.beat-b0)*s.spb,e.dur*s.spb+.3,.7);}
 }
 const FX={
   land(){if(S.sfxOn)tone({f0:1600,f1:2400,dur:.06,type:'sine',vol:.04});},
@@ -266,7 +285,7 @@ const FX={
 
 /* ================= CAMERA + POSE TRACKING (on device) ================= */
 const video=$('v');
-let tracker=null,camOK=false,lastVT=-1,people=[];
+let tracker=null,camOK=false,lastVT=-1,people=[],camFresh=false;
 const vmap=()=>{const vw=video.videoWidth||640,vh=video.videoHeight||480,s=Math.max(W/vw,H/vh);return {vw,vh,s,ox:(W-vw*s)/2,oy:(H-vh*s)/2};};
 async function startCam(){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('nocam');
@@ -277,7 +296,8 @@ async function startCam(){
   const opts=(d,k)=>({baseOptions:{modelAssetPath:`https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_${k}/float16/1/pose_landmarker_${k}.task`,delegate:d},
     runningMode:'VIDEO',numPoses:4,minPoseDetectionConfidence:.45,minPosePresenceConfidence:.45,minTrackingConfidence:.45});
   let err=null;
-  for(const [d,k] of [['GPU','full'],['GPU','lite'],['CPU','lite']]){try{tracker=await timeoutP(vision.PoseLandmarker.createFromOptions(files,opts(d,k)),d==='GPU'?30000:120000);break;}catch(e){err=e;}}
+  for(const [d,k] of [['GPU','lite'],['GPU','full'],['CPU','lite']])   // lite first: more frames per second = the glow keeps up with fast hands
+  {try{tracker=await timeoutP(vision.PoseLandmarker.createFromOptions(files,opts(d,k)),d==='GPU'?30000:120000);break;}catch(e){err=e;}}
   if(!tracker)throw err||new Error('model');
   tracker=lockOn(tracker,{kind:'pose',players:()=>mode==='duo'?2:1});   // follow only the player(s), never a grown-up behind
   camOK=true;
@@ -290,7 +310,9 @@ function track(now){
     const sw=Math.hypot(p[11].x-p[12].x,p[11].y-p[12].y),cx=(p[11].x+p[12].x)/2,sy=(p[11].y+p[12].y)/2;
     const nose=p[0].v>.4?p[0]:{x:cx,y:sy-sw*.75};
     // a hand = just past the wrist, in line with the forearm (the middle of the palm / fingers)
-    const hands=[[15,13],[16,14]].map(([wi,ei])=>{const w=p[wi],e=p[ei];if(w.v<.35)return null;return {x:w.x+(w.x-e.x)*.38,y:w.y+(w.y-e.y)*.38};}).filter(Boolean);
+    // a hand = the middle of the palm: between the wrist and the index / little-finger knuckles (the glow sits right on the hand)
+    const hands=[[15,17,19,'L'],[16,18,20,'R']].map(([wi,pi,ii,id])=>{const w=p[wi],pk=p[pi],ix=p[ii];if(w.v<.2)return null;
+      return {id,x:w.x*.3+pk.x*.35+ix.x*.35,y:w.y*.3+pk.y*.35+ix.y*.35};}).filter(Boolean);
     return {nose,sw,cx,sy,hands,ok:p[11].v>=.4&&p[12].v>=.4&&sw>4};}).filter(p=>p.ok);
   people.sort((a,b)=>a.cx-b.cx);
   if(mode==='solo'&&people.length>1)people=[people.reduce((a,b)=>b.sw>a.sw?b:a)];
@@ -381,25 +403,32 @@ addEventListener('pointerup',e=>{if(e.pointerType!=='mouse')touches.delete(e.poi
 function readHands(P,dt){
   P.prev=P.hands.map(h=>({...h}));
   if(camOK){
-    const p=personFor(P.k);if(!p)return;P.seenT=tNow;
-    // smooth a little, keep the matching hand
-    const nh=p.hands.map(h=>{const o=P.hands.reduce((a,q)=>!a||Math.hypot(q.x-h.x,q.y-h.y)<Math.hypot(a.x-h.x,a.y-h.y)?q:a,null);
-      if(o&&Math.hypot(o.x-h.x,o.y-h.y)<U(P)*1.2){const k=Math.min(1,dt*26);return {x:o.x+(h.x-o.x)*k,y:o.y+(h.y-o.y)*k};}return {x:h.x,y:h.y};});
+    const p=personFor(P.k);if(!p){P.hands=[];return;}P.seenT=tNow;
+    if(!camFresh)return;   // no new camera picture this frame: keep exactly where the hand is in the picture on screen
+    // no lag: a "one-euro" filter — steady when the hand is still, follows instantly when it moves fast
+    const nh=[];P.filt=P.filt||{};
+    for(const h of p.hands){const f=P.filt[h.id];
+      if(!f||tNow-f.t>.3){P.filt[h.id]={x:h.x,y:h.y,dx:0,dy:0,t:tNow};nh.push({id:h.id,x:h.x,y:h.y});continue;}
+      const te=Math.max(1/120,tNow-f.t),al=fc=>{const r=2*Math.PI*fc*te;return r/(r+1);};
+      const ad=al(1);f.dx+=((h.x-f.x)/te-f.dx)*ad;f.dy+=((h.y-f.y)/te-f.dy)*ad;
+      const sp=Math.hypot(f.dx,f.dy),a=al(2.5+.006*sp);f.x+=(h.x-f.x)*a;f.y+=(h.y-f.y)*a;f.t=tNow;nh.push({id:h.id,x:f.x,y:f.y});}
+    // a hand lost for a moment (motion blur) stays where it was for 0.2 s
+    for(const o of P.hands)if(!nh.some(h=>h.id===o.id)&&P.filt[o.id]&&tNow-P.filt[o.id].t<.2)nh.push(o);
     P.hands=nh;
   } else if(BOT){botHand(P,dt);P.seenT=tNow;}
-  else{P.seenT=tNow;const ln=P.ln;P.hands=[...touches.values()].filter(q=>mode!=='duo'||(q.x>=ln.x&&q.x<ln.x+ln.w)).slice(0,2).map(q=>({...q}));}
+  else{P.seenT=tNow;const ln=P.ln;P.hands=[...touches.entries()].filter(([,q])=>mode!=='duo'||(q.x>=ln.x&&q.x<ln.x+ln.w)).slice(0,2).map(([id,q])=>({id,...q}));}
 }
 /* ?bot: a hand that flies to each note (to check the flow) */
 function botHand(P,dt){
   if(!P.bh)P.bh={x:P.ln.x+P.ln.w/2,y:H*.6};
   const tgt=cur&&cur.st==='ready'&&cur.k===P.k?cur:null,g=tgt?{x:tgt.x,y:tgt.y}:{x:P.ln.x+P.ln.w/2,y:H*.62};
-  const k=Math.min(1,dt*4.5);P.bh.x+=(g.x-P.bh.x)*k;P.bh.y+=(g.y-P.bh.y)*k;P.hands=[{...P.bh}];
+  const k=Math.min(1,dt*4.5);P.bh.x+=(g.x-P.bh.x)*k;P.bh.y+=(g.y-P.bh.y)*k;P.hands=[{id:'B',...P.bh}];
 }
 const segDist=(px,py,x0,y0,x1,y1)=>{const dx=x1-x0,dy=y1-y0,L=dx*dx+dy*dy,k=L?Math.max(0,Math.min(1,((px-x0)*dx+(py-y0)*dy)/L)):0;return Math.hypot(px-(x0+dx*k),py-(y0+dy*k));};
 /* does a hand (moving from its last place) touch the note? generous on purpose */
 function touching(P,tg){
   const hr=handR(P),offs=clusterOffsets(tg.n,tg.r);
-  return P.hands.some((h,j)=>{const pv=P.prev[j]&&Math.hypot(P.prev[j].x-h.x,P.prev[j].y-h.y)<U(P)*1.5?P.prev[j]:h;
+  return P.hands.some(h=>{const q=P.prev.find(o=>o.id===h.id),pv=q&&Math.hypot(q.x-h.x,q.y-h.y)<U(P)*2.5?q:h;
     return offs.some(o=>segDist(tg.x+o.x,tg.y+o.y,pv.x,pv.y,h.x,h.y)<o.r*1.05+hr*.85);});
 }
 const sideOf=i=>mode==='duo'?i%2:0;
@@ -433,7 +462,7 @@ function endGame(quit){
 function startFinale(){
   const s=song(),P0=parse(s);state='finale';FX.finish();
   const a=audio(),lead=1.1;finale={t0:tNow+lead,dur:P0.beats*s.spb,ev:P0.ev,beats:P0.beats};
-  for(const e of P0.ev)piano(s.scale[e.slot],lead+e.beat*s.spb,e.dur*s.spb+.35);
+  for(const e of P0.ev)melody(s.scale[e.slot],lead+e.beat*s.spb,e.dur*s.spb+.35);
   if(chordsOn)for(const c of P0.ch)chord(c.name,lead+c.beat*s.spb,c.dur*s.spb+.2);
   $('skip').classList.add('on');
   // record
@@ -461,7 +490,7 @@ const portraitPlay=()=>H>W*1.05&&['setup','count','play'].includes(state);
 let last=performance.now();
 function frame(now){
   const dt=Math.max(0,Math.min(.05,(now-last)/1000))*SPEEDUP;last=now;tNow+=dt;
-  if(camOK)track(now);
+  camFresh=camOK&&track(now);
   for(let i=0;i<8;i++)bounce[i]=Math.max(0,bounce[i]-dt*3);
   players.forEach(P=>P.hot=Math.max(0,P.hot-dt*2.5));
   if(portraitPlay()){render(dt);requestAnimationFrame(frame);return;}
