@@ -362,3 +362,19 @@ export function drawFlightPath(c, x, y, d, len, k0, k1, w) {
     c.fillStyle = '#fff'; c.beginPath(); c.arc(px, py, r, 0, 7); c.fill();
   }
 }
+
+/* ---------- trail option A (Edgar 24 Nov): a little curly whiff of wind, dropped every 2 wing beats, fading behind the bat ----------
+   (x,y) where it was dropped, r size, a opacity 0..1, ang = flight direction (the tail points toward where the bat went), spin ±1 */
+export function drawWhiff(c, x, y, r, a, ang, spin = 1) {
+  if (a <= 0) return;
+  c.save(); c.translate(x, y); c.rotate(ang); c.globalAlpha = a; c.shadowColor = 'rgba(43,33,24,.35)'; c.shadowBlur = 4;
+  c.strokeStyle = '#fff'; c.lineCap = 'round';
+  let px = null, py = null; const N = 36;
+  for (let i = 0; i <= N; i++) {
+    const k = i / N, an = spin * (Math.PI * .2 + k * Math.PI * 2.6), rr = r * (1 - k * .78), X = Math.cos(an) * rr - r * .2, Y = Math.sin(an) * rr * .85;
+    if (px !== null) { c.lineWidth = Math.max(1.2, r * .22 * (1 - k * .7)); c.beginPath(); c.moveTo(px, py); c.lineTo(X, Y); c.stroke(); }
+    px = X; py = Y;
+  }
+  c.lineWidth = r * .2; c.beginPath(); c.moveTo(r * 1.6, spin * r * .25); c.quadraticCurveTo(r * .9, spin * r * .9, Math.cos(spin * Math.PI * .2) * r - r * .2, Math.sin(spin * Math.PI * .2) * r * .85); c.stroke();
+  c.restore();
+}
