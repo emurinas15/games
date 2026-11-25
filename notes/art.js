@@ -22,7 +22,11 @@ function glyph(c, s) {
 
 /* one round note sticker */
 function bubble(c, x, y, r, col, lw) {
-  sticker(c, ell(x, y, r, r), col, lw);
+  // sticker look: thin dark edge → white border → the coloured disc with a fine dark line
+  const wb = r * .17;
+  sticker(c, ell(x, y, r + wb, r + wb), '#fff', Math.max(2, lw * .75));
+  c.save(); c.lineWidth = Math.max(1.5, lw * .45); c.strokeStyle = INK; c.fillStyle = col;
+  const d = ell(x, y, r, r); c.fill(d); c.stroke(d); c.restore();
   c.fillStyle = 'rgba(255,255,255,.45)'; c.fill(ell(x - r * .38, y - r * .42, r * .28, r * .15, -.6));
   c.save(); c.translate(x + r * .04, y); glyph(c, r * 1.05); c.restore();
 }
@@ -30,11 +34,11 @@ function bubble(c, x, y, r, col, lw) {
 /* where the circles of a double / triple note sit (relative to the centre) */
 export function clusterOffsets(n, r) {
   if (n <= 1) return [{ x: 0, y: 0, r }];
-  const rr = r * .82, step = rr * 1.55;
+  const rr = r * .82, step = rr * 1.85;
   return Array.from({ length: n }, (_, i) => ({ x: (i - (n - 1) / 2) * step, y: (i % 2 ? -rr * .22 : rr * .12), r: rr }));
 }
 /* half-width of a cluster (for hits and placing) */
-export const clusterHalfW = (n, r) => n <= 1 ? r : r * .82 * (1 + .775 * (n - 1));
+export const clusterHalfW = (n, r) => (n <= 1 ? r : r * .82 * (1 + .775 * (n - 1))) * 1.17;
 
 /* a note (or a double / triple note). o: {glow 0..1, popped: how many circles already played, alpha, halo colour, wob} */
 export function drawNote(c, x, y, r, slot, n, t, o = {}) {
@@ -50,7 +54,7 @@ export function drawNote(c, x, y, r, slot, n, t, o = {}) {
     if (i < pop) return;
     const b = Math.sin(t * 3 + i * 1.3 + slot) * r * .05 + (o.wob || 0) * Math.sin(t * 14 + i) * r * .06;
     // shadow
-    c.fillStyle = 'rgba(43,33,24,.28)'; c.fill(ell(x + p.x, y + p.y + p.r * .12 + b, p.r, p.r));
+    c.fillStyle = 'rgba(43,33,24,.3)'; c.fill(ell(x + p.x, y + p.y + p.r * .14 + b, p.r * 1.17, p.r * 1.17));
     bubble(c, x + p.x, y + p.y + b, p.r, col, lw);
   });
   if (n > 1 && pop === 0 && !o.noTag) {   // ×2 / ×3 tag

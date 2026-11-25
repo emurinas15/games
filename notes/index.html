@@ -341,7 +341,7 @@ function personFor(k){
 let players=[];
 function makePlayer(k){return {k,get ln(){return lanes()[k];},ref:null,hands:[],prev:[],seenT:-9,fake:[],cal:[],hot:0};}
 const U=P=>P.ref?P.ref.sw:Math.min(W,H)*.2;
-const noteR=P=>Math.max(20,Math.min(U(P)*.34,gap()*.78,64));
+const noteR=P=>Math.max(28,Math.min(U(P)*.48,gap()*1.05,92));   // big and easy to see (Edgar 25 Nov)
 const handR=P=>Math.max(16,U(P)*.2);
 
 /* UI boxes the notes must not hide behind */
