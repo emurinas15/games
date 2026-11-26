@@ -737,31 +737,39 @@ function newScene(){const ids=[...ANIMALS.keys()].sort(()=>Math.random()-.5).sli
 function greyFig(m,j,R,k){const key=R.w+'|'+DPR;if(m.grey&&m.grey.key===key)return m.grey;
   const F=sceneFig(ctx,j,R,k),bw=F.s*2.4,bh=F.s*2.9,sc=k*DPR,c2=document.createElement('canvas');c2.width=Math.ceil(bw*sc);c2.height=Math.ceil(bh*sc);
   const g=c2.getContext('2d');g.setTransform(sc,0,0,sc,0,0);const keep=ctx;ctx=g;try{drawDressed(m,j,bw/2,bh*.92,F.s,{pose:m.target.pose});}finally{ctx=keep;}
-  const im=g.getImageData(0,0,c2.width,c2.height),d=im.data;for(let i=0;i<d.length;i+=4){const v=(d[i]*.3+d[i+1]*.59+d[i+2]*.11)*.75+255*.25;d[i]=d[i+1]=d[i+2]=v;}g.putImageData(im,0,0);
-  return m.grey={key,c:c2,bw,bh};}
-function sceneFig(c,j,R,k){const back=j%2===1,x=900*SC_XS[j],ground=600*(back?.79:.9),s=600*.25*(back?.5:.56);/* two rows: back row a little higher and smaller */return {x,ground,s,cx:R.x+x*k,cy:R.y+(ground-s*.7)*k};}
+  const im=g.getImageData(0,0,c2.width,c2.height),d=im.data,c3=document.createElement('canvas');c3.width=c2.width;c3.height=c2.height;const g3=c3.getContext('2d'),im3=g3.createImageData(c2.width,c2.height),e=im3.data;
+  for(let i=0;i<d.length;i+=4){const L=d[i]*.3+d[i+1]*.59+d[i+2]*.11,v=L*.75+255*.25;e[i]=Math.min(255,L*.42+40);e[i+1]=Math.min(255,L*.62+95);e[i+2]=Math.min(255,L*.4+38);e[i+3]=d[i+3];d[i]=d[i+1]=d[i+2]=v;}   // green twin
+  g.putImageData(im,0,0);g3.putImageData(im3,0,0);
+  return m.grey={key,c:c2,green:c3,bw,bh};}
+// 26 Nov (Edgar): bigger scene — about 68% of the screen width, nearly full height (was half and half)
+function sceneRect(){const y=58,h=Math.max(160,H-y-46),w=Math.min(W*.68,h*2.3);return {x:10,y,w,h};}
+const sceneVW=R=>Math.max(900,R.w/(R.h/600));   // the card's width in picture units (600 tall)
+function sceneFig(c,j,R,k){const VW=sceneVW(R),back=j%2===1,x=VW*(.08+SC_XS[j]*.84),ground=600*(back?.8:.92),s=600*.25*(back?.66:.74);/* two rows: back row a little higher and smaller */return {x,ground,s,cx:R.x+x*k,cy:R.y+(ground-s*.7)*k};}
 function drawScene(){
-  const R=storyRect(),k=R.w/900,u=UI[lang],fin=phase==='finale';
+  const R=sceneRect(),k=R.h/600,VW=sceneVW(R),u=UI[lang],fin=phase==='finale';
   ctx.save();ctx.fillStyle=INK;ctx.beginPath();ctx.roundRect(R.x,R.y+5,R.w,R.h,18);ctx.fill();ctx.restore();
   ctx.save();const clip=new Path2D();clip.roundRect(R.x,R.y,R.w,R.h,18);ctx.clip(clip);ctx.translate(R.x,R.y);ctx.scale(k,k);
-  sDrawBG(ctx,900,600,scene.bg);drawThemeProps(scene.theme,tNow,fin,scene.finT);
+  sDrawBG(ctx,VW,600,scene.bg);ctx.save();ctx.translate((VW-900)/2,0);drawThemeProps(scene.theme,tNow,fin,scene.finT);ctx.restore();
   [1,3,0,2,4].map(j=>[scene.cast[j],j]).forEach(([m,j])=>{const F=sceneFig(ctx,j,R,k),id=ANIMALS[m.a].id,pose=m.target.pose,cur=j===scene.i&&!m.done&&!fin;
     const hop=fin||(m.done&&tNow-m.revealT<1.2)?-Math.abs(Math.sin(tNow*7+j))*F.s*.08:0;
     const grey=()=>{const G=greyFig(m,j,R,k),h=cur?-Math.abs(Math.sin(tNow*3))*F.s*.04:0;ctx.save();ctx.globalAlpha=cur?.9:.55;ctx.drawImage(G.c,F.x-G.bw/2,F.ground-G.bh*.92+h,G.bw,G.bh);ctx.restore();};
     const colour=()=>drawDressed(m,j,F.x,F.ground,F.s,{pose,hop,mouth:m.done?'smile':undefined});
     if(cur){const g=ctx.createRadialGradient(F.x,F.ground-F.s*.7,F.s*.2,F.x,F.ground-F.s*.7,F.s*1.15);g.addColorStop(0,'rgba(255,230,120,.85)');g.addColorStop(1,'rgba(255,230,120,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(F.x,F.ground-F.s*.7,F.s*1.15,0,Math.PI*2);ctx.fill();}
-    if(!m.done)grey();
+    if(!m.done){grey();
+      if(cur&&meters[0]>0){const G=greyFig(m,j,R,k),top=F.ground-G.bh*.92,fy=F.ground+F.s*.05-(F.ground+F.s*.05-top)*meters[0],h=-Math.abs(Math.sin(tNow*3))*F.s*.04;
+        ctx.save();const cl=new Path2D();cl.moveTo(F.x-G.bw/2,F.ground+F.s*.2);for(let q=0;q<=12;q++){const xx=F.x-G.bw/2+G.bw*q/12;cl.lineTo(xx,fy+Math.sin(q*1.1+tNow*7)*F.s*.03);}cl.lineTo(F.x+G.bw/2,F.ground+F.s*.2);cl.closePath();ctx.clip(cl);
+        ctx.drawImage(G.green,F.x-G.bw/2,top+h,G.bw,G.bh);ctx.restore();}}
     else{const e=Math.min(1,(tNow-m.revealT)/.9);
       if(e<1){grey();ctx.save();ctx.beginPath();ctx.arc(F.x,F.ground-F.s*.7,F.s*1.6*(e*e*(3-2*e)),0,Math.PI*2);ctx.clip();colour();ctx.restore();}   // the colour spreads out from the middle
       else colour();}});
-  if(fin){const cols=['#FF9FB0','#FFD86B','#7DCB6B','#5FB7F0','#B9A3E0'];for(let i=0;i<40;i++){const x=(i*137.5%100)/100*900,y=((i*61.8+tNow*60)%100)/100*600;ctx.save();ctx.translate(x,y);ctx.rotate(i+tNow);sticker(ctx,ell(0,0,7,3.5),cols[i%5],1.4);ctx.restore();}}
-  {const T=THEMES[scene.theme].title[lang];ctx.font='900 38px Grandstander,Fredoka,sans-serif';const tw=ctx.measureText(T).width+44,rb=new Path2D();rb.roundRect(450-tw/2,14,tw,54,27);sticker(ctx,rb,'#FFF8EC',4);
-    ctx.fillStyle=INK;ctx.textAlign='center';ctx.textBaseline='middle';ctx.direction=lang==='he'?'rtl':'ltr';ctx.fillText(T,450,43);}
+  if(fin){const cols=['#FF9FB0','#FFD86B','#7DCB6B','#5FB7F0','#B9A3E0'];for(let i=0;i<40;i++){const x=(i*137.5%100)/100*VW,y=((i*61.8+tNow*60)%100)/100*600;ctx.save();ctx.translate(x,y);ctx.rotate(i+tNow);sticker(ctx,ell(0,0,7,3.5),cols[i%5],1.4);ctx.restore();}}
+  {const T=THEMES[scene.theme].title[lang];ctx.font='900 38px Grandstander,Fredoka,sans-serif';const tw=ctx.measureText(T).width+44,rb=new Path2D();rb.roundRect(VW/2-tw/2,14,tw,54,27);sticker(ctx,rb,'#FFF8EC',4);
+    ctx.fillStyle=INK;ctx.textAlign='center';ctx.textBaseline='middle';ctx.direction=lang==='he'?'rtl':'ltr';ctx.fillText(T,VW/2,43);}
   ctx.restore();
   ctx.save();ctx.lineWidth=4;ctx.strokeStyle=INK;ctx.stroke(clip);ctx.restore();
   const fs=Math.max(15,Math.min(22,R.w*.045)),by=R.y+R.h+fs*1.05,m=scene.cast[scene.i];
   if(m&&!fin)bubble((lang==='he'?'מחקים: ':'Copy: ')+animalName(m.target),R.x+R.w/2,by,fs,'#E6F7DE');
-  bubble(u.sceneN(scene.cast.filter(c=>c.done).length,SC_N),R.x+R.w+8+(W-R.x-R.w-8)/2,64+fs*.2,fs,'#fff');
+  bubble(u.sceneN(scene.cast.filter(c=>c.done).length,SC_N),R.x+R.w+8+(W-R.x-R.w-8)/2,R.y+fs*1.4,fs,'#fff');
 }
 function sceneUpdate(dt,u){
   phaseT+=dt;if(phase!=='finale')scene.time+=dt;
@@ -770,7 +778,7 @@ function sceneUpdate(dt,u){
       if(r.ok){meters[0]=Math.min(1,meters[0]+dt/1.2);fillTick+=dt;if(fillTick>.2){fillTick=0;FX.fill(meters[0]);}}else meters[0]=Math.max(0,meters[0]-dt*.4);}
     else meters[0]=Math.max(0,meters[0]-dt*.4);
     if(meters[0]>=1){m.done=true;m.revealT=tNow;FX.great();say(pick(u.great),1.2);voice(ANIMALS[m.a].id,ANIMALS[m.a].id==='lion'?'ROAR':'');
-      const R=storyRect(),F=sceneFig(ctx,scene.i,R,R.w/900);for(let k=0;k<16;k++)pops.push({x:F.cx,y:F.cy,vx:(Math.random()-.5)*W*.6,vy:-H*(.3+Math.random()*.5),life:1.2});
+      const R=sceneRect(),F=sceneFig(ctx,scene.i,R,R.h/600);for(let k=0;k<16;k++)pops.push({x:F.cx,y:F.cy,vx:(Math.random()-.5)*W*.6,vy:-H*(.3+Math.random()*.5),life:1.2});
       setPhase('cheer');}}
   else if(phase==='cheer'){if(phaseT>1.3){scene.i++;meters=[0,0];lastMatch=[];
     if(scene.i>=SC_N){setPhase('finale');scene.finT=tNow;themeGag(scene.theme);say(THEMES[scene.theme].end[lang],3);for(let k=0;k<40;k++)pops.push({x:W*.3,y:H*.3,vx:(Math.random()-.5)*W,vy:-H*(.4+Math.random()*.6),life:2});}
@@ -913,7 +921,7 @@ const portraitPlay=()=>H>W*1.05&&['setup','count','play'].includes(state);
 /* 16 Nov (Edgar): in 2-player mode the players stand on the two sides and the action is in the MIDDLE —
    the wheel spins in a centre card and, once it picks, the animal statue takes the wheel's place in that same card.
    One player: the same card sits on the left and the player has the rest of the picture. */
-function stageRect(){if(story||scene)return storyRect();const y=58,h=H-y-Math.max(56,H*.11);
+function stageRect(){if(scene)return sceneRect();if(story)return storyRect();const y=58,h=H-y-Math.max(56,H*.11);
   if(who==='duo'){const w=Math.min(W*.24,h*.75);return {x:(W-w)/2,y,w,h};}
   const w=Math.min(W*.3,h*.82);return {x:12,y,w,h};}
 function playRect(){if(who==='duo')return {x:0,y:0,w:W,h:H};const R=stageRect(),x=R.x+R.w+8;return {x,y:0,w:W-x,h:H};}
@@ -998,7 +1006,7 @@ function render(dt){
   if(portraitPlay()){drawTurnPhone();return;}
   if(state==='setup'){ if(guide)guide.draw(ctx,playRect(),lang); else{const hv=halves();guides.forEach((g,k)=>g.draw(ctx,hv[k],lang));} }
   else if(state==='count'){const n=3-Math.floor(tNow-countT),k=(tNow-countT)%1;if(n>0)bigText(String(n),W/2,H*.42,Math.min(150,H*.22),'#fff',1+.25*Math.max(0,1-k*4));}
-  else if(state==='play'&&scene){drawScene();if(phase!=='finale'){drawMeter(0,W-43);if(phase==='copy')drawCopyDots();}}
+  else if(state==='play'&&scene){drawScene();if(phase==='copy')drawCopyDots();}
   else if(state==='play'&&story){drawStory();if(phase==='read'||phase==='copy'||phase==='cheer'){drawMeter(0,W-43);if(phase!=='cheer')drawCopyDots();}}
   else if(state==='play'){
     if(phase==='spin'||phase==='mix')drawWheel();
