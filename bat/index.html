@@ -370,7 +370,7 @@ function personFor(k){
 }
 const U=P=>P.ref.u;
 const FR=P=>U(P)*.25;                          // fruit radius
-const HIT=P=>U(P)*.55;                         // bat body + fruit: touching distance
+const HIT=P=>batR(P)+FR(P)*.9;                 // touching distance = the bat's body + the fruit (wings don't count)
 const standY=P=>P.ref.top-FR(P)*.85;           // the fruit's height while the child stands
 const laneY=(P,type)=>type==='low'?Math.min(H-U(P)*.35,standY(P)+U(P)*1.02):standY(P);
 const batR=P=>U(P)*.3;
@@ -627,7 +627,8 @@ function stepPlayer(P,dt){
           f.st='gone';f.back=P.t+.6;P.hits++;(P.hitT=P.hitT||{})[b.type+(b.rate?'T':'')]=(P.hitT[b.type+(b.rate?'T':'')]||0)+1;FX.nom();P.msgs.push({txt:UI[lang].yum,x:fp.x,y:fp.y,t:P.t,col:'#FF9FB0'});
           P.wave.left=0;P.bats.forEach(o=>{if(o!==b&&o.fid===b.fid){o.judged=true;o.mood='happy';}});
         } else {
-          const sp=Math.hypot(b.vx,b.vy),past=((jx-fp.x)*b.vx+(jy-fp.y)*b.vy)/sp>hit;
+          // Edgar 26 Nov: the dodge counts the moment the bat's middle passes the fruit without touching it — after that it can't snatch it any more
+          const sp=Math.hypot(b.vx,b.vy),past=((jx-fp.x)*b.vx+(jy-fp.y)*b.vy)/sp>0;
           if(past){b.judged=true;b.mood='aww';
             if(f.st==='head'&&b.fid===f.fid){P.ev++;f.yay=P.t;FX.phew();FX.aww();P.msgs.push({txt:UI[lang].phew,x:fp.x,y:fp.y,t:P.t,col:'#B8F0A0',stars:1});
               // all the bats for this fruit dodged -> it hops into the basket
